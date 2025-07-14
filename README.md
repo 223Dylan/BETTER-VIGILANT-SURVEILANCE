@@ -54,7 +54,7 @@ celery -A src.tasks worker --loglevel=info   # Background processing
 - **Alert Management** - Acknowledge, dismiss, escalate alerts
 - **False Positive Reduction** - Smart filtering and cooldown periods
 
-### 🏢 Enterprise Ready
+### Enterprise Ready
 - **Role-based Access** - Admin, Operator, Viewer permissions
 - **Comprehensive Monitoring** - ELK stack integration
 - **High Availability** - Docker-based deployment
@@ -148,7 +148,7 @@ graph TB
 - **GPU:** NVIDIA GTX 1060 or better (for faster inference)
 - **Network:** Gigabit Ethernet for IP cameras
 
-## 📚 Documentation
+## Documentation
 
 | Documentation | Description |
 |---------------|-------------|

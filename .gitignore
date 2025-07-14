@@ -175,3 +175,6 @@ test_*
 # Sensitive configuration
 alembic_production.ini
 database_backup/ 
+
+.gitignore
+.cursorignore
