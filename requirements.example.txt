@@ -74,7 +74,7 @@ openpyxl==3.1.2
 
 # Additional Utilities
 click==8.1.7
-tqdm==4.66.1
+tqdm==4.67.1
 python-slugify==8.0.1
 
 # CORS Support
