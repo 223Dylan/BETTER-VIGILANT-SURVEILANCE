@@ -10,7 +10,7 @@ Welcome to the Shoplifting Detection System documentation! This guide helps you 
 2. **[Installation Guide](10_INSTALLATION_GUIDE.md)** - Detailed installation instructions
 3. **[Configuration Guide](11_CONFIGURATION_GUIDE.md)** - Complete configuration reference
 
-## 📚 Core Documentation
+## Core Documentation
 
 ### System Architecture & Implementation
 
@@ -117,7 +117,7 @@ This documentation is maintained alongside the codebase. When making changes to 
 3. **Keep examples current** with actual code
 4. **Test all setup instructions** before committing
 
-## 🔗 External Resources
+## External Resources
 
 - **TensorFlow Documentation** - For LRCN model customization
 - **FastAPI Documentation** - For API development
