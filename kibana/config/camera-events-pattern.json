@@ -1,0 +1,18 @@
+{
+  "title": "Camera Events",
+  "timeFieldName": "@timestamp",
+  "fields": [
+    {
+      "name": "camera_id",
+      "type": "keyword"
+    },
+    {
+      "name": "event_type",
+      "type": "keyword"
+    },
+    {
+      "name": "severity",
+      "type": "keyword"
+    }
+  ]
+}

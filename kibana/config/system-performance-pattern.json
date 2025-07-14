@@ -1,0 +1,30 @@
+{
+  "title": "System Performance",
+  "timeFieldName": "@timestamp",
+  "fields": [
+    {
+      "name": "camera_id",
+      "type": "keyword"
+    },
+    {
+      "name": "fps_status",
+      "type": "keyword"
+    },
+    {
+      "name": "performance.fps_actual",
+      "type": "float"
+    },
+    {
+      "name": "performance.fps_efficiency",
+      "type": "float"
+    },
+    {
+      "name": "performance.memory_usage_mb",
+      "type": "float"
+    },
+    {
+      "name": "performance.queue_depth",
+      "type": "integer"
+    }
+  ]
+}

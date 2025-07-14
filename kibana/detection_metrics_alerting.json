@@ -1,0 +1,426 @@
+{
+  "watchers": [
+    {
+      "id": "high_detection_rate_alert",
+      "title": "High Detection Rate Alert",
+      "description": "Alert when shoplifting detections exceed normal thresholds",
+      "trigger": {
+        "schedule": {
+          "interval": "1m"
+        }
+      },
+      "input": {
+        "search": {
+          "request": {
+            "indices": ["detection-metrics-*"],
+            "body": {
+              "query": {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "type": "detection_metrics"
+                      }
+                    },
+                    {
+                      "term": {
+                        "detection_outcome": "shoplifting"
+                      }
+                    },
+                    {
+                      "term": {
+                        "confidence_level": "high"
+                      }
+                    },
+                    {
+                      "range": {
+                        "@timestamp": {
+                          "gte": "now-10m"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "aggs": {
+                "detection_count": {
+                  "cardinality": {
+                    "field": "camera_id"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "condition": {
+        "compare": {
+          "ctx.payload.hits.total": {
+            "gt": 5
+          }
+        }
+      },
+      "actions": {
+        "send_email": {
+          "email": {
+            "to": ["admin@company.com"],
+            "subject": "High Detection Rate Alert",
+            "body": "High number of shoplifting detections ({{ctx.payload.hits.total}}) detected in the last 10 minutes. Please investigate immediately."
+          }
+        },
+        "log_alert": {
+          "logging": {
+            "text": "High detection rate alert triggered: {{ctx.payload.hits.total}} detections in 10 minutes"
+          }
+        }
+      }
+    },
+    {
+      "id": "system_performance_degradation",
+      "title": "System Performance Degradation",
+      "description": "Alert when system performance falls below acceptable thresholds",
+      "trigger": {
+        "schedule": {
+          "interval": "2m"
+        }
+      },
+      "input": {
+        "search": {
+          "request": {
+            "indices": ["system-performance-*"],
+            "body": {
+              "query": {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "type": "system_performance"
+                      }
+                    },
+                    {
+                      "range": {
+                        "@timestamp": {
+                          "gte": "now-5m"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "aggs": {
+                "avg_fps": {
+                  "avg": {
+                    "field": "performance.fps_actual"
+                  }
+                },
+                "avg_latency": {
+                  "avg": {
+                    "field": "performance.processing_latency_ms"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "condition": {
+        "script": {
+          "source": "ctx.payload.aggregations.avg_fps.value < 15 || ctx.payload.aggregations.avg_latency.value > 200"
+        }
+      },
+      "actions": {
+        "send_email": {
+          "email": {
+            "to": ["admin@company.com"],
+            "subject": "System Performance Degradation",
+            "body": "System performance has degraded. Average FPS: {{ctx.payload.aggregations.avg_fps.value}}, Average Latency: {{ctx.payload.aggregations.avg_latency.value}}ms"
+          }
+        }
+      }
+    },
+    {
+      "id": "camera_offline_alert",
+      "title": "Camera Offline Alert",
+      "description": "Alert when cameras go offline or stop sending data",
+      "trigger": {
+        "schedule": {
+          "interval": "3m"
+        }
+      },
+      "input": {
+        "search": {
+          "request": {
+            "indices": ["camera-health-*"],
+            "body": {
+              "query": {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "type": "camera_health"
+                      }
+                    },
+                    {
+                      "range": {
+                        "@timestamp": {
+                          "gte": "now-10m"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "aggs": {
+                "cameras_by_status": {
+                  "terms": {
+                    "field": "health.status",
+                    "size": 10
+                  }
+                },
+                "offline_cameras": {
+                  "filter": {
+                    "term": {
+                      "health.status": "offline"
+                    }
+                  },
+                  "aggs": {
+                    "camera_list": {
+                      "terms": {
+                        "field": "camera_id",
+                        "size": 20
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "condition": {
+        "compare": {
+          "ctx.payload.aggregations.offline_cameras.doc_count": {
+            "gt": 0
+          }
+        }
+      },
+      "actions": {
+        "send_email": {
+          "email": {
+            "to": ["admin@company.com"],
+            "subject": "Camera Offline Alert",
+            "body": "{{ctx.payload.aggregations.offline_cameras.doc_count}} camera(s) are currently offline. Please check camera connectivity."
+          }
+        }
+      }
+    },
+    {
+      "id": "prediction_accuracy_drift",
+      "title": "Prediction Accuracy Drift Alert",
+      "description": "Alert when prediction confidence patterns change significantly",
+      "trigger": {
+        "schedule": {
+          "interval": "15m"
+        }
+      },
+      "input": {
+        "search": {
+          "request": {
+            "indices": ["detection-metrics-*"],
+            "body": {
+              "query": {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "type": "detection_metrics"
+                      }
+                    },
+                    {
+                      "range": {
+                        "@timestamp": {
+                          "gte": "now-1h"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "aggs": {
+                "confidence_stats": {
+                  "stats": {
+                    "field": "prediction.confidence"
+                  }
+                },
+                "confidence_distribution": {
+                  "terms": {
+                    "field": "confidence_level",
+                    "size": 5
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "condition": {
+        "script": {
+          "source": "ctx.payload.aggregations.confidence_stats.avg < 0.3 || ctx.payload.aggregations.confidence_stats.std_deviation > 0.4"
+        }
+      },
+      "actions": {
+        "send_email": {
+          "email": {
+            "to": ["ml-team@company.com"],
+            "subject": "Prediction Model Drift Alert",
+            "body": "Prediction model accuracy may have drifted. Average confidence: {{ctx.payload.aggregations.confidence_stats.avg}}, Standard deviation: {{ctx.payload.aggregations.confidence_stats.std_deviation}}"
+          }
+        }
+      }
+    }
+  ],
+  "index_patterns": [
+    {
+      "name": "detection-metrics-*",
+      "pattern": "detection-metrics-*",
+      "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 0,
+        "refresh_interval": "1s"
+      },
+      "mappings": {
+        "properties": {
+          "@timestamp": {
+            "type": "date"
+          },
+          "type": {
+            "type": "keyword"
+          },
+          "camera_id": {
+            "type": "keyword"
+          },
+          "prediction": {
+            "properties": {
+              "confidence": {
+                "type": "float"
+              },
+              "is_shoplifting": {
+                "type": "boolean"
+              },
+              "prediction_time_ms": {
+                "type": "float"
+              },
+              "label": {
+                "type": "keyword"
+              }
+            }
+          },
+          "alert": {
+            "properties": {
+              "triggered": {
+                "type": "boolean"
+              },
+              "level": {
+                "type": "keyword"
+              },
+              "alert_type": {
+                "type": "keyword"
+              }
+            }
+          },
+          "confidence_level": {
+            "type": "keyword"
+          },
+          "detection_outcome": {
+            "type": "keyword"
+          }
+        }
+      }
+    },
+    {
+      "name": "system-performance-*",
+      "pattern": "system-performance-*",
+      "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 0,
+        "refresh_interval": "5s"
+      },
+      "mappings": {
+        "properties": {
+          "@timestamp": {
+            "type": "date"
+          },
+          "type": {
+            "type": "keyword"
+          },
+          "camera_id": {
+            "type": "keyword"
+          },
+          "performance": {
+            "properties": {
+              "fps_actual": {
+                "type": "float"
+              },
+              "fps_target": {
+                "type": "float"
+              },
+              "processing_latency_ms": {
+                "type": "float"
+              },
+              "queue_depth": {
+                "type": "integer"
+              },
+              "dropped_frames": {
+                "type": "integer"
+              }
+            }
+          },
+          "fps_status": {
+            "type": "keyword"
+          }
+        }
+      }
+    },
+    {
+      "name": "camera-health-*",
+      "pattern": "camera-health-*",
+      "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 0,
+        "refresh_interval": "10s"
+      },
+      "mappings": {
+        "properties": {
+          "@timestamp": {
+            "type": "date"
+          },
+          "type": {
+            "type": "keyword"
+          },
+          "camera_id": {
+            "type": "keyword"
+          },
+          "health": {
+            "properties": {
+              "is_connected": {
+                "type": "boolean"
+              },
+              "current_fps": {
+                "type": "float"
+              },
+              "last_frame_timestamp": {
+                "type": "date"
+              },
+              "error_count": {
+                "type": "integer"
+              },
+              "status": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+} 

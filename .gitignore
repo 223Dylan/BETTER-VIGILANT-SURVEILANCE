@@ -1,0 +1,177 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.virtualenv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Database
+*.db
+*.sqlite3
+*.sqlite
+
+# Node.js (for frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Frontend build
+build/
+dist/
+.next/
+out/
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.staging
+
+# Secrets and keys
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+keys/private_key.pem
+keys/public_key.pem
+
+# Docker
+.dockerignore
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.temp
+
+# Model files (too large for git)
+*.h5
+*.pkl
+*.joblib
+models/*.h5
+models/*.pkl
+
+# Data files
+data/
+uploads/
+temp_frames/
+output/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# Poetry
+poetry.lock
+
+# Elastic/Logstash/Kibana data
+elasticsearch/data/
+logstash/data/
+kibana/data/
+
+# Local configuration overrides
+config/local.yaml
+config/production.yaml
+config/development.yaml
+
+# Backup files
+*.bak
+*.backup
+
+# Cache directories
+.cache/
+__pycache__/
+
+# Local development files
+local_*
+dev_*
+test_*
+
+# Sensitive configuration
+alembic_production.ini
+database_backup/ 

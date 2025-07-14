@@ -1,0 +1,57 @@
+# Global configuration for shoplifting detection system
+# Cameras are managed in the database - this file contains only global settings
+
+# Model configuration
+model:
+  path: "models/lrcn_160S_90_90Q.h5"
+  sequence_length: 160
+  frame_size: 90
+  input_shape: [160, 90, 90, 1]
+
+# Global preprocessing settings (applied to ALL cameras from database)
+preprocessing:
+  # Basic preprocessing
+  grayscale: true
+  
+  # Paper-based preprocessing for improved accuracy
+  background_removal: false  # DISABLED - was destroying frame content
+  shadow_removal: false      # DISABLED - was removing too much detail
+  shadow_threshold: 10
+  gaussian_blur: false       # DISABLED - was over-smoothing frames
+  blur_kernel_size: 5
+  
+  # Brightness/contrast adjustments
+  brightness: 1.0
+  contrast: 1.0
+  
+  # Legacy settings (kept for backward compatibility)
+  denoise: false
+  
+  # Data augmentation (optional, mainly for training)
+  augmentation:
+    enabled: false
+    horizontal_flip: true
+    rotation_probability: 0.5
+    rotation_angle: 30
+
+# Processing configuration
+processing:
+  use_gpu: false
+  skip_frames: 0
+  probability_thresholds:
+    low: 0.3
+    medium: 0.6
+    high: 0.8
+
+# Logging configuration
+logging:
+  level: "INFO"
+  file: "logs/main.log"
+  max_size: "10MB"
+  rotation: "1 day"
+  retention: "7 days"
+
+# Server configuration
+server:
+  host: "0.0.0.0"
+  port: 8001 

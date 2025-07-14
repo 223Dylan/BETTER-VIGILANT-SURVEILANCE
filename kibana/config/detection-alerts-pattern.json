@@ -1,0 +1,22 @@
+{
+  "title": "Detection Alerts",
+  "timeFieldName": "@timestamp",
+  "fields": [
+    {
+      "name": "camera_id",
+      "type": "keyword"
+    },
+    {
+      "name": "alert_level",
+      "type": "keyword"
+    },
+    {
+      "name": "confidence",
+      "type": "float"
+    },
+    {
+      "name": "alert_id",
+      "type": "keyword"
+    }
+  ]
+}

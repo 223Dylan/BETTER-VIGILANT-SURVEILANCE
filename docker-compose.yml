@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/frames_db
+    depends_on:
+      - redis
+      - elasticsearch
+      - postgres
+    networks:
+      - app-network
+    devices:
+      - "/dev/video0:/dev/video0"
+    privileged: true
+    volumes:
+      - /dev:/dev
+      - type: bind
+        source: //./pipe/docker_engine
+        target: //./pipe/docker_engine
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  worker:
+    build: .
+    command: celery -A src.tasks worker --loglevel=info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/frames_db
+    depends_on:
+      - redis
+      - elasticsearch
+      - postgres
+    networks:
+      - app-network
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - network.host=0.0.0.0
+      - http.port=9200
+      - http.cors.enabled=true
+      - http.cors.allow-origin="*"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.12.1
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    ports:
+      - "5000:5000"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.1
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=frames_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  elasticsearch-data:
+    driver: local
+  postgres-data:
+    driver: local 
