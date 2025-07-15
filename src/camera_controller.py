@@ -1,11 +1,13 @@
 import multiprocessing
 import time
 from typing import Dict, List, Optional
+
 from loguru import logger
-from src.utils.config import CameraConfig
+
 from src.camera_pipeline import CameraPipelineProcess
-from src.services.camera_db_service import camera_db_service
 from src.database.models.camera import Camera
+from src.services.camera_db_service import camera_db_service
+from src.utils.config import CameraConfig
 
 
 class CameraController:

@@ -2,9 +2,10 @@
 Image processing utilities.
 """
 
+from typing import Optional, Tuple
+
 import cv2
 import numpy as np
-from typing import Tuple, Optional
 
 
 def resize_frame(

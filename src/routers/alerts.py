@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
-from typing import List, Dict, Optional, Any
-from pydantic import BaseModel
-from datetime import datetime
-from loguru import logger
 import time
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from src.services.alert_manager import get_alert_manager, AlertManager
+from fastapi import APIRouter, Depends, HTTPException, Query
+from loguru import logger
+from pydantic import BaseModel
+
+from src.services.alert_manager import AlertManager, get_alert_manager
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 

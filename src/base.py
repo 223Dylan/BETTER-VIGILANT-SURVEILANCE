@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
+
 from loguru import logger
+
 from .utils import Config
 
 

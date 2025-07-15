@@ -1,8 +1,10 @@
 import multiprocessing
 import time
+
 import cv2
 import numpy as np
 from loguru import logger
+
 from src.camera_manager import CameraManager
 from src.frame_processor import FrameProcessor
 from src.tasks import celery_predict

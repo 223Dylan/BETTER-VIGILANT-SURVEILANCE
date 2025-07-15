@@ -1,12 +1,13 @@
-import cv2
-import numpy as np
-from collections import deque
-from typing import Dict, Optional
-from loguru import logger
 import asyncio
-from fastapi import WebSocket, WebSocketDisconnect
 import json
 import time
+from collections import deque
+from typing import Dict, Optional
+
+import cv2
+import numpy as np
+from fastapi import WebSocket, WebSocketDisconnect
+from loguru import logger
 
 
 class VideoStreamManager:

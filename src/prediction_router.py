@@ -1,8 +1,10 @@
 import asyncio
 import threading
 import time
-from typing import Dict, Any
+from typing import Any, Dict
+
 from loguru import logger
+
 from src.services.alert_manager import get_alert_manager
 
 # Global event loop for WebSocket operations

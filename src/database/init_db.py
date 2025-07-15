@@ -1,11 +1,12 @@
-from sqlalchemy import create_engine
-from sqlalchemy_utils import database_exists, create_database
-from loguru import logger
 import os
 import subprocess
 import sys
 
-from src.database.models.base import Base, DATABASE_URL
+from loguru import logger
+from sqlalchemy import create_engine
+from sqlalchemy_utils import create_database, database_exists
+
+from src.database.models.base import DATABASE_URL, Base
 
 
 def init_db():
@@ -54,10 +55,10 @@ def create_tables_fallback():
         engine = create_engine(DATABASE_URL)
 
         # Import all models to ensure they're registered
-        from src.database.models.frame import Frame
-        from src.database.models.camera import Camera
-        from src.database.models.user import User
         from src.database.models.alert import Alert
+        from src.database.models.camera import Camera
+        from src.database.models.frame import Frame
+        from src.database.models.user import User
 
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables created successfully using fallback method")

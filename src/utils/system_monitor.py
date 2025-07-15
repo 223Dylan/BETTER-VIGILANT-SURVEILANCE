@@ -1,6 +1,7 @@
-import psutil
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
+
+import psutil
 
 logger = logging.getLogger(__name__)
 

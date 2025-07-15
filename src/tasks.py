@@ -1,10 +1,12 @@
-from celery import Celery
-import numpy as np
 import logging
 import os
 import time
-from src.model import load_model
+
+import numpy as np
+from celery import Celery
+
 from src.detection_metrics import log_prediction_metrics
+from src.model import load_model
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

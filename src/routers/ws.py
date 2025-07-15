@@ -1,10 +1,12 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 import asyncio
-from typing import Dict
 import json
-from loguru import logger
-from src.websocket_manager import websocket_manager
 import time
+from typing import Dict
+
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
+from loguru import logger
+
+from src.websocket_manager import websocket_manager
 
 router = APIRouter()
 

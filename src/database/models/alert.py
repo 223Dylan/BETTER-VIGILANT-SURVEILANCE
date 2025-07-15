@@ -1,8 +1,11 @@
-from sqlalchemy import Column, String, Boolean, Float, DateTime, Text, JSON, Index
-from sqlalchemy.sql import func
-from .base import Base
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
+from sqlalchemy import (JSON, Boolean, Column, DateTime, Float, Index, String,
+                        Text)
+from sqlalchemy.sql import func
+
+from .base import Base
 
 
 class Alert(Base):

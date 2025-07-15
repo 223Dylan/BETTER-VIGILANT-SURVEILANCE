@@ -1,9 +1,11 @@
+import json
+import time
+from typing import Callable
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+
 from src.security.encryption import encryption_manager
-import json
-from typing import Callable
-import time
 
 
 class EncryptionMiddleware(BaseHTTPMiddleware):

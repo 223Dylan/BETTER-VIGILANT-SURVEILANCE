@@ -1,10 +1,11 @@
-from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
-import logging
 import json
+import logging
+import os
 import time
 from datetime import datetime
-import os
+
+from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Configure audit logger
 audit_logger = logging.getLogger("audit")

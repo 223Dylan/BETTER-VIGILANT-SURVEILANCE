@@ -1,16 +1,9 @@
-import tensorflow as tf
-from tensorflow.keras.layers import (
-    Conv2D,
-    MaxPooling2D,
-    Dense,
-    Flatten,
-    LSTM,
-    TimeDistributed,
-    Dropout,
-    Input,
-)
-from loguru import logger
 import os
+
+import tensorflow as tf
+from loguru import logger
+from tensorflow.keras.layers import (LSTM, Conv2D, Dense, Dropout, Flatten,
+                                     Input, MaxPooling2D, TimeDistributed)
 
 # Global model cache
 _model_cache = {}

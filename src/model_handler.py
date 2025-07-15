@@ -1,20 +1,14 @@
+import time
+from typing import Dict, List, Optional, Tuple
+
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import (
-    Conv2D,
-    MaxPooling2D,
-    Dense,
-    Flatten,
-    LSTM,
-    TimeDistributed,
-    Dropout,
-    Input,
-)
-from tensorflow.keras.models import Sequential, Model
-from typing import Tuple, Dict, Optional, List
 from loguru import logger
+from tensorflow.keras.layers import (LSTM, Conv2D, Dense, Dropout, Flatten,
+                                     Input, MaxPooling2D, TimeDistributed)
+from tensorflow.keras.models import Model, Sequential
+
 from .base import BaseComponent
-import time
 from .model import load_model  # Import load_model from model.py
 
 

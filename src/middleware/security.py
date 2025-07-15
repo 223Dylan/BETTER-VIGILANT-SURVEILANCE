@@ -1,13 +1,15 @@
-from fastapi import Request, HTTPException
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
-from typing import Optional, List, Dict
-import time
-from collections import defaultdict
 import logging
 import os
+import time
+from collections import defaultdict
+from typing import Dict, List, Optional
+
 import jwt
 from dotenv import load_dotenv
+from fastapi import HTTPException, Request
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+
 from src.utils.secrets import secrets_manager
 
 # Load environment variables

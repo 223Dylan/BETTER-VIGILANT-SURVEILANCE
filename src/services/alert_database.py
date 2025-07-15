@@ -1,11 +1,12 @@
-from typing import List, Optional, Dict, Any
-from sqlalchemy.orm import Session
-from sqlalchemy import desc, and_, or_
 from datetime import datetime, timedelta
-from loguru import logger
+from typing import Any, Dict, List, Optional
 
-from src.database.models.base import SessionLocal
+from loguru import logger
+from sqlalchemy import and_, desc, or_
+from sqlalchemy.orm import Session
+
 from src.database.models.alert import Alert
+from src.database.models.base import SessionLocal
 
 
 class AlertDatabaseService:

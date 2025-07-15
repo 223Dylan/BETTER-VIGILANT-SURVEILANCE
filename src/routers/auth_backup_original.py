@@ -1,15 +1,16 @@
-from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
-from typing import Optional
-from sqlalchemy.orm import Session
 import hashlib
 from datetime import datetime
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from loguru import logger
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from src.auth.jwt_auth import jwt_auth
-from src.database.models.user import User
 from src.database.models.base import get_db
-from loguru import logger
+from src.database.models.user import User
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 

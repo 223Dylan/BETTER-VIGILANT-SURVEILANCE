@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Response, HTTPException
-from fastapi.responses import StreamingResponse
-import cv2
 import asyncio
 import time
-import numpy as np
 from typing import Generator
+
+import cv2
+import numpy as np
+from fastapi import APIRouter, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from loguru import logger
 
 router = APIRouter(tags=["mjpeg"])

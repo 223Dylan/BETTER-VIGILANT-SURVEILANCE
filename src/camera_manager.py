@@ -1,10 +1,12 @@
-from typing import Dict, List, Optional
-import numpy as np
-from loguru import logger
-from .frame_capture import FrameCapture
-from .utils import CameraConfig
 import time
 from collections import deque
+from typing import Dict, List, Optional
+
+import numpy as np
+from loguru import logger
+
+from .frame_capture import FrameCapture
+from .utils import CameraConfig
 
 
 class CameraManager:

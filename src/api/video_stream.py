@@ -1,9 +1,12 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Request
-from typing import Dict
 import asyncio
-from loguru import logger
-from src.video_stream_manager import VideoStreamManager
 import time
+from typing import Dict
+
+from fastapi import (APIRouter, HTTPException, Request, WebSocket,
+                     WebSocketDisconnect)
+from loguru import logger
+
+from src.video_stream_manager import VideoStreamManager
 
 router = APIRouter(tags=["video"])
 

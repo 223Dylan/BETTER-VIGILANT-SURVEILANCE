@@ -1,11 +1,12 @@
+import asyncio
+import os
+import subprocess
+import tempfile
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import StreamingResponse
-import os
-import tempfile
-import subprocess
-import asyncio
 from loguru import logger
-from pathlib import Path
 
 router = APIRouter(tags=["hls-test"])
 

@@ -6,18 +6,19 @@ NOTICE: This frames API router exists but is NOT currently being used in the sys
 - System currently operates in real-time mode without persistent frame storage
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from typing import List, Optional
-from datetime import datetime
-import numpy as np
-import cv2
 import base64
+from datetime import datetime
 from io import BytesIO
+from typing import List, Optional
+
+import cv2
+import numpy as np
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from src.database.models.base import get_db
 from src.services.frame_service import FrameService
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/frames", tags=["frames"])
 

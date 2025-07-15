@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
-from typing import List, Dict, Any
-from src.services.camera_db_service import camera_db_service
-from src.database.models.camera import Camera
-from loguru import logger
 import os
+from typing import Any, Dict, List
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from loguru import logger
+
+from src.database.models.camera import Camera
+from src.services.camera_db_service import camera_db_service
 
 router = APIRouter(prefix="/cameras", tags=["cameras"])
 

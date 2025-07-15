@@ -1,11 +1,14 @@
+import time
+from collections import deque
+from typing import Optional, Tuple
+
 import cv2
 import numpy as np
-from typing import Optional, Tuple
 from loguru import logger
-from .base import BaseComponent
-import time
+
 from src.utils import CameraConfig
-from collections import deque
+
+from .base import BaseComponent
 
 
 class FrameCapture(BaseComponent):

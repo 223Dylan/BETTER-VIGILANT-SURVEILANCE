@@ -1,15 +1,16 @@
-from typing import Optional, Dict, Any
 import base64
+import json
+import os
+import pickle
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
+from urllib.parse import urlparse
+
 import cv2
 import numpy as np
-from datetime import datetime, timedelta
+import redis
 from loguru import logger
 from sqlalchemy.orm import Session
-import redis
-import json
-import pickle
-import os
-from urllib.parse import urlparse
 
 from src.database.models.base import get_db
 from src.services.frame_service import FrameService

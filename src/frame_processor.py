@@ -1,16 +1,19 @@
-import numpy as np
-import cv2
-from typing import Optional, Tuple, List, Dict, Any
-from loguru import logger
-from .base import BaseComponent
 import threading
-from collections import deque
 import time
-from .utils import resize_frame
+from collections import deque
+from queue import Empty, Full, Queue
+from threading import Event, Thread
+from typing import Any, Dict, List, Optional, Tuple
+
+import cv2
+import numpy as np
+from loguru import logger
+
+from src.detection_metrics import log_camera_health_metrics, log_system_metrics
 from src.services.frame_storage_service import FrameStorageService
-from queue import Queue, Full, Empty
-from threading import Thread, Event
-from src.detection_metrics import log_system_metrics, log_camera_health_metrics
+
+from .base import BaseComponent
+from .utils import resize_frame
 
 
 class FrameProcessor(BaseComponent):

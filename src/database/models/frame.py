@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON, LargeBinary
+from sqlalchemy import JSON, Column, DateTime, Integer, LargeBinary, String
 from sqlalchemy.sql import func
+
 from .base import Base
 
 

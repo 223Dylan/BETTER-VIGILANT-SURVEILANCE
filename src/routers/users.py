@@ -1,14 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import List, Optional
-from pydantic import BaseModel, EmailStr
-from src.database.models.user import User
-from src.auth.jwt_auth import jwt_auth
-from src.database.models.base import get_db
-from sqlalchemy.orm import Session
-from sqlalchemy import or_
 import hashlib
 import secrets
 import string
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, EmailStr
+from sqlalchemy import or_
+from sqlalchemy.orm import Session
+
+from src.auth.jwt_auth import jwt_auth
+from src.database.models.base import get_db
+from src.database.models.user import User
 
 router = APIRouter()
 
