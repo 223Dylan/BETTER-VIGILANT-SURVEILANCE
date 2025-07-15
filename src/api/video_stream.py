@@ -2,8 +2,7 @@ import asyncio
 import time
 from typing import Dict
 
-from fastapi import (APIRouter, HTTPException, Request, WebSocket,
-                     WebSocketDisconnect)
+from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from loguru import logger
 
 from src.video_stream_manager import VideoStreamManager

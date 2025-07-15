@@ -11,6 +11,7 @@ sys.path.append(
 )
 
 from database.models.alert import Alert
+
 # Import ALL models for proper migration generation
 from database.models.base import Base
 from database.models.camera import Camera

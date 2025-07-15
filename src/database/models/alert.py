@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from sqlalchemy import (JSON, Boolean, Column, DateTime, Float, Index, String,
-                        Text)
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Index, String, Text
 from sqlalchemy.sql import func
 
 from .base import Base

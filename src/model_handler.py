@@ -4,8 +4,16 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import tensorflow as tf
 from loguru import logger
-from tensorflow.keras.layers import (LSTM, Conv2D, Dense, Dropout, Flatten,
-                                     Input, MaxPooling2D, TimeDistributed)
+from tensorflow.keras.layers import (
+    LSTM,
+    Conv2D,
+    Dense,
+    Dropout,
+    Flatten,
+    Input,
+    MaxPooling2D,
+    TimeDistributed,
+)
 from tensorflow.keras.models import Model, Sequential
 
 from .base import BaseComponent
