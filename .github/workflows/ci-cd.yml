@@ -99,9 +99,6 @@ jobs:
   # Security Scanning
   security-scan:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
     
     steps:
     - uses: actions/checkout@v4
@@ -111,14 +108,22 @@ jobs:
       with:
         scan-type: 'fs'
         scan-ref: '.'
+        format: 'table'
+        
+    - name: Run Trivy vulnerability scanner (SARIF)
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
         format: 'sarif'
         output: 'trivy-results.sarif'
         
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      if: always() && github.event_name != 'pull_request'
+    - name: Upload scan results as artifact
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        sarif_file: 'trivy-results.sarif'
+        name: trivy-results
+        path: trivy-results.sarif
 
   # Docker Build
   docker-build:
