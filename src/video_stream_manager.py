@@ -4,7 +4,7 @@ from collections import deque
 from typing import Dict, Optional
 from loguru import logger
 import asyncio
-from fastapi import WebSocket
+from fastapi import WebSocket, WebSocketDisconnect
 import json
 import time
 

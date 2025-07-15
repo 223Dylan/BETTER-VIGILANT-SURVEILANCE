@@ -33,14 +33,8 @@ class FrameProcessor(BaseComponent):
         self.fps_window = 10  # Window size for FPS calculation
         self.fps_history = deque(maxlen=self.fps_window)
         
-        # Initialize preprocessing from config
-        self.preprocessing = config.get('preprocessing', {})
-        if isinstance(self.preprocessing, dict):
-            # Set defaults if not provided
-            self.preprocessing.setdefault('grayscale', True)
-            self.preprocessing.setdefault('denoise', False)
-            self.preprocessing.setdefault('brightness', 1.0)
-            self.preprocessing.setdefault('contrast', 1.0)
+        # Use notebook's fixed preprocessing approach - no configuration needed
+        # The preprocessing steps are: frame_diff -> blur -> resize -> grayscale -> normalize
         
         # Performance optimization flags
         self.use_gpu = config.get('processing', {}).get('use_gpu', False)
@@ -81,7 +75,7 @@ class FrameProcessor(BaseComponent):
         self._previous_frame = None
         
         logger.info(f"FrameProcessor initialized with sequence length {self.sequence_length}")
-        logger.info(f"Preprocessing configuration: {self.preprocessing}")
+        logger.info(f"Using notebook's preprocessing: frame_diff -> blur(3x3) -> resize -> grayscale -> normalize")
 
     def initialize(self) -> bool:
         """Initialize the frame processor."""
@@ -184,43 +178,33 @@ class FrameProcessor(BaseComponent):
                 time.sleep(0.1)
 
     def _process_frame(self, frame: np.ndarray) -> Optional[np.ndarray]:
-        """Process a single frame with paper-based preprocessing."""
+        """Process a single frame using the exact preprocessing from the notebook."""
         try:
-            # Step 1: Convert to grayscale
-            if self.preprocessing.get('grayscale', True):
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            # Step 1: Frame differencing (background subtraction)
+            if self._previous_frame is not None:
+                # Use frame differencing as in the notebook
+                diff = cv2.absdiff(frame, self._previous_frame)
+            else:
+                # For the first frame, use the original frame
+                diff = frame.copy()
             
-            # Step 2: Resize first (before other operations)
-            frame = cv2.resize(frame, (self.frame_size, self.frame_size))
+            # Update previous frame for next iteration
+            self._previous_frame = frame.copy()
             
-            # Step 3: Background removal (frame differencing)
-            if self.preprocessing.get('background_removal', True):
-                if hasattr(self, '_previous_frame') and self._previous_frame is not None:
-                    frame = cv2.absdiff(frame, self._previous_frame)
-                self._previous_frame = frame.copy()
+            # Step 2: Gaussian blur (exactly as in notebook: kernel (3,3), sigma 0)
+            diff = cv2.GaussianBlur(diff, (3, 3), 0)
             
-            # Step 4: Shadow removal
-            if self.preprocessing.get('shadow_removal', True):
-                shadow_threshold = self.preprocessing.get('shadow_threshold', 10)
-                frame[frame <= shadow_threshold] = 0
+            # Step 3: Resize (exactly as in notebook: to frame_height, frame_width)
+            resized_frame = cv2.resize(diff, (self.frame_size, self.frame_size))
             
-            # Step 5: Gaussian blur to remove unimportant details
-            if self.preprocessing.get('gaussian_blur', True):
-                kernel_size = self.preprocessing.get('blur_kernel_size', 5)
-                frame = cv2.GaussianBlur(frame, (kernel_size, kernel_size), 0)
+            # Step 4: Convert to grayscale (exactly as in notebook)
+            gray_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
             
-            # Step 6: Data augmentation (optional, during training)
-            if self.preprocessing.get('augmentation', {}).get('enabled', False):
-                frame = self._apply_augmentation(frame)
+            # Step 5: Normalize (exactly as in notebook: divide by 255)
+            normalized_frame = gray_frame / 255.0
             
-            # Step 7: Brightness/contrast adjustment
-            brightness = self.preprocessing.get('brightness', 1.0)
-            contrast = self.preprocessing.get('contrast', 1.0)
-            if brightness != 1.0 or contrast != 1.0:
-                frame = cv2.convertScaleAbs(frame, alpha=contrast, beta=brightness)
-            
-            # Step 8: Normalize to [0,1] range
-            normalized_frame = (frame.astype(np.float32) / 255.0).reshape(self.frame_size, self.frame_size, 1)
+            # Reshape for model input (add channel dimension)
+            normalized_frame = normalized_frame.reshape(self.frame_size, self.frame_size, 1).astype(np.float32)
             
             # Store in sequence buffer
             with self.lock:
@@ -242,24 +226,7 @@ class FrameProcessor(BaseComponent):
             logger.error(f"Error processing frame: {str(e)}")
             return None
 
-    def _apply_augmentation(self, frame):
-        """Apply data augmentation as described in the paper."""
-        import random
-        
-        # Horizontal flip
-        if (self.preprocessing.get('augmentation', {}).get('horizontal_flip', True) and 
-            random.random() > 0.5):
-            frame = cv2.flip(frame, 1)
-        
-        # Rotation (30 degrees as specified in paper)
-        rotation_prob = self.preprocessing.get('augmentation', {}).get('rotation_probability', 0.5)
-        if random.random() < rotation_prob:
-            angle = self.preprocessing.get('augmentation', {}).get('rotation_angle', 30)
-            rows, cols = frame.shape
-            M = cv2.getRotationMatrix2D((cols/2, rows/2), angle, 1)
-            frame = cv2.warpAffine(frame, M, (cols, rows))
-        
-        return frame
+
 
     def process_frame(self, frame: np.ndarray) -> bool:
         """Add a frame to the processing queue."""
@@ -321,16 +288,9 @@ class FrameProcessor(BaseComponent):
             return sequence_copy
 
     def update_brightness(self, new_brightness: float) -> bool:
-        """Update brightness setting dynamically without restart."""
-        try:
-            with self.lock:
-                old_brightness = self.preprocessing.get('brightness', 1.0)
-                self.preprocessing['brightness'] = new_brightness
-                logger.info(f"Updated brightness for {self.camera_id}: {old_brightness:.1f} -> {new_brightness:.1f}")
-                return True
-        except Exception as e:
-            logger.error(f"Error updating brightness for {self.camera_id}: {e}")
-            return False
+        """Brightness adjustment not supported in notebook preprocessing mode."""
+        logger.warning(f"Brightness adjustment not supported in notebook preprocessing mode for {self.camera_id}")
+        return False
     
     def get_stats(self) -> dict:
         """Get frame processing statistics."""
