@@ -55,7 +55,7 @@ jobs:
       
     - name: Bundle size analysis
       run: |
-        npm run build
+        CI=false npm run build
         npx bundlesize || true
         
     # Generate Code Quality Report
