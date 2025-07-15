@@ -37,6 +37,8 @@ def start_websocket_loop():
 def route_prediction_to_websocket(camera_id: str, prediction_result: Dict[Any, Any]):
     """Route a prediction result to the appropriate WebSocket connections."""
     global _websocket_loop
+    if '_websocket_loop' not in globals():
+        _websocket_loop = None
     
     try:
         # Ensure WebSocket loop is running
