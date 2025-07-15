@@ -46,6 +46,8 @@ def load_model(model_path: str) -> tf.keras.Model:
         Loaded TensorFlow model
     """
     global _model_cache
+    if '_model_cache' not in globals():
+        _model_cache = {}
     
     # Check if model is already loaded
     if model_path in _model_cache:
