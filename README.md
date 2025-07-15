@@ -1,18 +1,18 @@
-# Shoplifting Detection System
+# Better Vigilant Surveillance
 
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.16%2B-orange.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.68%2B-green.svg)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
-Advanced real-time shoplifting detection system using Long-term Recurrent Convolutional Networks (LRCN) for behavioral analysis in retail environments.
+Advanced real-time surveillance system using Long-term Recurrent Convolutional Networks (LRCN) for behavioral analysis in retail environments.
 
 ## Quick Start
 
 ```bash
 # Clone the repository
 git clone <your-repository-url>
-cd shoplifting-detection-system
+cd better-vigilant-surveillance
 
 # Run automated setup
 chmod +x scripts/setup_dev.sh && ./scripts/setup_dev.sh  # Linux/macOS
@@ -184,7 +184,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 ```bash
 # Clone and setup development environment
 git clone <your-repository-url>
-cd shoplifting-detection-system
+cd better-vigilant-surveillance
 chmod +x scripts/setup_dev.sh && ./scripts/setup_dev.sh
 
 # Run tests
@@ -202,8 +202,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 - **Documentation:** [docs/README.md](docs/README.md)
-- **Issues:** [GitHub Issues](https://github.com/your-org/shoplifting-detection/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/your-org/shoplifting-detection/discussions)
 
 ## Version Information
 
