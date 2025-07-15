@@ -12,6 +12,8 @@ _websocket_thread = None
 def start_websocket_loop():
     """Start the WebSocket event loop in a separate thread."""
     global _websocket_loop, _websocket_thread
+    _websocket_loop = _websocket_loop if '_websocket_loop' in globals() else None
+    _websocket_thread = _websocket_thread if '_websocket_thread' in globals() else None
     
     def run_loop():
         global _websocket_loop
