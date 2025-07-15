@@ -2,11 +2,13 @@
 
 This guide provides detailed installation instructions for different deployment scenarios.
 
-## Installation Methods
+## Quick Installation Methods
 
-### Method 1: Docker Development Environment (Recommended)
+### Method 1: Development Setup (Recommended)
 
-This method sets up all services (database, Redis, ELK stack) using Docker while running the Python application locally for development.
+**Best for**: Development, testing, and local deployment
+
+This method runs infrastructure services (database, Redis, etc.) in Docker while running the Python application locally for easy development.
 
 1. **Start infrastructure services:**
    ```bash
@@ -16,14 +18,15 @@ This method sets up all services (database, Redis, ELK stack) using Docker while
 2. **Setup Python environment:**
    ```bash
    python3 -m venv .venv
-   source .venv/bin/activate
+   source .venv/bin/activate  # Linux/macOS
+   # OR
+   .venv\Scripts\activate     # Windows
    pip install -r requirements.txt
    ```
 
-3. **Initialize database:**
+3. **Initialize the system:**
    ```bash
-   alembic upgrade head
-   python scripts/init_sample_data.py
+   python scripts/init_system.py
    ```
 
 4. **Start the application:**
@@ -31,326 +34,419 @@ This method sets up all services (database, Redis, ELK stack) using Docker while
    python main.py
    ```
 
-### Method 2: Full Manual Setup
+### Method 2: Full Docker Setup
 
-For users who prefer to install all dependencies manually.
+**Best for**: Production deployment, isolated environments
 
-1. **Install PostgreSQL:**
-   - Create database: `createdb shoplifting_detection`
-   - Update `DATABASE_URL` in `.env`
+This method runs everything in Docker containers.
 
-2. **Install Redis:**
-   - Start Redis server on port 6379
-   - Update `REDIS_URL` in `.env`
-
-3. **Install ELK Stack (optional):**
-   - Elasticsearch on port 9200
-   - Logstash on port 5000
-   - Kibana on port 5601
-
-4. **Follow Python setup from Method 1**
-
-### Method 3: Full Docker Setup
-
-Run everything in containers (useful for production-like environment).
-
-1. **Build and start all services:**
+1. **Start all services:**
    ```bash
    docker-compose up -d
    ```
 
-2. **Access the application:**
-   - API: http://localhost:8001
-   - Frontend: http://localhost:3000 (if enabled)
+2. **Initialize database (one-time):**
+   ```bash
+   docker-compose exec app python scripts/init_system.py
+   ```
 
-## Configuration Files Setup
+### Method 3: Manual Local Setup
 
-### Environment Variables (.env)
+**Best for**: Custom configurations, specific requirements
 
-Copy and customize the environment file:
+For users who prefer to install all dependencies manually.
+
+## Detailed Installation Steps
+
+### Prerequisites
+
+#### Required Software
+- **Python 3.8+** - [Download](https://www.python.org/downloads/)
+- **Git** - [Download](https://git-scm.com/downloads)
+- **Docker & Docker Compose** - [Download](https://www.docker.com/products/docker-desktop)
+
+#### System Requirements
+- **RAM:** 8GB minimum, 16GB recommended
+- **Storage:** 10GB free space minimum
+- **CPU:** 4 cores minimum (GPU optional for model inference)
+- **OS:** Windows 10+, macOS 10.15+, or Ubuntu 20.04+
+
+### Step-by-Step Development Setup
+
+#### 1. Clone Repository
 ```bash
-cp .env.example .env
+git clone <your-repository-url>
+cd shoplifting-detection-system
 ```
 
-Edit `.env` with your specific settings:
-
+#### 2. Configuration Files
 ```bash
-# Database
-DATABASE_URL=postgresql://postgres:your_password@localhost:5432/shoplifting_detection
+# Copy example configurations
+cp .env.example .env
+cp config/config.example.yaml config/config.yaml
+cp alembic.example.ini alembic.ini
 
+# Edit .env file for your environment
+# The defaults should work for development
+```
+
+#### 3. Infrastructure Services
+```bash
+# Start PostgreSQL, Redis, Elasticsearch, etc.
+docker-compose -f docker-compose.dev.yml up -d
+
+# Verify services are running
+docker-compose -f docker-compose.dev.yml ps
+```
+
+Services started:
+- **PostgreSQL**: localhost:5432
+- **Redis**: localhost:6379
+- **Elasticsearch**: localhost:9200
+- **Kibana**: localhost:5601
+
+#### 4. Python Environment
+```bash
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate virtual environment
+# Linux/macOS:
+source .venv/bin/activate
+# Windows:
+.venv\Scripts\activate
+
+# Install Python dependencies
+pip install -r requirements.txt
+```
+
+#### 5. System Initialization
+```bash
+# Run comprehensive setup
+python scripts/init_system.py
+
+# Or run steps manually:
+# python -c "from src.database.init_db import init_db; init_db()"
+# python scripts/create_admin.py
+```
+
+This creates:
+- Database tables and schema
+- Admin user: `admin` / `admin123`
+- Sample camera configuration
+
+#### 6. Model Setup
+
+**Critical**: The AI model file is required but not included in the repository.
+
+See [models/README.md](../models/README.md) for:
+- Model download instructions
+- Training your own model
+- Alternative model options
+
+#### 7. Start Application
+```bash
+python main.py
+```
+
+Access points:
+- **Web Interface**: http://localhost:8001
+- **API Docs**: http://localhost:8001/docs
+
+### Manual Local Installation
+
+If you prefer to install services locally instead of Docker:
+
+#### 1. Install PostgreSQL
+```bash
+# Ubuntu/Debian
+sudo apt-get install postgresql postgresql-contrib
+
+# macOS (with Homebrew)
+brew install postgresql
+
+# Windows
+# Download from: https://www.postgresql.org/download/windows/
+```
+
+Create database:
+```sql
+sudo -u postgres createdb shoplifting_detection
+sudo -u postgres createuser --interactive --pwprompt shoplifting_user
+```
+
+#### 2. Install Redis
+```bash
+# Ubuntu/Debian
+sudo apt-get install redis-server
+
+# macOS (with Homebrew)  
+brew install redis
+
+# Windows
+# Download from: https://github.com/tporadowski/redis/releases
+```
+
+#### 3. Install Elasticsearch (Optional)
+```bash
+# Download and install from:
+# https://www.elastic.co/downloads/elasticsearch
+
+# Start service
+sudo systemctl start elasticsearch
+```
+
+#### 4. Update Configuration
+```bash
+# Update .env file with your local service URLs
+DATABASE_URL=postgresql://shoplifting_user:password@localhost:5432/shoplifting_detection
+REDIS_URL=redis://localhost:6379/0
+ELASTICSEARCH_URL=http://localhost:9200
+```
+
+### Production Deployment
+
+#### Environment Variables
+```bash
 # Security (CHANGE THESE!)
-JWT_SECRET_KEY=your-super-secret-jwt-key-here
-ENCRYPTION_PASSWORD=your-encryption-password
-ENCRYPTION_SALT=your-encryption-salt
+SECRET_KEY=your-super-secure-secret-key-at-least-32-chars
+ENCRYPTION_KEY=your-encryption-key
+JWT_SECRET_KEY=your-jwt-secret
 
-# Model Configuration
-MODEL_PATH=models/lrcn_160S_90_90Q.h5
-USE_GPU=false
+# Database (Production settings)
+DATABASE_URL=postgresql://user:pass@prod-db:5432/shoplifting_detection
+DB_POOL_SIZE=20
+DB_MAX_OVERFLOW=30
+
+# Redis
+REDIS_URL=redis://prod-redis:6379/0
 
 # API Settings
+API_HOST=0.0.0.0
 API_PORT=8001
-API_DEBUG=true
+CORS_ALLOWED_ORIGINS=https://your-domain.com
+
+# Logging
+LOG_LEVEL=WARNING
 ```
 
-### Main Configuration (config/config.yaml)
-
-Copy and customize the main configuration:
-```bash
-cp config/config.example.yaml config/config.yaml
-```
-
-Key settings to configure:
-
+#### Docker Compose for Production
 ```yaml
-# Model settings
-model:
-  path: "models/lrcn_160S_90_90Q.h5"
-  use_gpu: false
+# docker-compose.prod.yml
+version: '3.8'
+services:
+  app:
+    build: .
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - SECRET_KEY=${SECRET_KEY}
+    ports:
+      - "8001:8001"
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
 
-# Detection thresholds
-processing:
-  probability_thresholds:
-    low: 0.3
-    medium: 0.6
-    high: 0.8
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: shoplifting_detection
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
-# Camera configuration (add your cameras here)
-cameras:
-  # example_cameras:
-  #   usb_camera_1:
-  #     name: "Front Door Camera"
-  #     source: 0
-  #     enabled: true
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
 ```
 
-### Database Migration Configuration
+## Troubleshooting
 
-Copy the Alembic configuration:
+### Common Installation Issues
+
+#### Docker Issues
 ```bash
-cp alembic.example.ini alembic.ini
+# Permission denied
+sudo docker-compose up -d
+
+# Port conflicts
+docker-compose -f docker-compose.dev.yml down
+# Edit docker-compose.dev.yml to change ports
 ```
 
-## Model Setup
-
-The system requires an LRCN model file. You need to:
-
-1. **Obtain or train an LRCN model** for shoplifting detection
-2. **Place the model file** at `models/lrcn_160S_90_90Q.h5`
-3. **Or update the path** in your configuration
-
-> **Note:** The repository includes a placeholder model file. Replace it with your actual trained model.
-
-## Directory Structure
-
-The installation will create the following directories:
-
-```
-shoplifting-detection-system/
-├── logs/                     # Application logs
-├── uploads/                  # File uploads
-│   └── videos/              # Video files
-├── temp_frames/             # Temporary frame storage
-├── output/                  # Processing output
-├── keys/                    # Encryption keys (auto-generated)
-├── data/                    # Data files
-└── models/                  # AI model files
-```
-
-## Running the Application
-
-### Development Mode
-
-1. **Activate virtual environment:**
-   ```bash
-   source .venv/bin/activate  # Linux/macOS
-   .venv\Scripts\activate.bat  # Windows
-   ```
-
-2. **Start infrastructure (if using Docker):**
-   ```bash
-   docker-compose -f docker-compose.dev.yml up -d
-   ```
-
-3. **Start the application:**
-   ```bash
-   python main.py
-   ```
-
-4. **Start Celery worker (in another terminal):**
-   ```bash
-   source .venv/bin/activate
-   celery -A src.tasks worker --loglevel=info
-   ```
-
-5. **Start frontend (if available):**
-   ```bash
-   npm run dev
-   ```
-
-### Production Mode
-
-For production deployment, use the main docker-compose file:
-
+#### Database Issues
 ```bash
-docker-compose up -d
+# Connection refused
+docker-compose -f docker-compose.dev.yml logs postgres
+
+# Wrong database name
+# Check all configs use 'shoplifting_detection'
+grep -r "frames_db" .  # Should return nothing
 ```
 
-## Verification
+#### Python Issues
+```bash
+# Module not found
+pip install -r requirements.txt
 
-### Check Services
+# Import errors
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+```
 
-1. **API Health:**
-   ```bash
-   curl http://localhost:8001/health
-   ```
+#### Model Issues
+```bash
+# Model file missing
+ls -la models/lrcn_160S_90_90Q.h5
 
-2. **Database Connection:**
-   ```bash
-   # Test from within virtual environment
-   python -c "from src.database.base import engine; print('Database OK')"
-   ```
+# Model loading errors
+python -c "import tensorflow as tf; print(tf.__version__)"
+```
 
-3. **Redis Connection:**
-   ```bash
-   redis-cli ping
-   ```
+### Performance Optimization
 
-4. **Elasticsearch:**
-   ```bash
-   curl http://localhost:9200
-   ```
-
-### Access Points
-
-Once running, you can access:
-
-- **API Documentation:** http://localhost:8001/docs
-- **API Alternative Docs:** http://localhost:8001/redoc
-- **Main Application:** http://localhost:3000 (if frontend is running)
-- **Database Admin:** http://localhost:8080 (PgAdmin, if using Docker)
-- **Redis Admin:** http://localhost:8081 (Redis Commander, if using Docker)
-- **Kibana Dashboard:** http://localhost:5601 (if using ELK stack)
-
-## Default Credentials
-
-**Database Admin (PgAdmin):**
-- Email: admin@example.com
-- Password: admin123
-
-**Application Admin User:**
-- Username: admin
-- Password: admin123
-
-> **Important:** Change these default credentials before production use!
-
-## Platform-Specific Instructions
-
-### Windows
-
-- Use `python` instead of `python3`
-- Use backslashes in paths: `scripts\setup_dev.bat`
-- Install Visual C++ Build Tools if compilation errors occur
-- Consider using Windows Subsystem for Linux (WSL) for better compatibility
-
-### macOS
-
-- Install Xcode Command Line Tools: `xcode-select --install`
-- Use Homebrew for additional dependencies: `brew install postgresql`
-- May need to install OpenSSL: `brew install openssl`
-
-### Linux (Ubuntu/Debian)
-
-- Install system dependencies:
-  ```bash
-  sudo apt-get update
-  sudo apt-get install python3-dev postgresql-dev build-essential
-  ```
-- Ensure Docker permissions: `sudo usermod -aG docker $USER`
-
-## Performance Optimization
-
-### GPU Support
-
-To enable GPU acceleration:
-
-1. **Install CUDA and cuDNN** (NVIDIA GPUs only)
-2. **Install TensorFlow GPU:**
-   ```bash
-   pip install tensorflow-gpu
-   ```
-3. **Update configuration:**
-   ```bash
-   USE_GPU=true
-   ```
-
-### Memory Management
-
-For systems with limited memory:
-
+#### Development
 ```yaml
-# In config/config.yaml
-performance:
-  max_memory_usage_mb: 2048
-  processing_threads: 2
-  max_concurrent_cameras: 3
+# docker-compose.dev.yml - Minimal services
+services:
+  postgres:
+    # ... postgres config only
+  redis:
+    # ... redis config only
+  # Comment out elasticsearch, kibana, logstash for faster startup
 ```
 
-### Database Optimization
+#### Production
+```bash
+# Enable model caching
+USE_GPU=true
+MODEL_CACHING=true
 
-Add indexes for better performance:
+# Database connection pooling
+DB_POOL_SIZE=20
+DB_MAX_OVERFLOW=30
 
-```sql
--- Connect to your database and run:
-CREATE INDEX idx_alert_camera_timestamp ON alerts(camera_id, timestamp);
-CREATE INDEX idx_frame_timestamp ON frames(timestamp);
+# Redis optimizations
+REDIS_CACHE_TTL=3600
 ```
 
-## Security Considerations
+### Security Checklist
 
-Before deploying to production:
+- [ ] Change all default passwords
+- [ ] Update SECRET_KEY and encryption keys
+- [ ] Configure HTTPS/SSL certificates
+- [ ] Set up firewall rules
+- [ ] Enable database SSL
+- [ ] Configure Redis authentication
+- [ ] Set up log monitoring
+- [ ] Regular security updates
 
-1. **Change all default passwords**
-2. **Generate secure JWT secrets:**
-   ```bash
-   python -c "import secrets; print(secrets.token_urlsafe(32))"
-   ```
-3. **Enable HTTPS** with proper SSL certificates
-4. **Configure firewall** to restrict access to necessary ports only
-5. **Regularly update dependencies:**
-   ```bash
-   pip install -r requirements.txt --upgrade
-   ```
-6. **Set up proper backup procedures** for database and model files
+### Monitoring Setup
 
-## Uninstallation
+#### Log Aggregation (Optional)
+```bash
+# Start ELK stack
+docker-compose -f docker-compose.dev.yml up -d elasticsearch kibana logstash
 
-To remove the system:
+# Access Kibana
+open http://localhost:5601
+```
 
-1. **Stop all services:**
-   ```bash
-   docker-compose -f docker-compose.dev.yml down -v
-   ```
+#### Health Checks
+```bash
+# API health
+curl http://localhost:8001/health
 
-2. **Remove virtual environment:**
-   ```bash
-   rm -rf .venv
-   ```
+# Database health
+docker-compose -f docker-compose.dev.yml exec postgres pg_isready
 
-3. **Remove generated files:**
-   ```bash
-   rm -rf logs/ uploads/ temp_frames/ output/ keys/
-   ```
+# Redis health
+docker-compose -f docker-compose.dev.yml exec redis redis-cli ping
+```
 
-4. **Remove Docker images (optional):**
-   ```bash
-   docker system prune -a
-   ```
+## Configuration Options
 
-## Next Steps
+### Environment Variables
 
-After installation:
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | postgres://... | PostgreSQL connection string |
+| `REDIS_URL` | redis://localhost:6379/0 | Redis connection string |
+| `SECRET_KEY` | (required) | JWT signing key |
+| `API_HOST` | 0.0.0.0 | API server host |
+| `API_PORT` | 8001 | API server port |
+| `LOG_LEVEL` | INFO | Logging level |
+| `USE_GPU` | false | Enable GPU for model inference |
 
-1. **Read the [Configuration Guide](11_CONFIGURATION_GUIDE.md)** to customize your setup
-2. **Set up cameras** using the [Camera Management](04_CAMERA_MANAGEMENT.md) guide
-3. **Configure alerts** with the [Alert System](05_ALERT_SYSTEM.md) documentation
-4. **Monitor system performance** using [Monitoring and Analytics](09_MONITORING_ANALYTICS.md) 
+### Docker Services
+
+#### Core Services (Always Required)
+- **postgres**: Database
+- **redis**: Message broker and cache
+
+#### Optional Services  
+- **elasticsearch**: Log storage and search
+- **kibana**: Log visualization
+- **logstash**: Log processing
+
+#### Application Services
+- **app**: Main Python application
+- **worker**: Celery background tasks
+
+## Upgrade Guide
+
+### Backup Before Upgrade
+```bash
+# Database backup
+docker-compose -f docker-compose.dev.yml exec postgres pg_dump -U postgres shoplifting_detection > backup.sql
+
+# Configuration backup
+cp .env .env.backup
+cp config/config.yaml config/config.yaml.backup
+```
+
+### Update Process
+```bash
+# Pull latest code
+git pull origin main
+
+# Update dependencies
+pip install -r requirements.txt
+
+# Run migrations
+python scripts/init_system.py --force
+
+# Restart services
+docker-compose -f docker-compose.dev.yml restart
+python main.py
+```
+
+## Support
+
+### Getting Help
+1. Check [Troubleshooting Guide](12_TROUBLESHOOTING_GUIDE.md)
+2. Review logs: `docker-compose -f docker-compose.dev.yml logs`
+3. Run diagnostics: `python scripts/init_system.py --force`
+4. Search existing GitHub issues
+5. Create new issue with logs and system info
+
+### Useful Commands
+```bash
+# System status
+python scripts/init_system.py --force
+
+# Service logs
+docker-compose -f docker-compose.dev.yml logs --tail=50
+
+# Database access
+docker-compose -f docker-compose.dev.yml exec postgres psql -U postgres shoplifting_detection
+
+# Reset everything
+docker-compose -f docker-compose.dev.yml down -v
+python scripts/init_system.py
+``` 

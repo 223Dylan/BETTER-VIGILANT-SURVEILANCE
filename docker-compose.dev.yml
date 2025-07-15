@@ -1,155 +1,107 @@
-version: '3.8'
-
 # =============================================================================
 # SHOPLIFTING DETECTION SYSTEM - DEVELOPMENT INFRASTRUCTURE
 # =============================================================================
-# Core services: PostgreSQL, Redis, Elasticsearch, Logstash, Kibana
-# Usage: docker-compose -f docker-compose.dev.yml up -d
+# This docker-compose file runs only the infrastructure services
+# The main application runs locally for development
 
 services:
-  # =============================================================================
-  # DATABASE
-  # =============================================================================
+  # Database
   postgres:
-    image: postgres:15-alpine
-    container_name: shoplifting_postgres_dev
+    image: postgres:15
+    container_name: shoplifting_postgres
     environment:
-      POSTGRES_DB: ${DB_NAME:-shoplifting_detection}
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      PGDATA: /var/lib/postgresql/data/pgdata
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=shoplifting_detection
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - app_network
+      - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-shoplifting_detection}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
 
-  # =============================================================================
-  # REDIS (Caching and Message Broker)
-  # =============================================================================
+  # Message Broker
   redis:
-    image: redis:7-alpine
-    container_name: shoplifting_redis_dev
+    image: redis:latest
+    container_name: shoplifting_redis
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "6379:6379"
+    networks:
+      - app-network
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
-    networks:
-      - app_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-    restart: unless-stopped
-    command: redis-server --appendonly yes
 
-  # =============================================================================
-  # ELASTICSEARCH (Search and Analytics)
-  # =============================================================================
+  # Search Engine (Optional)
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
-    container_name: shoplifting_elasticsearch_dev
+    container_name: shoplifting_elasticsearch
     environment:
-      - node.name=elasticsearch
-      - cluster.name=shoplifting-cluster
       - discovery.type=single-node
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - xpack.security.enabled=false
-      - xpack.security.enrollment.enabled=false
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - network.host=0.0.0.0
+      - http.port=9200
+      - http.cors.enabled=true
+      - http.cors.allow-origin="*"
     ports:
       - "9200:9200"
-      - "9300:9300"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
-      - app_network
+      - app-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-    restart: unless-stopped
 
-  # =============================================================================
-  # LOGSTASH (Log Processing Pipeline)
-  # =============================================================================
+  # Log Processing (Optional)
   logstash:
     image: docker.elastic.co/logstash/logstash:8.12.1
-    container_name: shoplifting_logstash_dev
-    ports:
-      - "${LOGSTASH_PORT:-5000}:5000/tcp"
-      - "5044:5044"
-      - "9600:9600"
+    container_name: shoplifting_logstash
     volumes:
-      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
-      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
-    environment:
-      LS_JAVA_OPTS: "-Xmx512m -Xms512m"
-    networks:
-      - app_network
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    ports:
+      - "5000:5000"
     depends_on:
       elasticsearch:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9600/_node/stats || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    restart: unless-stopped
+    networks:
+      - app-network
 
-  # =============================================================================
-  # KIBANA (Data Visualization)
-  # =============================================================================
+  # Dashboard (Optional)
   kibana:
     image: docker.elastic.co/kibana/kibana:8.12.1
-    container_name: shoplifting_kibana_dev
+    container_name: shoplifting_kibana
     ports:
       - "5601:5601"
     environment:
-      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
-      SERVER_NAME: "shoplifting-kibana-dev"
-      SERVER_HOST: "0.0.0.0"
-      xpack.security.enabled: false
-    networks:
-      - app_network
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     depends_on:
       elasticsearch:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    restart: unless-stopped
+    networks:
+      - app-network
 
-# =============================================================================
-# VOLUMES
-# =============================================================================
+networks:
+  app-network:
+    name: shoplifting_network
+    driver: bridge
+
 volumes:
   postgres_data:
+    name: shoplifting_postgres_data
     driver: local
   redis_data:
+    name: shoplifting_redis_data
     driver: local
   elasticsearch_data:
-    driver: local
-
-# =============================================================================
-# NETWORKS
-# =============================================================================
-networks:
-  app_network:
-    driver: bridge
-    name: shoplifting_detection_network 
+    name: shoplifting_elasticsearch_data
+    driver: local 

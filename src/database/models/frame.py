@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, JSON, LargeBinary
 from sqlalchemy.sql import func
 from .base import Base
 
+
 class Frame(Base):
     __tablename__ = "frames"
 
@@ -14,4 +15,4 @@ class Frame(Base):
     processed_at = Column(DateTime(timezone=True), nullable=True)
 
     def __repr__(self):
-        return f"<Frame(id={self.id}, sequence={self.sequence_number}, timestamp={self.timestamp})>" 
+        return f"<Frame(id={self.id}, sequence={self.sequence_number}, timestamp={self.timestamp})>"

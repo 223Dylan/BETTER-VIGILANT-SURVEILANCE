@@ -59,7 +59,7 @@ type:camera_health
 ## You're All Set!
 
 Your enhanced detection metrics system is now working with:
-- ✅ Proper index templates
-- ✅ Data flowing into Elasticsearch
-- ✅ Index patterns configured
-- ✅ Ready for dashboard creation 
+- Proper index templates
+- Data flowing into Elasticsearch
+- Index patterns configured
+- Ready for dashboard creation 

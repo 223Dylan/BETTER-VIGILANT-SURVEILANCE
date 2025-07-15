@@ -1,45 +1,43 @@
-version: '3.8'
-
 services:
-  app:
-    build: .
-    ports:
-      - "8000:8000"
-      - "8001:8001"
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/frames_db
-    depends_on:
-      - redis
-      - elasticsearch
-      - postgres
-    networks:
-      - app-network
-    devices:
-      - "/dev/video0:/dev/video0"
-    privileged: true
-    volumes:
-      - /dev:/dev
-      - type: bind
-        source: //./pipe/docker_engine
-        target: //./pipe/docker_engine
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+  # app:
+  #   build: .
+  #   ports:
+  #     - "8000:8000"
+  #     - "8001:8001"
+  #   environment:
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - ELASTICSEARCH_URL=http://elasticsearch:9200
+  #     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/frames_db
+  #   depends_on:
+  #     - redis
+  #     - elasticsearch
+  #     - postgres
+  #   networks:
+  #     - app-network
+  #   devices:
+  #     - "/dev/video0:/dev/video0"
+  #   privileged: true
+  #   volumes:
+  #     - /dev:/dev
+  #     - type: bind
+  #       source: //./pipe/docker_engine
+  #       target: //./pipe/docker_engine
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
 
-  worker:
-    build: .
-    command: celery -A src.tasks worker --loglevel=info
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/frames_db
-    depends_on:
-      - redis
-      - elasticsearch
-      - postgres
-    networks:
-      - app-network
+  # worker:
+  #   build: .
+  #   command: celery -A src.tasks worker --loglevel=info
+  #   environment:
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - ELASTICSEARCH_URL=http://elasticsearch:9200
+  #     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/frames_db
+  #   depends_on:
+  #     - redis
+  #     - elasticsearch
+  #     - postgres
+  #   networks:
+  #     - app-network
 
   redis:
     image: redis:latest
@@ -100,7 +98,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=frames_db
+      - POSTGRES_DB=shoplifting_detection
     ports:
       - "5432:5432"
     volumes:

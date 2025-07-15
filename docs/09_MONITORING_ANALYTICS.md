@@ -767,13 +767,13 @@ def create_index_template(name: str, template: dict) -> bool:
     try:
         response = requests.put(url, json=template)
         if response.status_code in [200, 201]:
-            print(f"✓ Created index template: {name}")
+            print(f"Created index template: {name}")
             return True
         else:
-            print(f"✗ Failed to create template {name}: {response.text}")
+            print(f"Failed to create template {name}: {response.text}")
             return False
     except Exception as e:
-        print(f"✗ Error creating template {name}: {e}")
+        print(f"Error creating template {name}: {e}")
         return False
 
 def main():
@@ -839,10 +839,10 @@ def main():
     success &= create_index_template("detection-alerts", alert_template)
     
     if success:
-        print("✓ All templates created successfully")
+        print("All templates created successfully")
         return 0
     else:
-        print("✗ Some templates failed to create")
+        print("Some templates failed to create")
         return 1
 
 if __name__ == "__main__":

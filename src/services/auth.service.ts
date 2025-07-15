@@ -313,7 +313,7 @@ class AuthService {
   }
 
   public debugLocalStorage(): void {
-    console.log('🔍 LocalStorage Debug:');
+            console.log('LocalStorage Debug:');
     console.log('  - auth_token:', localStorage.getItem('auth_token') ? 'EXISTS' : 'NOT FOUND');
     console.log('  - refresh_token:', localStorage.getItem('refresh_token') ? 'EXISTS' : 'NOT FOUND');
     console.log('  - token_expiry:', localStorage.getItem('token_expiry'));

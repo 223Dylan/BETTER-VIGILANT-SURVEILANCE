@@ -8,31 +8,9 @@ model:
   frame_size: 90
   input_shape: [160, 90, 90, 1]
 
-# Global preprocessing settings (applied to ALL cameras from database)
-preprocessing:
-  # Basic preprocessing
-  grayscale: true
-  
-  # Paper-based preprocessing for improved accuracy
-  background_removal: false  # DISABLED - was destroying frame content
-  shadow_removal: false      # DISABLED - was removing too much detail
-  shadow_threshold: 10
-  gaussian_blur: false       # DISABLED - was over-smoothing frames
-  blur_kernel_size: 5
-  
-  # Brightness/contrast adjustments
-  brightness: 1.0
-  contrast: 1.0
-  
-  # Legacy settings (kept for backward compatibility)
-  denoise: false
-  
-  # Data augmentation (optional, mainly for training)
-  augmentation:
-    enabled: false
-    horizontal_flip: true
-    rotation_probability: 0.5
-    rotation_angle: 30
+# NOTE: Preprocessing is now hardcoded in frame_processor.py to match notebook
+# Pipeline: frame_diff → blur(3x3) → resize → grayscale → normalize
+# No configuration needed - all steps are fixed for model compatibility
 
 # Processing configuration
 processing:

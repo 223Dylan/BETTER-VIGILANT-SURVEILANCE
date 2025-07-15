@@ -31,7 +31,7 @@ engine = create_engine(
     max_overflow=MAX_OVERFLOW,
     pool_timeout=POOL_TIMEOUT,
     pool_recycle=POOL_RECYCLE,
-    pool_pre_ping=True  # Enable connection health checks
+    pool_pre_ping=True,  # Enable connection health checks
 )
 
 # Create session factory
@@ -40,6 +40,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Create base class for models
 Base = declarative_base()
 
+
 def get_db():
     """Get database session."""
     db = SessionLocal()
@@ -47,6 +48,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 def init_db():
     """Initialize database."""
@@ -58,6 +60,7 @@ def init_db():
         logger.error(f"Error initializing database: {e}")
         raise
 
+
 def close_db():
     """Close database connection."""
     try:
@@ -65,4 +68,4 @@ def close_db():
         logger.info("Database connection closed")
     except Exception as e:
         logger.error(f"Error closing database connection: {e}")
-        raise 
+        raise

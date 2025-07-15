@@ -272,7 +272,7 @@ const MainLayout: React.FC = () => {
               <div className="flex-shrink-0 flex items-center">
                 <span className="text-xl font-bold text-blue-600 flex items-center space-x-2">
                   <SecurityIcon className="w-6 h-6" />
-                  <span>Security System</span>
+                  <span>Better Vigilant Surveilance</span>
                 </span>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

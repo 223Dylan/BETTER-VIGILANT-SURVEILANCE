@@ -3,9 +3,10 @@ from typing import Any, Dict
 from loguru import logger
 from .utils import Config
 
+
 class BaseComponent(ABC):
     """Base class for all components in the pipeline."""
-    
+
     def __init__(self, config: Config = None):
         self.config = config or Config()
         self._initialized = False
@@ -56,4 +57,4 @@ class BaseComponent(ABC):
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.stop()
-        self.cleanup() 
+        self.cleanup()

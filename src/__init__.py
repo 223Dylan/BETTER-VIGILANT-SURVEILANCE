@@ -9,9 +9,9 @@ from .model_handler import ModelHandler
 from .tasks import predict_sequence
 
 __all__ = [
-    'CameraManager',
-    'FrameCapture',
-    'FrameProcessor',
-    'ModelHandler',
-    'predict_sequence'
-] 
+    "CameraManager",
+    "FrameCapture",
+    "FrameProcessor",
+    "ModelHandler",
+    "predict_sequence",
+]

@@ -230,7 +230,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
         connectToPredictionWebSocket();
       } else if (!camera.enabled && predictionWs) {
         // Disconnect WebSocket if camera becomes disabled
-        console.log('🔌 Disconnecting WebSocket - camera disabled');
+        console.log('Disconnecting WebSocket - camera disabled');
         predictionWs.close();
         setPredictionWs(null);
         setConnectionStatus('disconnected');
@@ -240,20 +240,20 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
   const connectToPredictionWebSocket = () => {
     if (!camera || !camera.enabled) {
-      console.log('🚫 Not connecting WebSocket - camera disabled or not found');
+      console.log('Not connecting WebSocket - camera disabled or not found');
       return;
     }
 
     // Close existing connection first
     if (predictionWs) {
-      console.log('🔌 Closing existing WebSocket connection');
+      console.log('Closing existing WebSocket connection');
       predictionWs.close();
       setPredictionWs(null);
     }
 
     try {
       const wsUrl = `ws://localhost:8001/ws/cameras/${camera.id}/prediction`;
-      console.log(`🔗 Creating NEW WebSocket connection to: ${wsUrl}`);
+      console.log(`Creating NEW WebSocket connection to: ${wsUrl}`);
       
       const ws = new WebSocket(wsUrl);
       

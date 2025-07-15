@@ -8,6 +8,7 @@ import json
 from datetime import datetime, timedelta
 from loguru import logger
 
+
 class FrameService:
     def __init__(self, db: Session):
         """Initialize the frame service with a database session."""
@@ -16,7 +17,7 @@ class FrameService:
 
     def _compress_frame(self, frame: np.ndarray) -> bytes:
         """Compress a frame using JPEG encoding."""
-        success, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        success, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         if not success:
             raise ValueError("Failed to compress frame")
         return buffer.tobytes()
@@ -26,14 +27,16 @@ class FrameService:
         nparr = np.frombuffer(frame_data, np.uint8)
         return cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    def store_frame(self, frame: bytes, sequence_number: int = None, metadata: dict = None) -> int:
+    def store_frame(
+        self, frame: bytes, sequence_number: int = None, metadata: dict = None
+    ) -> int:
         """Store a frame in the database."""
         try:
             frame_record = Frame(
                 frame_data=frame,
                 sequence_number=sequence_number,
                 timestamp=datetime.utcnow(),
-                frame_metadata=metadata or {}
+                frame_metadata=metadata or {},
             )
             self.db.add(frame_record)
             self.db.commit()
@@ -59,26 +62,36 @@ class FrameService:
     def get_frames_by_sequence(self, start: int, end: int) -> List[Frame]:
         """Get frames within a sequence range."""
         try:
-            frames = self.db.query(Frame)\
-                .filter(Frame.sequence_number >= start)\
-                .filter(Frame.sequence_number <= end)\
-                .order_by(Frame.sequence_number)\
+            frames = (
+                self.db.query(Frame)
+                .filter(Frame.sequence_number >= start)
+                .filter(Frame.sequence_number <= end)
+                .order_by(Frame.sequence_number)
                 .all()
-            logger.info(f"Retrieved {len(frames)} frames in sequence range {start}-{end}")
+            )
+            logger.info(
+                f"Retrieved {len(frames)} frames in sequence range {start}-{end}"
+            )
             return frames
         except Exception as e:
             logger.error(f"Error retrieving frames by sequence: {e}")
             raise
 
-    def get_frames_by_timestamp(self, start_time: datetime, end_time: datetime) -> List[Frame]:
+    def get_frames_by_timestamp(
+        self, start_time: datetime, end_time: datetime
+    ) -> List[Frame]:
         """Get frames within a time range."""
         try:
-            frames = self.db.query(Frame)\
-                .filter(Frame.timestamp >= start_time)\
-                .filter(Frame.timestamp <= end_time)\
-                .order_by(Frame.timestamp)\
+            frames = (
+                self.db.query(Frame)
+                .filter(Frame.timestamp >= start_time)
+                .filter(Frame.timestamp <= end_time)
+                .order_by(Frame.timestamp)
                 .all()
-            logger.info(f"Retrieved {len(frames)} frames in time range {start_time}-{end_time}")
+            )
+            logger.info(
+                f"Retrieved {len(frames)} frames in time range {start_time}-{end_time}"
+            )
             return frames
         except Exception as e:
             logger.error(f"Error retrieving frames by timestamp: {e}")
@@ -87,44 +100,54 @@ class FrameService:
     def get_frames_batch(self, frame_ids: List[int]) -> List[Frame]:
         """Get multiple frames by their IDs in a single query."""
         try:
-            frames = self.db.query(Frame)\
-                .filter(Frame.id.in_(frame_ids))\
-                .all()
+            frames = self.db.query(Frame).filter(Frame.id.in_(frame_ids)).all()
             logger.info(f"Retrieved {len(frames)} frames in batch")
             return frames
         except Exception as e:
             logger.error(f"Error retrieving frames batch: {e}")
             raise
 
-    def get_frames_by_sequence_batch(self, sequence_ranges: List[tuple]) -> Dict[int, List[Frame]]:
+    def get_frames_by_sequence_batch(
+        self, sequence_ranges: List[tuple]
+    ) -> Dict[int, List[Frame]]:
         """Get multiple sequence ranges in a single query."""
         try:
             result = {}
             for i, (start, end) in enumerate(sequence_ranges):
-                frames = self.db.query(Frame)\
-                    .filter(Frame.sequence_number >= start)\
-                    .filter(Frame.sequence_number <= end)\
-                    .order_by(Frame.sequence_number)\
+                frames = (
+                    self.db.query(Frame)
+                    .filter(Frame.sequence_number >= start)
+                    .filter(Frame.sequence_number <= end)
+                    .order_by(Frame.sequence_number)
                     .all()
+                )
                 result[i] = frames
-            logger.info(f"Retrieved {sum(len(frames) for frames in result.values())} frames in {len(sequence_ranges)} sequence ranges")
+            logger.info(
+                f"Retrieved {sum(len(frames) for frames in result.values())} frames in {len(sequence_ranges)} sequence ranges"
+            )
             return result
         except Exception as e:
             logger.error(f"Error retrieving frames by sequence batch: {e}")
             raise
 
-    def get_frames_by_timestamp_batch(self, time_ranges: List[tuple]) -> Dict[int, List[Frame]]:
+    def get_frames_by_timestamp_batch(
+        self, time_ranges: List[tuple]
+    ) -> Dict[int, List[Frame]]:
         """Get multiple time ranges in a single query."""
         try:
             result = {}
             for i, (start_time, end_time) in enumerate(time_ranges):
-                frames = self.db.query(Frame)\
-                    .filter(Frame.timestamp >= start_time)\
-                    .filter(Frame.timestamp <= end_time)\
-                    .order_by(Frame.timestamp)\
+                frames = (
+                    self.db.query(Frame)
+                    .filter(Frame.timestamp >= start_time)
+                    .filter(Frame.timestamp <= end_time)
+                    .order_by(Frame.timestamp)
                     .all()
+                )
                 result[i] = frames
-            logger.info(f"Retrieved {sum(len(frames) for frames in result.values())} frames in {len(time_ranges)} time ranges")
+            logger.info(
+                f"Retrieved {sum(len(frames) for frames in result.values())} frames in {len(time_ranges)} time ranges"
+            )
             return result
         except Exception as e:
             logger.error(f"Error retrieving frames by timestamp batch: {e}")
@@ -149,9 +172,7 @@ class FrameService:
         """Delete frames older than specified days."""
         try:
             cutoff_date = datetime.utcnow() - timedelta(days=days)
-            result = self.db.query(Frame)\
-                .filter(Frame.timestamp < cutoff_date)\
-                .delete()
+            result = self.db.query(Frame).filter(Frame.timestamp < cutoff_date).delete()
             self.db.commit()
             logger.info(f"Deleted {result} frames older than {days} days")
             return result
@@ -163,17 +184,18 @@ class FrameService:
     def get_latest_frames(self, limit: int = 10) -> List[Frame]:
         """Get the most recent frames."""
         try:
-            frames = self.db.query(Frame)\
-                .order_by(desc(Frame.timestamp))\
-                .limit(limit)\
-                .all()
+            frames = (
+                self.db.query(Frame).order_by(desc(Frame.timestamp)).limit(limit).all()
+            )
             logger.info(f"Retrieved {len(frames)} latest frames")
             return frames
         except Exception as e:
             logger.error(f"Error retrieving latest frames: {e}")
             raise
 
-    def get_frame_count(self, start_time: Optional[datetime] = None, end_time: Optional[datetime] = None) -> int:
+    def get_frame_count(
+        self, start_time: Optional[datetime] = None, end_time: Optional[datetime] = None
+    ) -> int:
         """Get total count of frames, optionally filtered by time range."""
         try:
             query = self.db.query(Frame)
@@ -186,4 +208,4 @@ class FrameService:
             return count
         except Exception as e:
             logger.error(f"Error getting frame count: {e}")
-            raise 
+            raise

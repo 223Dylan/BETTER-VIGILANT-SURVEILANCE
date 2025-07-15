@@ -4,49 +4,59 @@ from .base import Base
 from datetime import datetime
 from typing import Dict, Any, Optional
 
+
 class Alert(Base):
     """Alert model for storing detection alerts."""
+
     __tablename__ = "alerts"
-    
+
     # Primary key
     id = Column(String, primary_key=True)  # UUID string
-    
+
     # Core alert information
     camera_id = Column(String(255), nullable=False, index=True)
-    type = Column(String(100), nullable=False, index=True)  # shoplifting, suspicious_activity, etc.
-    severity = Column(String(50), nullable=False, index=True)  # low, medium, high, critical
-    status = Column(String(50), nullable=False, default="active", index=True)  # active, acknowledged, resolved, dismissed
-    
+    type = Column(
+        String(100), nullable=False, index=True
+    )  # shoplifting, suspicious_activity, etc.
+    severity = Column(
+        String(50), nullable=False, index=True
+    )  # low, medium, high, critical
+    status = Column(
+        String(50), nullable=False, default="active", index=True
+    )  # active, acknowledged, resolved, dismissed
+
     # Detection data
     confidence = Column(Float, nullable=False)
     message = Column(Text, nullable=False)
     source = Column(String(100), default="detection", nullable=False)
-    
+
     # Detection metadata (stored as JSON)
     detection_data = Column(JSON, default={})
-    
+
     # Timestamps
-    timestamp = Column(DateTime(timezone=True), nullable=False)  # When the detection occurred
+    timestamp = Column(
+        DateTime(timezone=True), nullable=False
+    )  # When the detection occurred
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     # Acknowledgment and resolution tracking
     acknowledged_by = Column(String(255), nullable=True)
     acknowledged_at = Column(DateTime(timezone=True), nullable=True)
     resolved_by = Column(String(255), nullable=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
-    
+
     # Additional notes
     notes = Column(Text, nullable=True)
-    
+
     # Create indexes for common queries
     __table_args__ = (
-        Index('idx_alert_camera_timestamp', 'camera_id', 'timestamp'),
-        Index('idx_alert_severity_status', 'severity', 'status'),
-        Index('idx_alert_type_timestamp', 'type', 'timestamp'),
-        Index('idx_alert_timestamp_desc', 'timestamp'),
+        Index("idx_alert_camera_timestamp", "camera_id", "timestamp"),
+        Index("idx_alert_severity_status", "severity", "status"),
+        Index("idx_alert_type_timestamp", "type", "timestamp"),
+        Index("idx_alert_timestamp_desc", "timestamp"),
     )
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for API responses."""
         return {
@@ -63,12 +73,14 @@ class Alert(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "acknowledged_by": self.acknowledged_by,
-            "acknowledged_at": self.acknowledged_at.isoformat() if self.acknowledged_at else None,
+            "acknowledged_at": (
+                self.acknowledged_at.isoformat() if self.acknowledged_at else None
+            ),
             "resolved_by": self.resolved_by,
             "resolved_at": self.resolved_at.isoformat() if self.resolved_at else None,
-            "notes": self.notes
+            "notes": self.notes,
         }
-    
+
     @classmethod
     def from_alert_record(cls, alert_record):
         """Create Alert instance from AlertRecord."""
@@ -82,20 +94,40 @@ class Alert(Base):
             message=alert_record.message,
             source=alert_record.source,
             detection_data=alert_record.detection_data,
-            timestamp=datetime.fromisoformat(alert_record.timestamp.replace('Z', '')) if isinstance(alert_record.timestamp, str) else alert_record.timestamp,
+            timestamp=(
+                datetime.fromisoformat(alert_record.timestamp.replace("Z", ""))
+                if isinstance(alert_record.timestamp, str)
+                else alert_record.timestamp
+            ),
             acknowledged_by=alert_record.acknowledged_by,
-            acknowledged_at=datetime.fromisoformat(alert_record.acknowledged_at.replace('Z', '')) if alert_record.acknowledged_at else None,
+            acknowledged_at=(
+                datetime.fromisoformat(alert_record.acknowledged_at.replace("Z", ""))
+                if alert_record.acknowledged_at
+                else None
+            ),
             resolved_by=alert_record.resolved_by,
-            resolved_at=datetime.fromisoformat(alert_record.resolved_at.replace('Z', '')) if alert_record.resolved_at else None,
-            notes=alert_record.notes
+            resolved_at=(
+                datetime.fromisoformat(alert_record.resolved_at.replace("Z", ""))
+                if alert_record.resolved_at
+                else None
+            ),
+            notes=alert_record.notes,
         )
-    
+
     def update_from_alert_record(self, alert_record):
         """Update this Alert instance from AlertRecord."""
         self.status = alert_record.status
         self.acknowledged_by = alert_record.acknowledged_by
-        self.acknowledged_at = datetime.fromisoformat(alert_record.acknowledged_at.replace('Z', '')) if alert_record.acknowledged_at else None
+        self.acknowledged_at = (
+            datetime.fromisoformat(alert_record.acknowledged_at.replace("Z", ""))
+            if alert_record.acknowledged_at
+            else None
+        )
         self.resolved_by = alert_record.resolved_by
-        self.resolved_at = datetime.fromisoformat(alert_record.resolved_at.replace('Z', '')) if alert_record.resolved_at else None
+        self.resolved_at = (
+            datetime.fromisoformat(alert_record.resolved_at.replace("Z", ""))
+            if alert_record.resolved_at
+            else None
+        )
         self.notes = alert_record.notes
-        self.updated_at = datetime.utcnow() 
+        self.updated_at = datetime.utcnow()

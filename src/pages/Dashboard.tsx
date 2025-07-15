@@ -71,7 +71,7 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Security Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Better Vigilant Surveilance</h1>
           <p className="mt-2 text-gray-600">
             Real-time monitoring and system overview
           </p>

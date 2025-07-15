@@ -61,19 +61,19 @@ jobs:
     # Generate Code Quality Report
     - name: Generate code quality summary
       run: |
-        echo "## 📊 Code Quality Report" >> $GITHUB_STEP_SUMMARY
+        echo "## Code Quality Report" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
         # Python metrics
-        echo "### 🐍 Python Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "### Python Analysis" >> $GITHUB_STEP_SUMMARY
         echo "- **Security issues found:** $(jq '.results | length' bandit-report.json 2>/dev/null || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
         echo "- **Vulnerabilities found:** $(jq '.vulnerabilities | length' safety-report.json 2>/dev/null || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
         echo "- **Pylint score:** $(jq '.[] | select(.type=="convention") | .message' pylint-report.json 2>/dev/null | wc -l || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
         
         # Frontend metrics
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### ⚛️ Frontend Analysis" >> $GITHUB_STEP_SUMMARY
-        echo "- **TypeScript compilation:** ✅ Passed" >> $GITHUB_STEP_SUMMARY
+        echo "### Frontend Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "- **TypeScript compilation:** PASSED" >> $GITHUB_STEP_SUMMARY
         echo "- **Unused dependencies:** $(jq '.dependencies | length' depcheck-report.json 2>/dev/null || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
         
     - name: Upload code quality artifacts
