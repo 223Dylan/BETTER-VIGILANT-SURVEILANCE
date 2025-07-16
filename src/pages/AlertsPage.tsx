@@ -6,6 +6,8 @@ import {
   AlertList, 
   AlertDetailModal 
 } from '../components/alerts';
+import { apiService } from '../services/api.service';
+import { authService } from '../services/auth.service';
 
 interface AlertsPageProps {}
 
@@ -54,21 +56,15 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
       }
 
       // Fetch active alerts
-      const activeResponse = await fetch(`/api/alerts/active?${filterParams}`);
-      if (!activeResponse.ok) throw new Error('Failed to fetch active alerts');
-      const activeData = await activeResponse.json();
+      const activeData = await apiService.get<any>(`/api/alerts/active?${filterParams}`);
       setActiveAlerts(activeData.data.alerts);
 
       // Fetch all alerts (for "all" view)
-      const allResponse = await fetch(`/api/alerts/history?limit=200&${filterParams}`);
-      if (!allResponse.ok) throw new Error('Failed to fetch alert history');
-      const allData = await allResponse.json();
+      const allData = await apiService.get<any>(`/api/alerts/history?limit=200&${filterParams}`);
       setAllAlerts([...activeData.data.alerts, ...allData.data.alerts]);
 
       // Fetch statistics
-      const statsResponse = await fetch('/api/alerts/stats');
-      if (!statsResponse.ok) throw new Error('Failed to fetch alert stats');
-      const statsData = await statsResponse.json();
+      const statsData = await apiService.get<any>('/api/alerts/stats');
       setAlertStats(statsData.data);
 
       setError(null);
@@ -81,16 +77,16 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
 
   const acknowledgeAlert = async (alertId: string, notes?: string) => {
     try {
-      const response = await fetch(`/api/alerts/${alertId}/acknowledge`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId: 'current-user', // Replace with actual user ID
-          notes 
-        })
+      const currentUser = authService.getCurrentUser();
+      if (!currentUser) {
+        setError('Please log in to acknowledge alerts');
+        return;
+      }
+
+      await apiService.post(`/api/alerts/${alertId}/acknowledge`, { 
+        userId: currentUser.id,
+        notes 
       });
-      
-      if (!response.ok) throw new Error('Failed to acknowledge alert');
       
       fetchData(); // Refresh data
     } catch (err) {
@@ -100,16 +96,16 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
 
   const resolveAlert = async (alertId: string, notes?: string) => {
     try {
-      const response = await fetch(`/api/alerts/${alertId}/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId: 'current-user', // Replace with actual user ID
-          notes 
-        })
+      const currentUser = authService.getCurrentUser();
+      if (!currentUser) {
+        setError('Please log in to resolve alerts');
+        return;
+      }
+
+      await apiService.post(`/api/alerts/${alertId}/resolve`, { 
+        userId: currentUser.id,
+        notes 
       });
-      
-      if (!response.ok) throw new Error('Failed to resolve alert');
       
       fetchData(); // Refresh data
     } catch (err) {
