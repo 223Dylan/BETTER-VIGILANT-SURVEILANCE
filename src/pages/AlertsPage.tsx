@@ -85,7 +85,7 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
 
       await apiService.post(`/api/alerts/${alertId}/acknowledge`, { 
         userId: currentUser.id,
-          notes 
+        notes 
       });
       
       fetchData(); // Refresh data
@@ -104,7 +104,7 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
 
       await apiService.post(`/api/alerts/${alertId}/resolve`, { 
         userId: currentUser.id,
-          notes 
+        notes 
       });
       
       fetchData(); // Refresh data

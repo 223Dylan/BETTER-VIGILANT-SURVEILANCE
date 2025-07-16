@@ -25,8 +25,7 @@ import {
   Pause as PauseIcon,
   Refresh as RefreshIcon,
   Close as CloseIcon,
-  Visibility as VisibilityIcon,
-  Delete as DeleteIcon
+  Visibility as VisibilityIcon
 } from '@mui/icons-material';
 
 // Heroicons
@@ -182,10 +181,6 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
   // Brightness state
   const [brightness, setBrightness] = useState<number>(1.0);
   const [isUpdatingBrightness, setIsUpdatingBrightness] = useState(false);
-
-  // Delete confirmation state
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (camera && isOpen) {
@@ -813,31 +808,6 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     }
   };
 
-  // Handle camera deletion
-  const handleDeleteCamera = async () => {
-    if (!camera || isDeleting) return;
-    
-    setIsDeleting(true);
-    try {
-      const success = await cameraService.deleteCamera(camera.id);
-      if (success) {
-        // Close the panel and refresh the camera list
-        onClose();
-        if (onCameraUpdated) {
-          onCameraUpdated();
-        }
-      } else {
-        alert('Failed to delete camera. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error deleting camera:', error);
-      alert('An error occurred while deleting the camera.');
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteConfirm(false);
-    }
-  };
-
   if (!isOpen || !camera) return null;
 
   return (
@@ -885,25 +855,15 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                   )}
                 </span>
               </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  disabled={isDeleting}
-                  className="rounded-md bg-red-50 p-2 text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Delete Camera"
-                >
-                  <DeleteIcon className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={onClose}
-                  className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <span className="sr-only">Close panel</span>
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+              <button
+                onClick={onClose}
+                className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <span className="sr-only">Close panel</span>
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
             {/* Content */}
@@ -1205,38 +1165,6 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
-                        <textarea
-                          value={editableCamera?.description || ''}
-                          onChange={(e) => handleCameraFieldChange('description', e.target.value)}
-                          onBlur={(e) => handleCameraFieldBlur('description', e.target.value)}
-                          className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          disabled={isUpdatingSettings}
-                          rows={2}
-                          placeholder="Optional description..."
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Location</label>
-                        <input
-                          type="text"
-                          value={editableCamera?.location || ''}
-                          onChange={(e) => handleCameraFieldChange('location', e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.currentTarget.blur();
-                              handleCameraFieldBlur('location', e.currentTarget.value);
-                            }
-                          }}
-                          onBlur={(e) => handleCameraFieldBlur('location', e.target.value)}
-                          className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          disabled={isUpdatingSettings}
-                          placeholder="Physical location (e.g., Main Entrance)"
-                        />
-                      </div>
-
                       <div className="pt-2 border-t border-gray-200 space-y-2">
                         <div className="flex justify-between">
                           <span className="text-gray-500">Resolution:</span>
@@ -1245,14 +1173,6 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                         <div className="flex justify-between">
                           <span className="text-gray-500">Target FPS:</span>
                           <span className="font-medium">{editableCamera?.fps || camera.fps}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Source Type:</span>
-                          <span className="font-medium capitalize">{editableCamera?.source_type || camera.source_type || 'Unknown'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Source:</span>
-                          <span className="font-medium text-xs break-all">{editableCamera?.source || camera.source || 'Unknown'}</span>
                         </div>
                       </div>
                     </div>
@@ -1489,68 +1409,6 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                         )}
                       </div>
 
-                      {/* Detection Settings */}
-                      <div className="mt-3 space-y-2">
-                        <h4 className="text-sm font-medium text-gray-700">Detection Settings</h4>
-                        
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                          <label className="text-xs font-medium text-gray-500">Detection Enabled</label>
-                          <button
-                            onClick={() => {
-                              const newValue = !editableCamera?.detection_enabled;
-                              handleCameraFieldChange('detection_enabled', newValue);
-                              updateCameraProperty('detection_enabled', newValue);
-                            }}
-                            disabled={isUpdatingSettings}
-                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                              editableCamera?.detection_enabled ? 'bg-blue-600' : 'bg-gray-300'
-                            } ${isUpdatingSettings ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                          >
-                            <span
-                              className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                                editableCamera?.detection_enabled ? 'translate-x-5' : 'translate-x-1'
-                              }`}
-                            />
-                          </button>
-                        </div>
-
-                        <div>
-                          <SettingSlider
-                            label="Detection Sensitivity"
-                            value={editableCamera?.detection_sensitivity || 0.5}
-                            min={0.0}
-                            max={1.0}
-                            step={0.1}
-                            onChange={(value) => {
-                              handleCameraFieldChange('detection_sensitivity', value);
-                              updateCameraProperty('detection_sensitivity', value);
-                            }}
-                            disabled={isUpdatingSettings || !editableCamera?.detection_enabled}
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                          <label className="text-xs font-medium text-gray-500">Recording Enabled</label>
-                          <button
-                            onClick={() => {
-                              const newValue = !editableCamera?.recording_enabled;
-                              handleCameraFieldChange('recording_enabled', newValue);
-                              updateCameraProperty('recording_enabled', newValue);
-                            }}
-                            disabled={isUpdatingSettings}
-                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                              editableCamera?.recording_enabled ? 'bg-blue-600' : 'bg-gray-300'
-                            } ${isUpdatingSettings ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                          >
-                            <span
-                              className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                                editableCamera?.recording_enabled ? 'translate-x-5' : 'translate-x-1'
-                              }`}
-                            />
-                          </button>
-                        </div>
-                      </div>
-
                       {/* Save/Update Status */}
                       {isUpdatingSettings && (
                         <div className="flex items-center justify-center p-2 bg-yellow-50 rounded-lg border border-yellow-200">
@@ -1568,52 +1426,6 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Delete Confirmation Dialog */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-60 overflow-y-auto">
-          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowDeleteConfirm(false)} />
-            <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-              <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <DeleteIcon className="h-6 w-6 text-red-600" />
-                  </div>
-                  <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                    <h3 className="text-base font-semibold leading-6 text-gray-900">
-                      Delete Camera
-                    </h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500">
-                        Are you sure you want to delete "{editableCamera?.name || camera.name}"? This action cannot be undone and will permanently remove the camera configuration.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                <button
-                  type="button"
-                  onClick={handleDeleteCamera}
-                  disabled={isDeleting}
-                  className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isDeleting ? 'Deleting...' : 'Delete'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  disabled={isDeleting}
-                  className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

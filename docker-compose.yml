@@ -66,8 +66,7 @@ services:
       test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 10
-      start_period: 60s
+      retries: 5
 
   logstash:
     image: docker.elastic.co/logstash/logstash:8.12.1

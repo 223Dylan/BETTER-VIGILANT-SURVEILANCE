@@ -19,14 +19,6 @@ export interface Camera {
     motion: number;
     object: number;
   };
-  // Additional fields from backend
-  description?: string;
-  location?: string;
-  detection_enabled?: boolean;
-  detection_sensitivity?: number;
-  recording_enabled?: boolean;
-  source?: string;
-  source_type?: 'webcam' | 'rtsp' | 'file';
 }
 
 // API Response Types

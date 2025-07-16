@@ -83,14 +83,6 @@ class CameraService {
             motion: 0.7,
             object: 0.5,
           },
-          // Additional fields from backend
-          description: camera.description,
-          location: camera.location,
-          detection_enabled: camera.detection_enabled,
-          detection_sensitivity: camera.detection_sensitivity,
-          recording_enabled: camera.recording_enabled,
-          source: camera.source,
-          source_type: camera.source_type as 'webcam' | 'rtsp' | 'file',
         }
       })
       
@@ -140,14 +132,7 @@ class CameraService {
         'resolutionWidth': 'resolution_width',
         'resolutionHeight': 'resolution_height',
         'fps': 'fps',
-        'brightness': 'brightness',
-        'description': 'description',
-        'location': 'location',
-        'detection_enabled': 'detection_enabled',
-        'detection_sensitivity': 'detection_sensitivity',
-        'recording_enabled': 'recording_enabled',
-        'source': 'source',
-        'source_type': 'source_type'
+        'brightness': 'brightness'
       }
 
       const backendProperty = propertyMap[property] || property
