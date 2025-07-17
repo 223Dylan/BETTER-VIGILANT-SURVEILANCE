@@ -48,6 +48,7 @@ PUBLIC_ENDPOINTS = [
     "/api/health",
     "/api/auth/login",
     "/api/auth/register",
+    "/api/auth/refresh",
     "/docs",
     "/openapi.json",
     "/redoc",
@@ -55,6 +56,13 @@ PUBLIC_ENDPOINTS = [
     "/cameras/available",
     "/cameras/status",
     "/cameras/upload-video",
+    # Metrics endpoints (public for monitoring)
+    "/api/metrics/health",
+    "/api/metrics/summary",
+    "/api/metrics/system",
+    "/api/metrics/cameras",
+    "/api/metrics/detections",
+    "/api/metrics/alerts/recent",
 ]
 
 # Video streaming endpoints that should be public
@@ -66,6 +74,8 @@ VIDEO_STREAMING_PATTERNS = [
     "/api/simple/hls/",
     # Camera control endpoints (temporarily public for development)
     "/cameras/",
+    # Metrics endpoints patterns (public for monitoring)
+    "/api/metrics/",
 ]
 
 

@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import { VideoCameraIcon, BellIcon, ChartBarIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import ActiveCameraGrid from '../components/ActiveCameraGrid';
 import MetricsDashboard from '../components/MetricsDashboard';
+import CameraPerformancePanel from '../components/CameraPerformancePanel';
+import AlertsNotificationPanel from '../components/AlertsNotificationPanel';
 import { cameraService } from '../services/camera.service';
+import { metricsService } from '../services/metrics.service';
 
 // Material-UI Icons
 import {
@@ -19,12 +22,18 @@ const Dashboard: React.FC = () => {
     error: 0,
     detectionRate: '0%'
   });
+  const [selectedCamera, setSelectedCamera] = useState<string | null>(null);
+  const [healthStatus, setHealthStatus] = useState<any>(null);
 
   useEffect(() => {
     loadCameraStats();
+    loadHealthStatus();
     
     // Update stats every 30 seconds
-    const interval = setInterval(loadCameraStats, 30000);
+    const interval = setInterval(() => {
+      loadCameraStats();
+      loadHealthStatus();
+    }, 30000);
     
     return () => clearInterval(interval);
   }, []);
@@ -41,8 +50,25 @@ const Dashboard: React.FC = () => {
         error,
         detectionRate: active > 0 ? '98%' : '0%' // Mock detection rate
       });
+      
+      // Set first active camera as selected if none selected
+      if (!selectedCamera && active > 0) {
+        const firstActive = cameras.find(c => c.enabled);
+        if (firstActive) {
+          setSelectedCamera(firstActive.id.toString());
+        }
+      }
     } catch (err) {
       console.error('Error loading camera stats:', err);
+    }
+  };
+
+  const loadHealthStatus = async () => {
+    try {
+      const health = await metricsService.getHealthStatus();
+      setHealthStatus(health);
+    } catch (err) {
+      console.error('Error loading health status:', err);
     }
   };
 
@@ -94,6 +120,30 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Health Status Banner */}
+      {healthStatus && (!healthStatus.elasticsearch || !healthStatus.system_monitor) && (
+        <div className="rounded-md bg-yellow-50 p-4 border border-yellow-200">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Infrastructure Status
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  Some monitoring services are offline:
+                  {!healthStatus.elasticsearch && ' Elasticsearch'}
+                  {!healthStatus.prometheus && ' Prometheus'}
+                  {!healthStatus.system_monitor && ' System Monitor'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map(stat => (
@@ -138,30 +188,128 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Active Cameras */}
-      <ActiveCameraGrid />
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Active Cameras */}
+          <ActiveCameraGrid />
 
-      {/* System Metrics */}
-      <div className="bg-white rounded-lg shadow-md border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">System Performance</h2>
-        </div>
-        <div className="p-6">
+          {/* Enhanced System Metrics */}
           <MetricsDashboard />
+
+          {/* Camera Performance Detail */}
+          {selectedCamera && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Camera Performance Detail</h3>
+                <select
+                  value={selectedCamera}
+                  onChange={(e) => setSelectedCamera(e.target.value)}
+                  className="block w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value="">Select camera...</option>
+                  {/* This would be populated with actual camera IDs */}
+                  <option value="camera-1">Camera 1</option>
+                  <option value="camera-2">Camera 2</option>
+                  <option value="testing-camera">Testing Camera</option>
+                </select>
+              </div>
+              <CameraPerformancePanel 
+                cameraId={selectedCamera} 
+                timeRange="1h" 
+                realTime={true}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Right Column - Alerts & Quick Stats */}
+        <div className="space-y-6">
+          {/* Real-time Alerts */}
+          <AlertsNotificationPanel 
+            limit={15} 
+            realTime={true}
+            onAlertClick={(alert) => {
+              console.log('Alert clicked:', alert);
+              // Could navigate to alert detail or camera view
+            }}
+          />
+
+          {/* Quick Actions */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+            <div className="space-y-3">
+              <Link
+                to="/cameras"
+                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <VideocamIcon className="w-4 h-4 mr-2" />
+                Camera Management
+              </Link>
+              <Link
+                to="/alerts"
+                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <BellIcon className="w-4 h-4 mr-2" />
+                Alert History
+              </Link>
+              <button
+                onClick={() => window.open('/api/metrics/health', '_blank')}
+                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <ChartBarIcon className="w-4 h-4 mr-2" />
+                System Health
+              </button>
+            </div>
+          </div>
+
+          {/* System Status */}
+          {healthStatus && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Infrastructure Status</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Elasticsearch</span>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    healthStatus.elasticsearch ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {healthStatus.elasticsearch ? '● Online' : '● Offline'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Prometheus</span>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    healthStatus.prometheus ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {healthStatus.prometheus ? '● Online' : '● Offline'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">System Monitor</span>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    healthStatus.system_monitor ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {healthStatus.system_monitor ? '● Online' : '● Offline'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* Recent Activity Footer */}
       <div className="bg-white shadow-md rounded-lg border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Recent System Activity</h3>
         </div>
         <div className="p-6">
           <div className="space-y-3">
             <div className="flex items-center space-x-3 text-sm">
               <span className="flex-shrink-0 w-2 h-2 bg-green-400 rounded-full"></span>
               <span className="text-gray-500">
-                {new Date().toLocaleTimeString()} - System monitoring active
+                {new Date().toLocaleTimeString()} - Enhanced metrics system initialized
               </span>
             </div>
             {cameraStats.active > 0 && (

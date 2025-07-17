@@ -26,6 +26,10 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
 @router.post("/login", response_model=Token)
 async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """Login endpoint using database authentication."""
@@ -75,12 +79,19 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/refresh", response_model=Token)
 async def refresh_token(
-    token_data: dict = Depends(jwt_auth), db: Session = Depends(get_db)
+    refresh_data: RefreshRequest, db: Session = Depends(get_db)
 ):
     """Refresh access token using refresh token."""
     try:
+        # Verify the refresh token directly
+        try:
+            token_data = jwt_auth.verify_token(refresh_data.refresh_token)
+        except HTTPException as e:
+            logger.warning(f"Invalid refresh token: {e.detail}")
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+
         if token_data.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token type")
+            raise HTTPException(status_code=401, detail="Invalid token type - expected refresh token")
 
         username = token_data.get("sub")
         role = token_data.get("role")
@@ -104,12 +115,15 @@ async def refresh_token(
         user.last_activity_at = datetime.utcnow()
         db.commit()
 
+        # Create new tokens
         access_token = jwt_auth.create_access_token(username, role)
-        refresh_token = jwt_auth.create_refresh_token(username, role)
+        new_refresh_token = jwt_auth.create_refresh_token(username, role)
+
+        logger.info(f"Token refreshed successfully for user {username}")
 
         return {
             "access_token": access_token,
-            "refresh_token": refresh_token,
+            "refresh_token": new_refresh_token,
             "token_type": "bearer",
         }
 

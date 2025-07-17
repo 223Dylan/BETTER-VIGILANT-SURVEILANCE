@@ -7,11 +7,20 @@ from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from loguru import logger
 
 from src.websocket_manager import websocket_manager
+# Import metrics service with fallback handling
+try:
+    from src.services.metrics_service import MetricsService
+except ImportError:
+    # Fallback if aiohttp not available
+    from src.services.metrics_service_requests import MetricsServiceRequests as MetricsService
 
 router = APIRouter()
 
 # Shared stats will be injected from main.py
 shared_stats = None
+
+# Initialize metrics service for real-time updates
+metrics_service = MetricsService()
 
 
 def initialize_shared_data(stats):
@@ -49,76 +58,154 @@ async def camera_ws(websocket: WebSocket, camera_id: str):
 
 @router.websocket("/ws/cameras/{camera_id}/prediction")
 async def prediction_ws(websocket: WebSocket, camera_id: str):
-    """WebSocket endpoint for camera predictions and alerts."""
-    logger.info(
-        f"[WEBSOCKET] Prediction WebSocket connection attempt for camera {camera_id}"
-    )
+    """WebSocket endpoint for camera predictions."""
+    await websocket.accept()
+    await websocket_manager.connect_prediction(camera_id, websocket)
 
     try:
-        await websocket.accept()
-        logger.info(f"[SUCCESS] WebSocket accepted for camera {camera_id}")
-
-        await websocket_manager.connect_prediction(camera_id, websocket)
-        logger.info(
-            f"[WEBSOCKET] Prediction WebSocket registered in manager for camera {camera_id}"
-        )
-
-        # Send initial connection confirmation
-        await websocket.send_json(
-            {
-                "type": "connection",
-                "status": "connected",
-                "camera_id": camera_id,
-                "message": "Connected to prediction feed",
-            }
-        )
-        logger.info(f"[SENT] Sent connection confirmation for camera {camera_id}")
-
-        # Keep connection alive and handle incoming messages
         while True:
-            try:
-                # Wait for messages (can be used for client-side requests)
-                data = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
-                logger.debug(
-                    f"[RECEIVED] Received client message for {camera_id}: {data}"
-                )
-
-                # Handle client requests (optional)
-                try:
-                    request = json.loads(data)
-                    if request.get("type") == "ping":
-                        await websocket.send_json(
-                            {"type": "pong", "timestamp": time.time()}
-                        )
-                        logger.debug(f"[PONG] Sent pong to {camera_id}")
-                except json.JSONDecodeError:
-                    pass  # Ignore malformed requests
-
-            except asyncio.TimeoutError:
-                # Send keep-alive ping
-                connection_count = websocket_manager.get_connection_count(camera_id)
-                await websocket.send_json(
-                    {
-                        "type": "keepalive",
-                        "timestamp": time.time(),
-                        "connections": connection_count,
-                    }
-                )
-                logger.debug(
-                    f"[KEEPALIVE] Sent keepalive to {camera_id}, connections: {connection_count}"
-                )
-
+            # Keep connection alive with heartbeat
+            await websocket.send_json({"type": "heartbeat", "timestamp": time.time()})
+            await asyncio.sleep(5)
     except WebSocketDisconnect:
-        logger.info(
-            f"[DISCONNECTED] Prediction WebSocket disconnected for camera {camera_id}"
-        )
         await websocket_manager.disconnect_prediction(camera_id, websocket)
     except Exception as e:
-        logger.error(
-            f"[ERROR] Error in prediction WebSocket for camera {camera_id}: {str(e)}"
-        )
+        logger.error(f"Prediction WebSocket error for camera {camera_id}: {str(e)}")
         await websocket_manager.disconnect_prediction(camera_id, websocket)
-        try:
-            await websocket.send_json({"type": "error", "message": str(e)})
-        except:
-            pass
+
+
+@router.websocket("/ws/metrics")
+async def metrics_ws(websocket: WebSocket):
+    """WebSocket endpoint for real-time metrics updates."""
+    await websocket.accept()
+    logger.info("[WEBSOCKET] Metrics WebSocket connected")
+
+    try:
+        while True:
+            # Get comprehensive metrics summary
+            try:
+                metrics_summary = await metrics_service.get_metrics_summary()
+                
+                # Send metrics update
+                await websocket.send_json({
+                    "type": "metrics_update",
+                    "timestamp": time.time(),
+                    "data": metrics_summary
+                })
+                
+                # Wait 5 seconds before next update
+                await asyncio.sleep(5)
+                
+            except Exception as e:
+                logger.error(f"Error fetching metrics for WebSocket: {e}")
+                # Send error status
+                await websocket.send_json({
+                    "type": "error",
+                    "timestamp": time.time(),
+                    "message": "Failed to fetch metrics"
+                })
+                await asyncio.sleep(10)  # Wait longer on error
+                
+    except WebSocketDisconnect:
+        logger.info("[WEBSOCKET] Metrics WebSocket disconnected")
+    except Exception as e:
+        logger.error(f"Metrics WebSocket error: {str(e)}")
+
+
+@router.websocket("/ws/metrics/camera/{camera_id}")
+async def camera_metrics_ws(websocket: WebSocket, camera_id: str):
+    """WebSocket endpoint for real-time camera-specific metrics."""
+    await websocket.accept()
+    logger.info(f"[WEBSOCKET] Camera metrics WebSocket connected for {camera_id}")
+
+    try:
+        while True:
+            try:
+                # Get camera-specific performance data
+                performance = await metrics_service.get_camera_performance(camera_id, "5m")
+                
+                # Get recent detections for this camera
+                recent_detections = await metrics_service.get_detection_metrics(
+                    time_range="5m", 
+                    camera_id=camera_id
+                )
+                
+                # Send camera metrics update
+                await websocket.send_json({
+                    "type": "camera_metrics_update",
+                    "camera_id": camera_id,
+                    "timestamp": time.time(),
+                    "performance": performance,
+                    "recent_detections": recent_detections[:5]  # Last 5 detections
+                })
+                
+                await asyncio.sleep(3)  # Update every 3 seconds for camera-specific data
+                
+            except Exception as e:
+                logger.error(f"Error fetching camera {camera_id} metrics for WebSocket: {e}")
+                await websocket.send_json({
+                    "type": "error",
+                    "camera_id": camera_id,
+                    "timestamp": time.time(),
+                    "message": f"Failed to fetch metrics for camera {camera_id}"
+                })
+                await asyncio.sleep(10)
+                
+    except WebSocketDisconnect:
+        logger.info(f"[WEBSOCKET] Camera metrics WebSocket disconnected for {camera_id}")
+    except Exception as e:
+        logger.error(f"Camera metrics WebSocket error for {camera_id}: {str(e)}")
+
+
+@router.websocket("/ws/alerts")
+async def alerts_ws(websocket: WebSocket):
+    """WebSocket endpoint for real-time alert notifications."""
+    await websocket.accept()
+    logger.info("[WEBSOCKET] Alerts WebSocket connected")
+
+    try:
+        while True:
+            try:
+                # Get recent alerts (last 10 minutes)
+                recent_alerts = await metrics_service.get_recent_alerts(limit=20)
+                
+                # Filter for very recent alerts (last 5 minutes)
+                current_time = time.time()
+                five_minutes_ago = current_time - (5 * 60)
+                
+                new_alerts = []
+                for alert in recent_alerts:
+                    alert_time = alert.get("timestamp")
+                    if alert_time:
+                        # Parse timestamp and check if within last 5 minutes
+                        try:
+                            from datetime import datetime
+                            parsed_time = datetime.fromisoformat(alert_time.replace('Z', '+00:00'))
+                            if parsed_time.timestamp() > five_minutes_ago:
+                                new_alerts.append(alert)
+                        except:
+                            continue
+                
+                # Send alerts update
+                await websocket.send_json({
+                    "type": "alerts_update",
+                    "timestamp": current_time,
+                    "new_alerts": new_alerts,
+                    "total_recent": len(recent_alerts)
+                })
+                
+                await asyncio.sleep(30)  # Check for new alerts every 30 seconds
+                
+            except Exception as e:
+                logger.error(f"Error fetching alerts for WebSocket: {e}")
+                await websocket.send_json({
+                    "type": "error",
+                    "timestamp": time.time(),
+                    "message": "Failed to fetch alerts"
+                })
+                await asyncio.sleep(60)
+                
+    except WebSocketDisconnect:
+        logger.info("[WEBSOCKET] Alerts WebSocket disconnected")
+    except Exception as e:
+        logger.error(f"Alerts WebSocket error: {str(e)}")

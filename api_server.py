@@ -14,7 +14,7 @@ from src.middleware.request_limits import RequestLimitsMiddleware
 from src.middleware.encryption import EncryptionMiddleware, RequestSigningMiddleware
 from src.middleware.security import SecurityMiddleware
 from src.utils.secrets import secrets_manager
-from src.routers import auth, alerts, users, cameras, ws
+from src.routers import auth, alerts, users, cameras, ws, metrics
 from src.api.video_stream import router as video_router, stream_manager
 from src.api.routers.frames import router as frames_router
 from src.api.hls_stream import router as hls_router, initialize_hls_data
@@ -92,6 +92,9 @@ app.include_router(frames_router, prefix="/api")
 
 # Include users router
 app.include_router(users.router, prefix="/api")
+
+# Include metrics router
+app.include_router(metrics.router)
 
 # These will be injected from main.py
 shared_frames = {}
