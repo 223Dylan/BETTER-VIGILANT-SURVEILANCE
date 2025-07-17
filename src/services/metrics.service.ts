@@ -166,8 +166,7 @@ class MetricsService {
    * Create WebSocket connection for real-time metrics updates
    */
   createMetricsWebSocket(): WebSocket {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/metrics`;
+    const wsUrl = 'ws://localhost:8001/ws/metrics';
     return new WebSocket(wsUrl);
   }
 
@@ -175,8 +174,7 @@ class MetricsService {
    * Create WebSocket connection for camera-specific metrics
    */
   createCameraMetricsWebSocket(cameraId: string): WebSocket {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/metrics/camera/${cameraId}`;
+    const wsUrl = `ws://localhost:8001/ws/metrics/camera/${cameraId}`;
     return new WebSocket(wsUrl);
   }
 
@@ -184,8 +182,7 @@ class MetricsService {
    * Create WebSocket connection for real-time alerts
    */
   createAlertsWebSocket(): WebSocket {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/alerts`;
+    const wsUrl = 'ws://localhost:8001/ws/alerts';
     return new WebSocket(wsUrl);
   }
 

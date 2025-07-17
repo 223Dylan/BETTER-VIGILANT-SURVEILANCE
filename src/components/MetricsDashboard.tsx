@@ -129,8 +129,7 @@ const MetricsDashboard: React.FC = () => {
 
   const setupWebSocket = () => {
     try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/metrics`;
+      const wsUrl = 'ws://localhost:8001/ws/metrics';
       
       wsRef.current = new WebSocket(wsUrl);
 
