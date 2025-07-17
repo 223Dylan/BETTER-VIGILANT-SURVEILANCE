@@ -76,6 +76,8 @@ VIDEO_STREAMING_PATTERNS = [
     "/cameras/",
     # Metrics endpoints patterns (public for monitoring)
     "/api/metrics/",
+    # WebSocket endpoints patterns (public for real-time updates)
+    "/ws/",
 ]
 
 
