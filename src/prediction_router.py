@@ -6,7 +6,7 @@ from typing import Any, Dict
 from loguru import logger
 
 from src.services.alert_manager import get_alert_manager
-from src.websocket_manager import websocket_manager
+from src.services.redis_websocket_bridge import redis_websocket_bridge
 
 # Global event loop for WebSocket operations
 _websocket_loop = None
@@ -121,18 +121,27 @@ def format_prediction_for_alert(prediction_result: Dict[Any, Any]) -> Dict[str, 
 
 
 async def send_prediction_to_websocket(camera_id: str, alert_data: Dict[str, Any]):
-    """Send prediction data to WebSocket connections for a specific camera."""
+    """Send prediction data to WebSocket connections via Redis pub/sub."""
     try:
-        # Broadcast to prediction WebSocket connections
-        await websocket_manager.broadcast_prediction(camera_id, alert_data)
-
-        logger.info(
-            f"[SUCCESS] Successfully sent prediction to WebSocket for camera {camera_id}"
+        # Publish to Redis for cross-process WebSocket broadcasting
+        success = redis_websocket_bridge.publish_websocket_event(
+            camera_id=camera_id,
+            event_type="prediction", 
+            data=alert_data
         )
+        
+        if success:
+            logger.info(
+                f"[SUCCESS] Successfully published prediction to Redis for camera {camera_id}"
+            )
+        else:
+            logger.error(
+                f"[ERROR] Failed to publish prediction to Redis for camera {camera_id}"
+            )
 
     except Exception as e:
         logger.error(
-            f"[ERROR] Error sending prediction to WebSocket for {camera_id}: {e}"
+            f"[ERROR] Error publishing prediction to Redis for {camera_id}: {e}"
         )
 
 

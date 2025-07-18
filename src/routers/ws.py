@@ -65,6 +65,34 @@ async def test_broadcast(camera_id: str):
         return {"status": "error", "message": str(e)}
 
 
+@router.get("/ws/debug/test-redis/{camera_id}")
+async def test_redis_broadcast(camera_id: str):
+    """Test Redis-based broadcasting to simulate Celery worker."""
+    from src.services.redis_websocket_bridge import redis_websocket_bridge
+    
+    test_data = {
+        "type": "test_prediction",
+        "message": "Redis pub/sub test",
+        "confidence": 0.85,
+        "timestamp": time.time()
+    }
+    
+    try:
+        success = redis_websocket_bridge.publish_websocket_event(
+            camera_id=camera_id,
+            event_type="prediction",
+            data=test_data
+        )
+        
+        if success:
+            return {"status": "success", "message": f"Redis test broadcast published for {camera_id}"}
+        else:
+            return {"status": "error", "message": "Failed to publish to Redis"}
+            
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 @router.websocket("/ws/camera/{camera_id}")
 async def camera_ws(websocket: WebSocket, camera_id: str):
     """WebSocket endpoint for camera general status."""

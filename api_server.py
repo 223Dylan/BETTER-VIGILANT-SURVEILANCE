@@ -15,6 +15,8 @@ from src.middleware.encryption import EncryptionMiddleware, RequestSigningMiddle
 from src.middleware.security import SecurityMiddleware
 from src.utils.secrets import secrets_manager
 from src.routers import auth, alerts, users, cameras, ws, metrics
+from src.services.redis_websocket_bridge import redis_websocket_bridge
+from src.websocket_manager import websocket_manager
 from src.api.video_stream import router as video_router, stream_manager
 from src.api.routers.frames import router as frames_router
 from src.api.hls_stream import router as hls_router, initialize_hls_data
@@ -29,6 +31,25 @@ logger = setup_logging()
 
 # Create FastAPI instance
 app = FastAPI(title="Video Streaming API")
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize Redis WebSocket bridge on startup."""
+    try:
+        await redis_websocket_bridge.start_subscriber(websocket_manager)
+        logger.info("[STARTUP] Redis WebSocket bridge initialized")
+    except Exception as e:
+        logger.error(f"[STARTUP] Failed to initialize Redis WebSocket bridge: {e}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup Redis WebSocket bridge on shutdown."""
+    try:
+        await redis_websocket_bridge.stop_subscriber()
+        redis_websocket_bridge.close()
+        logger.info("[SHUTDOWN] Redis WebSocket bridge stopped")
+    except Exception as e:
+        logger.error(f"[SHUTDOWN] Error stopping Redis WebSocket bridge: {e}")
 
 # IMPORTANT: CORS must be the FIRST middleware to handle preflight requests
 app.add_middleware(
