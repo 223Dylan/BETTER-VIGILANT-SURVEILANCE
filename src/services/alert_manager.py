@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from loguru import logger
 
 from src.services.alert_database import get_alert_db_service
+from src.websocket_manager import websocket_manager
 
 
 class AlertSeverity(Enum):
@@ -245,8 +246,6 @@ class AlertManager:
     async def _broadcast_alert(self, alert: AlertRecord):
         """Broadcast alert to connected WebSocket clients."""
         try:
-            from src.websocket_manager import websocket_manager
-
             alert_data = {
                 "id": alert.id,
                 "type": "alert_created",
@@ -347,8 +346,6 @@ class AlertManager:
     async def _broadcast_alert_update(self, alert: AlertRecord):
         """Broadcast alert status update."""
         try:
-            from src.websocket_manager import websocket_manager
-
             alert_data = {
                 "id": alert.id,
                 "type": "alert_updated",

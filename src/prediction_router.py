@@ -6,6 +6,7 @@ from typing import Any, Dict
 from loguru import logger
 
 from src.services.alert_manager import get_alert_manager
+from src.websocket_manager import websocket_manager
 
 # Global event loop for WebSocket operations
 _websocket_loop = None
@@ -122,9 +123,6 @@ def format_prediction_for_alert(prediction_result: Dict[Any, Any]) -> Dict[str, 
 async def send_prediction_to_websocket(camera_id: str, alert_data: Dict[str, Any]):
     """Send prediction data to WebSocket connections for a specific camera."""
     try:
-        # Import here to avoid circular imports
-        from src.websocket_manager import websocket_manager
-
         # Broadcast to prediction WebSocket connections
         await websocket_manager.broadcast_prediction(camera_id, alert_data)
 

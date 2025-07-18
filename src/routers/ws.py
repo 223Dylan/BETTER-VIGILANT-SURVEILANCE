@@ -29,6 +29,42 @@ def initialize_shared_data(stats):
     shared_stats = stats
 
 
+@router.get("/ws/debug/connections")
+async def debug_connections():
+    """Debug endpoint to check current WebSocket connections."""
+    import os
+    return {
+        "websocket_manager_id": id(websocket_manager),
+        "process_pid": os.getpid(),
+        "camera_connections": {
+            camera_id: len(connections) 
+            for camera_id, connections in websocket_manager.camera_connections.items()
+        },
+        "prediction_connections": {
+            camera_id: len(connections) 
+            for camera_id, connections in websocket_manager.prediction_connections.items()
+        },
+        "total_camera_connections": len(websocket_manager.camera_connections),
+        "total_prediction_connections": len(websocket_manager.prediction_connections)
+    }
+
+
+@router.get("/ws/debug/test-broadcast/{camera_id}")
+async def test_broadcast(camera_id: str):
+    """Test broadcasting to a specific camera to debug the issue."""
+    test_data = {
+        "type": "test",
+        "message": "Debug test broadcast",
+        "timestamp": time.time()
+    }
+    
+    try:
+        await websocket_manager.broadcast_prediction(camera_id, test_data)
+        return {"status": "success", "message": f"Test broadcast sent to {camera_id}"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 @router.websocket("/ws/camera/{camera_id}")
 async def camera_ws(websocket: WebSocket, camera_id: str):
     """WebSocket endpoint for camera general status."""

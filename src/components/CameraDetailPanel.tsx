@@ -15,7 +15,7 @@ import {
   Home as HomeIcon,
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
-  PhotoCamera as PhotoCameraIcon,
+
   VideoCall as VideoCallIcon,
   Person as PersonIcon,
   Inventory as InventoryIcon,
@@ -62,16 +62,7 @@ interface AccordionSectionProps {
   badge?: string | number;
 }
 
-interface CameraSettings {
-  motionDetection: boolean;
-  nightVision: boolean;
-  audioRecording: boolean;
-  aiDetection: boolean;
-  motionSensitivity: number;
-  nightVisionMode: 'auto' | 'on' | 'off';
-  audioGain: number;
-  aiConfidenceThreshold: number;
-}
+
 
 const AccordionSection: React.FC<AccordionSectionProps> = ({
   title,
@@ -136,17 +127,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     connectionQuality: 'Good' as 'Excellent' | 'Good' | 'Poor' | 'Offline'
   });
 
-  // Camera settings state
-  const [cameraSettings, setCameraSettings] = useState<CameraSettings>({
-    motionDetection: true,
-    nightVision: false,
-    audioRecording: false,
-    aiDetection: true,
-    motionSensitivity: 50,
-    nightVisionMode: 'auto',
-    audioGain: 50,
-    aiConfidenceThreshold: 75
-  });
+
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
 
   // Accordion section states
@@ -191,7 +172,6 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
       loadCameraStatus();
       loadCameraStats();
       loadRealTimeStats();
-      loadCameraSettings();
       connectToPredictionWebSocket();
       
       // Update basic stats every 5 seconds
@@ -477,59 +457,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     return `${hours}:${minutes}:${seconds}`;
   };
 
-  const loadCameraSettings = async () => {
-    if (!camera) return;
-    try {
-      // In a real app, load these from the camera or database
-      // For now, use default values since these aren't in the Camera type yet
-      setCameraSettings({
-        motionDetection: true,
-        nightVision: false,
-        audioRecording: false,
-        aiDetection: true,
-        motionSensitivity: camera.thresholds?.motion ? camera.thresholds.motion * 100 : 50,
-        nightVisionMode: 'auto',
-        audioGain: 50,
-        aiConfidenceThreshold: camera.thresholds?.object ? camera.thresholds.object * 100 : 75
-      });
-    } catch (error) {
-      console.error('Error loading camera settings:', error);
-    }
-  };
 
-  const updateCameraSetting = async (setting: keyof CameraSettings, value: any) => {
-    if (!camera || isUpdatingSettings) return;
-    
-    setIsUpdatingSettings(true);
-    try {
-      // Update local state immediately for responsive UI
-      setCameraSettings(prev => ({
-        ...prev,
-        [setting]: value
-      }));
-
-      // In a real app, save to backend
-      // await cameraService.updateCameraSetting(camera.id, setting, value);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      console.log(`Updated ${setting} to ${value} for camera ${camera.id}`);
-      
-      if (onCameraUpdated) {
-        onCameraUpdated();
-      }
-    } catch (error) {
-      console.error(`Error updating ${setting}:`, error);
-      // Revert on error
-      setCameraSettings(prev => ({
-        ...prev,
-        [setting]: !value
-      }));
-    } finally {
-      setIsUpdatingSettings(false);
-    }
-  };
 
   const updateCameraProperty = async (property: string, value: any) => {
     if (!camera || isUpdatingSettings) return;
@@ -567,37 +495,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     }
   };
 
-  const SettingToggle: React.FC<{
-    label: string;
-    description: string;
-    icon: string;
-    enabled: boolean;
-    onChange: (enabled: boolean) => void;
-    disabled?: boolean;
-  }> = ({ label, description, icon, enabled, onChange, disabled = false }) => (
-    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-      <div className="flex items-center space-x-3">
-        <span className="text-lg">{icon}</span>
-        <div>
-          <div className="font-medium text-sm text-gray-900">{label}</div>
-          <div className="text-xs text-gray-500">{description}</div>
-        </div>
-      </div>
-      <button
-        onClick={() => !disabled && onChange(!enabled)}
-        disabled={disabled || isUpdatingSettings}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          enabled ? 'bg-blue-600' : 'bg-gray-300'
-        } ${disabled || isUpdatingSettings ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-      >
-        <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-            enabled ? 'translate-x-6' : 'translate-x-1'
-          }`}
-        />
-      </button>
-    </div>
-  );
+
 
   const SettingSlider: React.FC<{
     label: string;
@@ -629,31 +527,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     </div>
   );
 
-  const SettingSelect: React.FC<{
-    label: string;
-    value: string;
-    options: { value: string; label: string }[];
-    onChange: (value: string) => void;
-    disabled?: boolean;
-  }> = ({ label, value, options, onChange, disabled = false }) => (
-    <div className="p-3 bg-gray-50 rounded-lg">
-      <label className="block text-sm font-medium text-gray-900 mb-2">{label}</label>
-      <select
-        value={value}
-        onChange={(e) => !disabled && onChange(e.target.value)}
-        disabled={disabled || isUpdatingSettings}
-        className={`w-full p-2 border border-gray-300 rounded-md text-sm ${
-          disabled || isUpdatingSettings ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-        }`}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
+
 
   const handleToggleCamera = async () => {
     if (!camera || isToggling) return;
@@ -777,12 +651,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     }
   };
 
-  const handleEnabledToggle = async () => {
-    if (!editableCamera) return;
-    const newValue = !editableCamera.enabled;
-    handleCameraFieldChange('enabled', newValue);
-    await updateCameraProperty('enabled', newValue);
-  };
+
 
   // Handle brightness adjustment
   const handleBrightnessChange = async (newBrightness: number) => {
@@ -949,15 +818,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                       )}
                     </button>
                     
-                    <button className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center space-x-2">
-                      <PhotoCameraIcon className="w-4 h-4" />
-                      <span>Take Snapshot</span>
-                    </button>
-                    
-                    <button className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors flex items-center space-x-2">
-                      <VideoCameraIcon className="w-4 h-4" />
-                      <span>Record</span>
-                    </button>
+
                   </div>
                   
                   <div className="text-sm text-gray-500 flex items-center space-x-4">
@@ -1222,86 +1083,57 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                     onToggle={() => toggleSection('settings')}
                   >
                     <div className="space-y-3">
-                      {/* Enabled Toggle */}
-                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                        <label className="text-xs font-medium text-gray-500">Enabled</label>
-                        <button
-                          onClick={handleEnabledToggle}
-                          disabled={isUpdatingSettings}
-                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                            editableCamera?.enabled ? 'bg-blue-600' : 'bg-gray-300'
-                          } ${isUpdatingSettings ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                        >
-                          <span
-                            className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                              editableCamera?.enabled ? 'translate-x-5' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
                       {/* Technical Settings */}
                       <div className="space-y-2">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Resolution (W)</label>
-                            <input
-                              type="number"
-                              value={editableCamera?.resolutionWidth || 0}
-                              onChange={(e) => handleCameraFieldChange('resolutionWidth', parseInt(e.target.value))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.currentTarget.blur();
-                                  handleCameraFieldBlur('resolutionWidth', parseInt(e.currentTarget.value));
-                                }
-                              }}
-                              onBlur={(e) => handleCameraFieldBlur('resolutionWidth', parseInt(e.target.value))}
-                              className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              disabled={isUpdatingSettings}
-                              min="320"
-                              max="4096"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Resolution (H)</label>
-                            <input
-                              type="number"
-                              value={editableCamera?.resolutionHeight || 0}
-                              onChange={(e) => handleCameraFieldChange('resolutionHeight', parseInt(e.target.value))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.currentTarget.blur();
-                                  handleCameraFieldBlur('resolutionHeight', parseInt(e.currentTarget.value));
-                                }
-                              }}
-                              onBlur={(e) => handleCameraFieldBlur('resolutionHeight', parseInt(e.target.value))}
-                              className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              disabled={isUpdatingSettings}
-                              min="240"
-                              max="2160"
-                            />
-                          </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Resolution</label>
+                          <select
+                            value={`${editableCamera?.resolutionWidth || 640}x${editableCamera?.resolutionHeight || 480}`}
+                            onChange={(e) => {
+                              const [width, height] = e.target.value.split('x').map(Number);
+                              handleCameraFieldChange('resolutionWidth', width);
+                              handleCameraFieldChange('resolutionHeight', height);
+                              updateCameraProperty('resolution_width', width);
+                              updateCameraProperty('resolution_height', height);
+                            }}
+                            disabled={isUpdatingSettings}
+                            className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          >
+                            <option value="320x240">320x240 (QVGA)</option>
+                            <option value="640x480">640x480 (VGA)</option>
+                            <option value="800x600">800x600 (SVGA)</option>
+                            <option value="1024x768">1024x768 (XGA)</option>
+                            <option value="1280x720">1280x720 (720p HD)</option>
+                            <option value="1280x960">1280x960 (SXGA)</option>
+                            <option value="1600x1200">1600x1200 (UXGA)</option>
+                            <option value="1920x1080">1920x1080 (1080p Full HD)</option>
+                            <option value="2560x1440">2560x1440 (1440p QHD)</option>
+                            <option value="3840x2160">3840x2160 (4K UHD)</option>
+                          </select>
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1">FPS</label>
-                          <input
-                            type="number"
-                            value={editableCamera?.fps || 0}
-                            onChange={(e) => handleCameraFieldChange('fps', parseInt(e.target.value))}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.currentTarget.blur();
-                                handleCameraFieldBlur('fps', parseInt(e.currentTarget.value));
-                              }
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Frame Rate</label>
+                          <select
+                            value={editableCamera?.fps || 30}
+                            onChange={(e) => {
+                              const fps = parseInt(e.target.value);
+                              handleCameraFieldChange('fps', fps);
+                              updateCameraProperty('fps', fps);
                             }}
-                            onBlur={(e) => handleCameraFieldBlur('fps', parseInt(e.target.value))}
-                            className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             disabled={isUpdatingSettings}
-                            min="1"
-                            max="60"
-                          />
+                            className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          >
+                            <option value={5}>5 FPS</option>
+                            <option value={10}>10 FPS</option>
+                            <option value={15}>15 FPS</option>
+                            <option value={20}>20 FPS</option>
+                            <option value={24}>24 FPS (Cinema)</option>
+                            <option value={25}>25 FPS (PAL)</option>
+                            <option value={30}>30 FPS (NTSC)</option>
+                            <option value={50}>50 FPS</option>
+                            <option value={60}>60 FPS</option>
+                          </select>
                         </div>
                       </div>
 
@@ -1362,26 +1194,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                           />
                         </div>
 
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                          <label className="text-xs font-medium text-gray-500">Recording Enabled</label>
-                          <button
-                            onClick={() => {
-                              const newValue = !editableCamera?.recording_enabled;
-                              handleCameraFieldChange('recording_enabled', newValue);
-                              updateCameraProperty('recording_enabled', newValue);
-                            }}
-                            disabled={isUpdatingSettings}
-                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                              editableCamera?.recording_enabled ? 'bg-blue-600' : 'bg-gray-300'
-                            } ${isUpdatingSettings ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                          >
-                            <span
-                              className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                                editableCamera?.recording_enabled ? 'translate-x-5' : 'translate-x-1'
-                              }`}
-                            />
-                          </button>
-                        </div>
+
                       </div>
 
                       {/* Save/Update Status */}
