@@ -151,7 +151,7 @@ class AuthService {
       }
 
       const response = await apiService.post<AuthResponse>('/api/auth/refresh', {
-        refreshToken,
+        refresh_token: refreshToken,
       });
       this.setSessionFromToken(response.access_token);
     } catch (error) {
