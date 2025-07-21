@@ -194,8 +194,8 @@ async def camera_metrics_ws(websocket: WebSocket, camera_id: str):
                     camera_id=camera_id
                 )
                 
-                # Send camera metrics update
-                await websocket.send_json({
+                # Send camera metrics update safely
+                success = await _safe_websocket_send(websocket, {
                     "type": "camera_metrics_update",
                     "camera_id": camera_id,
                     "timestamp": time.time(),
@@ -203,22 +203,44 @@ async def camera_metrics_ws(websocket: WebSocket, camera_id: str):
                     "recent_detections": recent_detections[:5]  # Last 5 detections
                 })
                 
+                # If send failed, connection is likely closed
+                if not success:
+                    logger.debug(f"[WEBSOCKET] Failed to send camera metrics for {camera_id}, connection likely closed")
+                    break
+                
                 await asyncio.sleep(3)  # Update every 3 seconds for camera-specific data
                 
             except Exception as e:
                 logger.error(f"Error fetching camera {camera_id} metrics for WebSocket: {e}")
-                await websocket.send_json({
+                
+                # Try to send error message, but don't fail if WebSocket is closed
+                error_sent = await _safe_websocket_send(websocket, {
                     "type": "error",
                     "camera_id": camera_id,
                     "timestamp": time.time(),
                     "message": f"Failed to fetch metrics for camera {camera_id}"
                 })
+                
+                if not error_sent:
+                    logger.debug(f"[WEBSOCKET] Failed to send error message for camera {camera_id}, connection likely closed")
+                    break
+                    
                 await asyncio.sleep(10)
                 
     except WebSocketDisconnect:
         logger.info(f"[WEBSOCKET] Camera metrics WebSocket disconnected for {camera_id}")
     except Exception as e:
         logger.error(f"Camera metrics WebSocket error for {camera_id}: {str(e)}")
+
+
+async def _safe_websocket_send(websocket: WebSocket, data: dict) -> bool:
+    """Safely send data through WebSocket with connection state checking."""
+    try:
+        await websocket.send_json(data)
+        return True
+    except Exception as e:
+        logger.debug(f"WebSocket send failed: {e}")
+        return False
 
 
 @router.websocket("/ws/alerts")
@@ -250,23 +272,35 @@ async def alerts_ws(websocket: WebSocket):
                         except:
                             continue
                 
-                # Send alerts update
-                await websocket.send_json({
+                # Send alerts update safely
+                success = await _safe_websocket_send(websocket, {
                     "type": "alerts_update",
                     "timestamp": current_time,
                     "new_alerts": new_alerts,
                     "total_recent": len(recent_alerts)
                 })
                 
+                # If send failed, connection is likely closed
+                if not success:
+                    logger.debug("[WEBSOCKET] Failed to send alerts update, connection likely closed")
+                    break
+                
                 await asyncio.sleep(30)  # Check for new alerts every 30 seconds
                 
             except Exception as e:
                 logger.error(f"Error fetching alerts for WebSocket: {e}")
-                await websocket.send_json({
+                
+                # Try to send error message, but don't fail if WebSocket is closed
+                error_sent = await _safe_websocket_send(websocket, {
                     "type": "error",
                     "timestamp": time.time(),
                     "message": "Failed to fetch alerts"
                 })
+                
+                if not error_sent:
+                    logger.debug("[WEBSOCKET] Failed to send error message, connection likely closed")
+                    break
+                    
                 await asyncio.sleep(60)
                 
     except WebSocketDisconnect:

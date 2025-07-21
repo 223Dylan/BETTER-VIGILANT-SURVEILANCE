@@ -79,7 +79,45 @@ class AlertManager:
         # Database service for persistent storage
         self.db_service = get_alert_db_service()
 
+        # Load active alerts from database to sync memory state
+        self._load_active_alerts_from_db()
+
         logger.info("[INIT] Alert Manager initialized with database persistence")
+
+    def _load_active_alerts_from_db(self):
+        """Load active alerts from database into memory during initialization."""
+        try:
+            # Get active alerts from database
+            active_alerts_data = self.db_service.get_active_alerts()
+            
+            # Convert database records to AlertRecord objects and load into memory
+            for alert_data in active_alerts_data:
+                alert_record = AlertRecord(
+                    id=alert_data["id"],
+                    camera_id=alert_data["camera_id"],
+                    timestamp=alert_data["timestamp"],
+                    type=alert_data["type"],
+                    severity=alert_data["severity"],
+                    status=alert_data["status"],
+                    confidence=alert_data["confidence"],
+                    message=alert_data["message"],
+                    source=alert_data["source"],
+                    detection_data=alert_data["detection_data"],
+                    acknowledged_by=alert_data.get("acknowledged_by"),
+                    acknowledged_at=alert_data.get("acknowledged_at"),
+                    resolved_by=alert_data.get("resolved_by"),
+                    resolved_at=alert_data.get("resolved_at"),
+                    notes=alert_data.get("notes"),
+                    created_at=alert_data.get("created_at"),
+                    updated_at=alert_data.get("updated_at")
+                )
+                self.active_alerts[alert_record.id] = alert_record
+                
+            logger.info(f"[INIT] Loaded {len(active_alerts_data)} active alerts from database into memory")
+            
+        except Exception as e:
+            logger.error(f"[ERROR] Failed to load active alerts from database: {e}")
+            logger.info("[INIT] Continuing with empty active alerts - new alerts will still work")
 
     def process_prediction(self, prediction_result: Dict[str, Any]) -> Optional[str]:
         """
@@ -265,37 +303,85 @@ class AlertManager:
         self, alert_id: str, user_id: str, notes: Optional[str] = None
     ) -> bool:
         """Acknowledge an active alert."""
-        if alert_id not in self.active_alerts:
-            logger.warning(f"[WARNING] Cannot acknowledge: Alert {alert_id} not found")
-            return False
+        alert = None
+        
+        # First try to find alert in memory
+        if alert_id in self.active_alerts:
+            alert = self.active_alerts[alert_id]
+            alert.status = AlertStatus.ACKNOWLEDGED.value
+            alert.acknowledged_by = user_id
+            alert.acknowledged_at = datetime.utcnow().isoformat()
+            alert.updated_at = datetime.utcnow().isoformat()
 
-        alert = self.active_alerts[alert_id]
-        alert.status = AlertStatus.ACKNOWLEDGED.value
-        alert.acknowledged_by = user_id
-        alert.acknowledged_at = datetime.utcnow().isoformat()
-        alert.updated_at = datetime.utcnow().isoformat()
+            if notes:
+                alert.notes = notes
 
-        if notes:
-            alert.notes = notes
-
-        # Save to database
-        try:
-            self.db_service.save_alert(alert)
-            logger.debug(f"[DATABASE] Updated alert {alert_id} in database")
-        except Exception as e:
-            logger.error(f"[ERROR] Failed to update alert {alert_id} in database: {e}")
+            # Save to database
+            try:
+                self.db_service.save_alert(alert)
+                logger.debug(f"[DATABASE] Updated alert {alert_id} in database")
+            except Exception as e:
+                logger.error(f"[ERROR] Failed to update alert {alert_id} in database: {e}")
+                
+        else:
+            # Alert not found in memory, try database directly
+            logger.debug(f"[DATABASE] Alert {alert_id} not found in memory, checking database")
+            
+            try:
+                # Use the database service to update the alert status directly
+                success = self.db_service.update_alert_status(
+                    alert_id=alert_id,
+                    status="acknowledged",
+                    user_id=user_id,
+                    notes=notes
+                )
+                
+                if not success:
+                    logger.warning(f"[WARNING] Cannot acknowledge: Alert {alert_id} not found in database either")
+                    return False
+                    
+                logger.debug(f"[DATABASE] Successfully acknowledged alert {alert_id} directly in database")
+                
+                # Create a minimal alert object for broadcasting
+                alert_data = self.db_service.get_alert_by_id(alert_id)
+                if alert_data:
+                    # Convert dict to AlertRecord for broadcasting
+                    alert = AlertRecord(
+                        id=alert_data["id"],
+                        camera_id=alert_data["camera_id"],
+                        timestamp=alert_data["timestamp"],
+                        type=alert_data["type"],
+                        severity=alert_data["severity"],
+                        status=alert_data["status"],
+                        confidence=alert_data["confidence"],
+                        message=alert_data["message"],
+                        source=alert_data["source"],
+                        detection_data=alert_data["detection_data"],
+                        acknowledged_by=alert_data.get("acknowledged_by"),
+                        acknowledged_at=alert_data.get("acknowledged_at"),
+                        resolved_by=alert_data.get("resolved_by"),
+                        resolved_at=alert_data.get("resolved_at"),
+                        notes=alert_data.get("notes"),
+                        created_at=alert_data.get("created_at"),
+                        updated_at=alert_data.get("updated_at")
+                    )
+                
+            except Exception as e:
+                logger.error(f"[ERROR] Failed to acknowledge alert {alert_id} in database: {e}")
+                return False
 
         logger.info(f"[SUCCESS] Alert {alert_id} acknowledged by {user_id}")
 
-        # Broadcast status update (safely handle async)
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                asyncio.create_task(self._broadcast_alert_update(alert))
-            else:
-                logger.debug("No running event loop for WebSocket broadcast")
-        except RuntimeError:
-            logger.debug("No event loop available for WebSocket broadcast")
+        # Broadcast status update if we have alert data (safely handle async)
+        if alert:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(self._broadcast_alert_update(alert))
+                else:
+                    logger.debug("No running event loop for WebSocket broadcast")
+            except RuntimeError:
+                logger.debug("No event loop available for WebSocket broadcast")
 
         return True
 
@@ -303,43 +389,93 @@ class AlertManager:
         self, alert_id: str, user_id: str, notes: Optional[str] = None
     ) -> bool:
         """Resolve an alert and move it from active to history."""
-        if alert_id not in self.active_alerts:
-            logger.warning(f"[WARNING] Cannot resolve: Alert {alert_id} not found")
-            return False
+        alert = None
+        
+        # First try to find alert in memory
+        if alert_id in self.active_alerts:
+            alert = self.active_alerts[alert_id]
+            
+            # Update alert properties
+            alert.status = AlertStatus.RESOLVED.value
+            alert.resolved_by = user_id
+            alert.resolved_at = datetime.utcnow().isoformat()
+            alert.updated_at = datetime.utcnow().isoformat()
 
-        alert = self.active_alerts[alert_id]
-        alert.status = AlertStatus.RESOLVED.value
-        alert.resolved_by = user_id
-        alert.resolved_at = datetime.utcnow().isoformat()
-        alert.updated_at = datetime.utcnow().isoformat()
+            if notes:
+                current_notes = alert.notes or ""
+                alert.notes = f"{current_notes}\nResolved: {notes}".strip()
 
-        if notes:
-            current_notes = alert.notes or ""
-            alert.notes = f"{current_notes}\nResolved: {notes}".strip()
+            # Save to database before removing from memory
+            try:
+                self.db_service.save_alert(alert)
+                logger.debug(f"[DATABASE] Updated resolved alert {alert_id} in database")
+            except Exception as e:
+                logger.error(
+                    f"[ERROR] Failed to update resolved alert {alert_id} in database: {e}"
+                )
 
-        # Save to database before removing from memory
-        try:
-            self.db_service.save_alert(alert)
-            logger.debug(f"[DATABASE] Updated resolved alert {alert_id} in database")
-        except Exception as e:
-            logger.error(
-                f"[ERROR] Failed to update resolved alert {alert_id} in database: {e}"
-            )
-
-        # Remove from active alerts
-        del self.active_alerts[alert_id]
+            # Remove from active alerts
+            del self.active_alerts[alert_id]
+            
+        else:
+            # Alert not found in memory, try database directly
+            logger.debug(f"[DATABASE] Alert {alert_id} not found in memory, checking database")
+            
+            try:
+                # Use the database service to update the alert status directly
+                success = self.db_service.update_alert_status(
+                    alert_id=alert_id,
+                    status="resolved",
+                    user_id=user_id,
+                    notes=notes
+                )
+                
+                if not success:
+                    logger.warning(f"[WARNING] Cannot resolve: Alert {alert_id} not found in database either")
+                    return False
+                    
+                logger.debug(f"[DATABASE] Successfully resolved alert {alert_id} directly in database")
+                
+                # Create a minimal alert object for broadcasting
+                alert_data = self.db_service.get_alert_by_id(alert_id)
+                if alert_data:
+                    # Convert dict to AlertRecord for broadcasting
+                    alert = AlertRecord(
+                        id=alert_data["id"],
+                        camera_id=alert_data["camera_id"],
+                        timestamp=alert_data["timestamp"],
+                        type=alert_data["type"],
+                        severity=alert_data["severity"],
+                        status=alert_data["status"],
+                        confidence=alert_data["confidence"],
+                        message=alert_data["message"],
+                        source=alert_data["source"],
+                        detection_data=alert_data["detection_data"],
+                        acknowledged_by=alert_data.get("acknowledged_by"),
+                        acknowledged_at=alert_data.get("acknowledged_at"),
+                        resolved_by=alert_data.get("resolved_by"),
+                        resolved_at=alert_data.get("resolved_at"),
+                        notes=alert_data.get("notes"),
+                        created_at=alert_data.get("created_at"),
+                        updated_at=alert_data.get("updated_at")
+                    )
+                
+            except Exception as e:
+                logger.error(f"[ERROR] Failed to resolve alert {alert_id} in database: {e}")
+                return False
 
         logger.info(f"[SUCCESS] Alert {alert_id} resolved by {user_id}")
 
-        # Broadcast status update (safely handle async)
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                asyncio.create_task(self._broadcast_alert_update(alert))
-            else:
-                logger.debug("No running event loop for WebSocket broadcast")
-        except RuntimeError:
-            logger.debug("No event loop available for WebSocket broadcast")
+        # Broadcast status update if we have alert data (safely handle async)
+        if alert:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(self._broadcast_alert_update(alert))
+                else:
+                    logger.debug("No running event loop for WebSocket broadcast")
+            except RuntimeError:
+                logger.debug("No event loop available for WebSocket broadcast")
 
         return True
 
