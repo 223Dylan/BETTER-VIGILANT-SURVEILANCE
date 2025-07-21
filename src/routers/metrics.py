@@ -1,18 +1,21 @@
+import asyncio
+import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Union
-import asyncio
 
+import aiohttp
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-import aiohttp
-import json
 
 # Import metrics service with fallback handling
 try:
     from src.services.metrics_service import MetricsService
 except ImportError:
     # Fallback if aiohttp not available
-    from src.services.metrics_service_requests import MetricsServiceRequests as MetricsService
+    from src.services.metrics_service_requests import (
+        MetricsServiceRequests as MetricsService,
+    )
+
 from loguru import logger
 
 router = APIRouter(prefix="/api/metrics", tags=["metrics"])
@@ -58,7 +61,7 @@ class MetricsSummaryResponse(BaseModel):
 @router.get("/system", response_model=List[SystemMetricsResponse])
 async def get_system_metrics(
     time_range: str = Query("15m", description="Time range: 5m, 15m, 1h, 24h"),
-    limit: int = Query(100, description="Maximum number of data points")
+    limit: int = Query(100, description="Maximum number of data points"),
 ):
     """Get system performance metrics over time."""
     try:
@@ -83,7 +86,7 @@ async def get_camera_metrics():
 @router.get("/cameras/{camera_id}/performance")
 async def get_camera_performance(
     camera_id: str,
-    time_range: str = Query("1h", description="Time range: 5m, 15m, 1h, 24h")
+    time_range: str = Query("1h", description="Time range: 5m, 15m, 1h, 24h"),
 ):
     """Get detailed performance metrics for a specific camera."""
     try:
@@ -91,14 +94,18 @@ async def get_camera_performance(
         return metrics
     except Exception as e:
         logger.error(f"Error fetching camera {camera_id} performance: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch camera {camera_id} metrics")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to fetch camera {camera_id} metrics"
+        )
 
 
 @router.get("/detections", response_model=List[DetectionMetricsResponse])
 async def get_detection_metrics(
     time_range: str = Query("1h", description="Time range: 5m, 15m, 1h, 24h"),
     camera_id: Optional[str] = Query(None, description="Filter by camera ID"),
-    confidence_threshold: float = Query(0.0, description="Minimum confidence threshold")
+    confidence_threshold: float = Query(
+        0.0, description="Minimum confidence threshold"
+    ),
 ):
     """Get detection metrics with optional filtering."""
     try:
@@ -136,7 +143,9 @@ async def get_metrics_health():
 @router.get("/alerts/recent")
 async def get_recent_alerts(
     limit: int = Query(50, description="Maximum number of alerts"),
-    severity: Optional[str] = Query(None, description="Filter by severity: low, medium, high, critical")
+    severity: Optional[str] = Query(
+        None, description="Filter by severity: low, medium, high, critical"
+    ),
 ):
     """Get recent alerts from the system."""
     try:
@@ -144,4 +153,4 @@ async def get_recent_alerts(
         return alerts
     except Exception as e:
         logger.error(f"Error fetching recent alerts: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch recent alerts") 
+        raise HTTPException(status_code=500, detail="Failed to fetch recent alerts")

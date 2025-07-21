@@ -78,9 +78,7 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/refresh", response_model=Token)
-async def refresh_token(
-    refresh_data: RefreshRequest, db: Session = Depends(get_db)
-):
+async def refresh_token(refresh_data: RefreshRequest, db: Session = Depends(get_db)):
     """Refresh access token using refresh token."""
     try:
         # Verify the refresh token directly
@@ -91,7 +89,9 @@ async def refresh_token(
             raise HTTPException(status_code=401, detail="Invalid refresh token")
 
         if token_data.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token type - expected refresh token")
+            raise HTTPException(
+                status_code=401, detail="Invalid token type - expected refresh token"
+            )
 
         username = token_data.get("sub")
         role = token_data.get("role")

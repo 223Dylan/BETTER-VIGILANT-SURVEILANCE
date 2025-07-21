@@ -1,31 +1,25 @@
 #!/usr/bin/env python3
-import requests
 import time
+
+import requests
 
 KIBANA_URL = "http://localhost:5601"
 
 patterns = [
     "detection-metrics-*",
-    "system-performance-*", 
+    "system-performance-*",
     "detection-alerts-*",
-    "camera-events-*"
+    "camera-events-*",
 ]
+
 
 def create_pattern(pattern):
     url = f"{KIBANA_URL}/api/saved_objects/index-pattern/{pattern.replace('*', 'pattern')}"
-    
-    payload = {
-        "attributes": {
-            "title": pattern,
-            "timeFieldName": "@timestamp"
-        }
-    }
-    
-    headers = {
-        "Content-Type": "application/json",
-        "kbn-xsrf": "true"
-    }
-    
+
+    payload = {"attributes": {"title": pattern, "timeFieldName": "@timestamp"}}
+
+    headers = {"Content-Type": "application/json", "kbn-xsrf": "true"}
+
     try:
         response = requests.post(url, json=payload, headers=headers)
         if response.status_code in [200, 409]:
@@ -37,6 +31,7 @@ def create_pattern(pattern):
     except Exception as e:
         print(f"[ERROR] Error: {e}")
         return False
+
 
 # Wait for Kibana
 print("[INFO] Waiting for Kibana...")

@@ -87,141 +87,191 @@ class AlertManager:
     def auto_clear_old_alerts(self) -> int:
         """Auto-clear alerts that have been active for too long."""
         import os
-        
+
         # Check if auto-clearance is enabled
-        auto_clear_enabled = os.getenv("ALERT_AUTO_CLEAR_ENABLED", "true").lower() == "true"
+        auto_clear_enabled = (
+            os.getenv("ALERT_AUTO_CLEAR_ENABLED", "true").lower() == "true"
+        )
         if not auto_clear_enabled:
             logger.debug("[AUTO-CLEAR] Auto-clearance is disabled")
             return 0
-        
+
         # Get auto-clearance timeouts from environment (in hours)
         regular_timeout_hours = int(os.getenv("ALERT_AUTO_CLEAR_HOURS", "12"))
         critical_timeout_hours = int(os.getenv("ALERT_CRITICAL_AUTO_CLEAR_HOURS", "24"))
-        
+
         current_time = datetime.utcnow()
         cleared_count = 0
         alerts_to_clear = []
-        
-        logger.info(f"[AUTO-CLEAR] Starting auto-clearance check. Found {len(self.active_alerts)} active alerts in memory")
-        logger.info(f"[AUTO-CLEAR] Timeouts: Regular={regular_timeout_hours}h, Critical={critical_timeout_hours}h")
+
+        logger.info(
+            f"[AUTO-CLEAR] Starting auto-clearance check. Found {len(self.active_alerts)} active alerts in memory"
+        )
+        logger.info(
+            f"[AUTO-CLEAR] Timeouts: Regular={regular_timeout_hours}h, Critical={critical_timeout_hours}h"
+        )
         logger.info(f"[AUTO-CLEAR] Current time: {current_time.isoformat()}")
-        
+
         # Check in-memory active alerts
         for alert_id, alert in self.active_alerts.items():
             try:
                 # Parse the alert creation time
                 if alert.created_at:
-                    created_time = datetime.fromisoformat(alert.created_at.replace("Z", ""))
+                    created_time = datetime.fromisoformat(
+                        alert.created_at.replace("Z", "")
+                    )
                     time_source = "created_at"
                 else:
                     # Fallback to timestamp if created_at is not available
-                    created_time = datetime.fromisoformat(alert.timestamp.replace("Z", ""))
+                    created_time = datetime.fromisoformat(
+                        alert.timestamp.replace("Z", "")
+                    )
                     time_source = "timestamp"
-                
+
                 # Calculate age
                 age_delta = current_time - created_time
                 age_hours = age_delta.total_seconds() / 3600
-                
+
                 # Determine timeout based on severity
-                timeout_hours = critical_timeout_hours if alert.severity == AlertSeverity.CRITICAL.value else regular_timeout_hours
-                
-                logger.debug(f"[AUTO-CLEAR] Alert {alert_id}: severity={alert.severity}, age={age_hours:.2f}h, threshold={timeout_hours}h, source={time_source}")
-                
+                timeout_hours = (
+                    critical_timeout_hours
+                    if alert.severity == AlertSeverity.CRITICAL.value
+                    else regular_timeout_hours
+                )
+
+                logger.debug(
+                    f"[AUTO-CLEAR] Alert {alert_id}: severity={alert.severity}, age={age_hours:.2f}h, threshold={timeout_hours}h, source={time_source}"
+                )
+
                 # Check if alert is old enough to auto-clear
                 if age_hours > timeout_hours:
-                    logger.info(f"[AUTO-CLEAR] Alert {alert_id} qualifies for auto-clearance (age: {age_hours:.2f}h > threshold: {timeout_hours}h)")
+                    logger.info(
+                        f"[AUTO-CLEAR] Alert {alert_id} qualifies for auto-clearance (age: {age_hours:.2f}h > threshold: {timeout_hours}h)"
+                    )
                     alerts_to_clear.append(alert_id)
                 else:
-                    logger.debug(f"[AUTO-CLEAR] Alert {alert_id} too young for auto-clearance (age: {age_hours:.2f}h <= threshold: {timeout_hours}h)")
-                    
+                    logger.debug(
+                        f"[AUTO-CLEAR] Alert {alert_id} too young for auto-clearance (age: {age_hours:.2f}h <= threshold: {timeout_hours}h)"
+                    )
+
             except Exception as e:
                 logger.error(f"Error checking alert {alert_id} for auto-clearance: {e}")
                 continue
-        
-        logger.info(f"[AUTO-CLEAR] Found {len(alerts_to_clear)} alerts to clear from memory")
-        
+
+        logger.info(
+            f"[AUTO-CLEAR] Found {len(alerts_to_clear)} alerts to clear from memory"
+        )
+
         # Clear the old alerts
         for alert_id in alerts_to_clear:
             try:
                 success = self.resolve_alert(
                     alert_id=alert_id,
                     user_id="system",
-                    notes="Auto-resolved: Alert exceeded maximum age"
+                    notes="Auto-resolved: Alert exceeded maximum age",
                 )
                 if success:
                     cleared_count += 1
-                    logger.info(f"[AUTO-CLEAR] Successfully auto-cleared alert {alert_id}")
+                    logger.info(
+                        f"[AUTO-CLEAR] Successfully auto-cleared alert {alert_id}"
+                    )
                 else:
-                    logger.warning(f"[AUTO-CLEAR] Failed to auto-clear alert {alert_id}")
+                    logger.warning(
+                        f"[AUTO-CLEAR] Failed to auto-clear alert {alert_id}"
+                    )
             except Exception as e:
                 logger.error(f"[AUTO-CLEAR] Error auto-clearing alert {alert_id}: {e}")
-        
+
         # Also check database for any alerts not in memory
         try:
             # Get active alerts from database that might not be in memory
             db_active_alerts = self.db_service.get_active_alerts()
-            logger.info(f"[AUTO-CLEAR] Found {len(db_active_alerts)} active alerts in database")
-            
+            logger.info(
+                f"[AUTO-CLEAR] Found {len(db_active_alerts)} active alerts in database"
+            )
+
             db_cleared = 0
             for alert_data in db_active_alerts:
                 alert_id = alert_data["id"]
-                
+
                 # Skip if already in memory (already processed above)
                 if alert_id in self.active_alerts:
                     continue
-                
+
                 try:
                     # Parse the alert creation time
                     if alert_data.get("created_at"):
-                        created_time = datetime.fromisoformat(alert_data["created_at"].replace("Z", ""))
+                        created_time = datetime.fromisoformat(
+                            alert_data["created_at"].replace("Z", "")
+                        )
                         time_source = "created_at"
                     else:
-                        created_time = datetime.fromisoformat(alert_data["timestamp"].replace("Z", ""))
+                        created_time = datetime.fromisoformat(
+                            alert_data["timestamp"].replace("Z", "")
+                        )
                         time_source = "timestamp"
-                    
+
                     # Calculate age
                     age_delta = current_time - created_time
                     age_hours = age_delta.total_seconds() / 3600
-                    
+
                     # Determine timeout based on severity
                     severity = alert_data.get("severity", "medium")
-                    timeout_hours = critical_timeout_hours if severity == "critical" else regular_timeout_hours
-                    
-                    logger.debug(f"[AUTO-CLEAR] DB Alert {alert_id}: severity={severity}, age={age_hours:.2f}h, threshold={timeout_hours}h, source={time_source}")
-                    
+                    timeout_hours = (
+                        critical_timeout_hours
+                        if severity == "critical"
+                        else regular_timeout_hours
+                    )
+
+                    logger.debug(
+                        f"[AUTO-CLEAR] DB Alert {alert_id}: severity={severity}, age={age_hours:.2f}h, threshold={timeout_hours}h, source={time_source}"
+                    )
+
                     # Check if alert is old enough to auto-clear
                     if age_hours > timeout_hours:
-                        logger.info(f"[AUTO-CLEAR] DB Alert {alert_id} qualifies for auto-clearance (age: {age_hours:.2f}h > threshold: {timeout_hours}h)")
+                        logger.info(
+                            f"[AUTO-CLEAR] DB Alert {alert_id} qualifies for auto-clearance (age: {age_hours:.2f}h > threshold: {timeout_hours}h)"
+                        )
                         # Use database service to update directly
                         success = self.db_service.update_alert_status(
                             alert_id=alert_id,
                             status="resolved",
                             user_id="system",
-                            notes="Auto-resolved: Alert exceeded maximum age"
+                            notes="Auto-resolved: Alert exceeded maximum age",
                         )
                         if success:
                             cleared_count += 1
                             db_cleared += 1
-                            logger.info(f"[AUTO-CLEAR] Successfully auto-cleared database alert {alert_id}")
+                            logger.info(
+                                f"[AUTO-CLEAR] Successfully auto-cleared database alert {alert_id}"
+                            )
                         else:
-                            logger.warning(f"[AUTO-CLEAR] Failed to auto-clear database alert {alert_id}")
+                            logger.warning(
+                                f"[AUTO-CLEAR] Failed to auto-clear database alert {alert_id}"
+                            )
                     else:
-                        logger.debug(f"[AUTO-CLEAR] DB Alert {alert_id} too young for auto-clearance (age: {age_hours:.2f}h <= threshold: {timeout_hours}h)")
-                            
+                        logger.debug(
+                            f"[AUTO-CLEAR] DB Alert {alert_id} too young for auto-clearance (age: {age_hours:.2f}h <= threshold: {timeout_hours}h)"
+                        )
+
                 except Exception as e:
-                    logger.error(f"[AUTO-CLEAR] Error checking database alert {alert_id}: {e}")
+                    logger.error(
+                        f"[AUTO-CLEAR] Error checking database alert {alert_id}: {e}"
+                    )
                     continue
-                    
+
             logger.info(f"[AUTO-CLEAR] Cleared {db_cleared} alerts from database")
-                    
+
         except Exception as e:
-            logger.error(f"[AUTO-CLEAR] Error checking database alerts for auto-clearance: {e}")
-        
+            logger.error(
+                f"[AUTO-CLEAR] Error checking database alerts for auto-clearance: {e}"
+            )
+
         if cleared_count > 0:
             logger.info(f"[AUTO-CLEAR] Auto-cleared {cleared_count} old alerts")
         else:
             logger.info("[AUTO-CLEAR] No alerts qualified for auto-clearance")
-            
+
         return cleared_count
 
     def _load_active_alerts_from_db(self):
@@ -229,7 +279,7 @@ class AlertManager:
         try:
             # Get active alerts from database
             active_alerts_data = self.db_service.get_active_alerts()
-            
+
             # Convert database records to AlertRecord objects and load into memory
             for alert_data in active_alerts_data:
                 alert_record = AlertRecord(
@@ -249,15 +299,19 @@ class AlertManager:
                     resolved_at=alert_data.get("resolved_at"),
                     notes=alert_data.get("notes"),
                     created_at=alert_data.get("created_at"),
-                    updated_at=alert_data.get("updated_at")
+                    updated_at=alert_data.get("updated_at"),
                 )
                 self.active_alerts[alert_record.id] = alert_record
-                
-            logger.info(f"[INIT] Loaded {len(active_alerts_data)} active alerts from database into memory")
-            
+
+            logger.info(
+                f"[INIT] Loaded {len(active_alerts_data)} active alerts from database into memory"
+            )
+
         except Exception as e:
             logger.error(f"[ERROR] Failed to load active alerts from database: {e}")
-            logger.info("[INIT] Continuing with empty active alerts - new alerts will still work")
+            logger.info(
+                "[INIT] Continuing with empty active alerts - new alerts will still work"
+            )
 
     def process_prediction(self, prediction_result: Dict[str, Any]) -> Optional[str]:
         """
@@ -444,7 +498,7 @@ class AlertManager:
     ) -> bool:
         """Acknowledge an active alert."""
         alert = None
-        
+
         # First try to find alert in memory
         if alert_id in self.active_alerts:
             alert = self.active_alerts[alert_id]
@@ -461,27 +515,35 @@ class AlertManager:
                 self.db_service.save_alert(alert)
                 logger.debug(f"[DATABASE] Updated alert {alert_id} in database")
             except Exception as e:
-                logger.error(f"[ERROR] Failed to update alert {alert_id} in database: {e}")
-                
+                logger.error(
+                    f"[ERROR] Failed to update alert {alert_id} in database: {e}"
+                )
+
         else:
             # Alert not found in memory, try database directly
-            logger.debug(f"[DATABASE] Alert {alert_id} not found in memory, checking database")
-            
+            logger.debug(
+                f"[DATABASE] Alert {alert_id} not found in memory, checking database"
+            )
+
             try:
                 # Use the database service to update the alert status directly
                 success = self.db_service.update_alert_status(
                     alert_id=alert_id,
                     status="acknowledged",
                     user_id=user_id,
-                    notes=notes
+                    notes=notes,
                 )
-                
+
                 if not success:
-                    logger.warning(f"[WARNING] Cannot acknowledge: Alert {alert_id} not found in database either")
+                    logger.warning(
+                        f"[WARNING] Cannot acknowledge: Alert {alert_id} not found in database either"
+                    )
                     return False
-                    
-                logger.debug(f"[DATABASE] Successfully acknowledged alert {alert_id} directly in database")
-                
+
+                logger.debug(
+                    f"[DATABASE] Successfully acknowledged alert {alert_id} directly in database"
+                )
+
                 # Create a minimal alert object for broadcasting
                 alert_data = self.db_service.get_alert_by_id(alert_id)
                 if alert_data:
@@ -503,11 +565,13 @@ class AlertManager:
                         resolved_at=alert_data.get("resolved_at"),
                         notes=alert_data.get("notes"),
                         created_at=alert_data.get("created_at"),
-                        updated_at=alert_data.get("updated_at")
+                        updated_at=alert_data.get("updated_at"),
                     )
-                
+
             except Exception as e:
-                logger.error(f"[ERROR] Failed to acknowledge alert {alert_id} in database: {e}")
+                logger.error(
+                    f"[ERROR] Failed to acknowledge alert {alert_id} in database: {e}"
+                )
                 return False
 
         logger.info(f"[SUCCESS] Alert {alert_id} acknowledged by {user_id}")
@@ -530,11 +594,11 @@ class AlertManager:
     ) -> bool:
         """Resolve an alert and move it from active to history."""
         alert = None
-        
+
         # First try to find alert in memory
         if alert_id in self.active_alerts:
             alert = self.active_alerts[alert_id]
-            
+
             # Update alert properties
             alert.status = AlertStatus.RESOLVED.value
             alert.resolved_by = user_id
@@ -548,7 +612,9 @@ class AlertManager:
             # Save to database before removing from memory
             try:
                 self.db_service.save_alert(alert)
-                logger.debug(f"[DATABASE] Updated resolved alert {alert_id} in database")
+                logger.debug(
+                    f"[DATABASE] Updated resolved alert {alert_id} in database"
+                )
             except Exception as e:
                 logger.error(
                     f"[ERROR] Failed to update resolved alert {alert_id} in database: {e}"
@@ -556,26 +622,29 @@ class AlertManager:
 
             # Remove from active alerts
             del self.active_alerts[alert_id]
-            
+
         else:
             # Alert not found in memory, try database directly
-            logger.debug(f"[DATABASE] Alert {alert_id} not found in memory, checking database")
-            
+            logger.debug(
+                f"[DATABASE] Alert {alert_id} not found in memory, checking database"
+            )
+
             try:
                 # Use the database service to update the alert status directly
                 success = self.db_service.update_alert_status(
-                    alert_id=alert_id,
-                    status="resolved",
-                    user_id=user_id,
-                    notes=notes
+                    alert_id=alert_id, status="resolved", user_id=user_id, notes=notes
                 )
-                
+
                 if not success:
-                    logger.warning(f"[WARNING] Cannot resolve: Alert {alert_id} not found in database either")
+                    logger.warning(
+                        f"[WARNING] Cannot resolve: Alert {alert_id} not found in database either"
+                    )
                     return False
-                    
-                logger.debug(f"[DATABASE] Successfully resolved alert {alert_id} directly in database")
-                
+
+                logger.debug(
+                    f"[DATABASE] Successfully resolved alert {alert_id} directly in database"
+                )
+
                 # Create a minimal alert object for broadcasting
                 alert_data = self.db_service.get_alert_by_id(alert_id)
                 if alert_data:
@@ -597,11 +666,13 @@ class AlertManager:
                         resolved_at=alert_data.get("resolved_at"),
                         notes=alert_data.get("notes"),
                         created_at=alert_data.get("created_at"),
-                        updated_at=alert_data.get("updated_at")
+                        updated_at=alert_data.get("updated_at"),
                     )
-                
+
             except Exception as e:
-                logger.error(f"[ERROR] Failed to resolve alert {alert_id} in database: {e}")
+                logger.error(
+                    f"[ERROR] Failed to resolve alert {alert_id} in database: {e}"
+                )
                 return False
 
         logger.info(f"[SUCCESS] Alert {alert_id} resolved by {user_id}")
@@ -647,7 +718,7 @@ class AlertManager:
 
         # Fallback to in-memory data
         alerts = list(self.active_alerts.values())
-        
+
         # Filter to only include alerts with "active" status
         alerts = [alert for alert in alerts if alert.status == AlertStatus.ACTIVE.value]
 

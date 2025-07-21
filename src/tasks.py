@@ -172,25 +172,23 @@ def auto_clear_alerts(self):
     """Periodic task to auto-clear old alerts."""
     try:
         from src.services.alert_manager import get_alert_manager
-        
+
         alert_manager = get_alert_manager()
         cleared_count = alert_manager.auto_clear_old_alerts()
-        
-        logger.info(f"[AUTO-CLEAR] Periodic auto-clearance completed: {cleared_count} alerts cleared")
-        
+
+        logger.info(
+            f"[AUTO-CLEAR] Periodic auto-clearance completed: {cleared_count} alerts cleared"
+        )
+
         return {
             "status": "success",
             "cleared_count": cleared_count,
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
-        
+
     except Exception as e:
         logger.error(f"[ERROR] Auto-clearance task failed: {str(e)}")
-        return {
-            "status": "error",
-            "error": str(e),
-            "timestamp": time.time()
-        }
+        return {"status": "error", "error": str(e), "timestamp": time.time()}
 
 
 # Export the celery app

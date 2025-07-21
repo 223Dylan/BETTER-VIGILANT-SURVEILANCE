@@ -27,13 +27,16 @@ class WebSocketManager:
     async def connect_prediction(self, camera_id: str, websocket: WebSocket):
         """Connect a WebSocket to a camera's prediction feed."""
         import os
+
         if camera_id not in self.prediction_connections:
             self.prediction_connections[camera_id] = set()
         self.prediction_connections[camera_id].add(websocket)
         logger.info(
             f"[WEBSOCKET] Prediction WebSocket ADDED for {camera_id}. Total connections: {len(self.prediction_connections[camera_id])}"
         )
-        logger.info(f"[DEBUG] WebSocketManager instance ID: {id(self)} | Process PID: {os.getpid()}")
+        logger.info(
+            f"[DEBUG] WebSocketManager instance ID: {id(self)} | Process PID: {os.getpid()}"
+        )
         logger.info(
             f"[INFO] Current prediction connections: {list(self.prediction_connections.keys())}"
         )
@@ -74,8 +77,11 @@ class WebSocketManager:
     async def broadcast_prediction(self, camera_id: str, prediction_data: dict):
         """Broadcast a prediction to all prediction WebSocket connections for a camera."""
         import os
+
         logger.info(f"[SEARCH] Looking for prediction connections for {camera_id}")
-        logger.info(f"[DEBUG] WebSocketManager instance ID: {id(self)} | Process PID: {os.getpid()}")
+        logger.info(
+            f"[DEBUG] WebSocketManager instance ID: {id(self)} | Process PID: {os.getpid()}"
+        )
         logger.info(
             f"[INFO] Available cameras with connections: {list(self.prediction_connections.keys())}"
         )

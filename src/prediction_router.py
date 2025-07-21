@@ -125,11 +125,9 @@ async def send_prediction_to_websocket(camera_id: str, alert_data: Dict[str, Any
     try:
         # Publish to Redis for cross-process WebSocket broadcasting
         success = redis_websocket_bridge.publish_websocket_event(
-            camera_id=camera_id,
-            event_type="prediction", 
-            data=alert_data
+            camera_id=camera_id, event_type="prediction", data=alert_data
         )
-        
+
         if success:
             logger.info(
                 f"[SUCCESS] Successfully published prediction to Redis for camera {camera_id}"
