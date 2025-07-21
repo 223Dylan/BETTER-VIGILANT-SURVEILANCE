@@ -358,7 +358,7 @@ def start_server(host: str, port: int, shared_data: Dict, controller: CameraCont
             api_server.app,  # Use the FastAPI instance directly
             host=host,
             port=port,
-            log_level="debug"
+            log_level="warning"
         )
     except Exception as e:
         logger.error(f"Error starting server: {e}")

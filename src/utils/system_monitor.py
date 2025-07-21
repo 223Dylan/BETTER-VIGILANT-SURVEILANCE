@@ -11,9 +11,9 @@ class SystemMonitor:
         self.active_cameras = 0
         self.metrics = {}
         self.thresholds = {
-            "cpu_usage": 80.0,  # 80% CPU usage threshold
-            "memory_usage": 85.0,  # 85% memory usage threshold
-            "disk_usage": 90.0,  # 90% disk usage threshold
+            "cpu_usage": 95.0,  # 95% CPU usage threshold
+            "memory_usage": 98.0,  # 98% memory usage threshold
+            "disk_usage": 95.0,  # 95% disk usage threshold
         }
 
     def update_active_cameras(self, count: int) -> None:
@@ -43,12 +43,12 @@ class SystemMonitor:
                 "active_cameras": self.active_cameras,
             }
 
-            # Log if any metric exceeds threshold
-            for metric, value in self.metrics.items():
-                if metric in self.thresholds and value > self.thresholds[metric]:
-                    logger.warning(
-                        f"High {metric}: {value}% (threshold: {self.thresholds[metric]}%)"
-                    )
+            # Log if any metric exceeds threshold (disabled to reduce log noise)
+            # for metric, value in self.metrics.items():
+            #     if metric in self.thresholds and value > self.thresholds[metric]:
+            #         logger.warning(
+            #             f"High {metric}: {value}% (threshold: {self.thresholds[metric]}%)"
+            #         )
 
         except Exception as e:
             logger.error(f"Error updating system metrics: {str(e)}")

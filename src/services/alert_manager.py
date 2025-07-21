@@ -647,6 +647,9 @@ class AlertManager:
 
         # Fallback to in-memory data
         alerts = list(self.active_alerts.values())
+        
+        # Filter to only include alerts with "active" status
+        alerts = [alert for alert in alerts if alert.status == AlertStatus.ACTIVE.value]
 
         if filters:
             alerts = self._apply_filters(alerts, filters)

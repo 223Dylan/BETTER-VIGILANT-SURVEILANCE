@@ -7,9 +7,9 @@ from datetime import datetime
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-# Configure audit logger
+# Configure audit logger (disabled to reduce log noise)
 audit_logger = logging.getLogger("audit")
-audit_logger.setLevel(logging.INFO)
+audit_logger.setLevel(logging.ERROR)  # Only log errors, not INFO requests
 
 # Create audit log directory if it doesn't exist
 os.makedirs("logs", exist_ok=True)
