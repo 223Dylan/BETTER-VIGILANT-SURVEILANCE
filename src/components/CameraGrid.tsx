@@ -34,6 +34,15 @@ const CameraGrid: React.FC = () => {
       setLoading(true);
       const cameras = await cameraService.getCameras();
       setCameraList(cameras);
+      
+      // Update the detail camera if it's currently open
+      if (detailCamera) {
+        const updatedDetailCamera = cameras.find(c => c.id === detailCamera.id);
+        if (updatedDetailCamera) {
+          setDetailCamera(updatedDetailCamera);
+        }
+      }
+      
       setError(null);
     } catch (err) {
       console.error('Error loading cameras:', err);
@@ -48,6 +57,15 @@ const CameraGrid: React.FC = () => {
       setRefreshing(true);
       const cameras = await cameraService.getCameras();
       setCameraList(cameras);
+      
+      // Update the detail camera if it's currently open
+      if (detailCamera) {
+        const updatedDetailCamera = cameras.find(c => c.id === detailCamera.id);
+        if (updatedDetailCamera) {
+          setDetailCamera(updatedDetailCamera);
+        }
+      }
+      
       setError(null);
     } catch (err) {
       console.error('Error refreshing cameras:', err);

@@ -73,10 +73,21 @@ const CameraCard: React.FC<CameraCardProps> = ({
       if (camera.enabled) {
         setStatus('stopping');
         await cameraService.disableCamera(camera.id);
-        setStatus('stopped');
+        console.log(`[CARD] Camera ${camera.id} disabled successfully`);
+        
+        // Immediately refresh parent data so all components sync
+        if (onCameraUpdated) {
+          onCameraUpdated();
+        }
       } else {
         setStatus('starting');
         await cameraService.enableCamera(camera.id);
+        console.log(`[CARD] Camera ${camera.id} enable command sent`);
+        
+        // Immediately refresh parent data so all components sync
+        if (onCameraUpdated) {
+          onCameraUpdated();
+        }
         
         // Poll for camera to actually become active
         let retries = 0;
@@ -104,13 +115,8 @@ const CameraCard: React.FC<CameraCardProps> = ({
         }
       }
       
-      // Call parent's toggle handler
+      // Call parent's toggle handler for legacy compatibility
       onToggleEnabled();
-      
-      // Notify parent to refresh data
-      if (onCameraUpdated) {
-        onCameraUpdated();
-      }
     } catch (error) {
       console.error('Error toggling camera:', error);
       setStatus('error');
@@ -119,17 +125,21 @@ const CameraCard: React.FC<CameraCardProps> = ({
     }
   };
 
+  // Sync with camera.enabled prop changes (for synchronization with detail panel)
   useEffect(() => {
-    // Remove: connectWebSocket();
-    
+    const newStatus = camera.enabled ? 'active' : 'stopped';
+    console.log(`[CARD-SYNC] Camera ${camera.id} enabled state: ${camera.enabled}, setting status to: ${newStatus}`);
+    setStatus(newStatus);
+  }, [camera.enabled, camera.id]);
+
+  useEffect(() => {
     // Keep only status checking
-            statusCheckInterval.current = setInterval(checkCameraStatus, 15000); // Reduced frequency: 15s instead of 5s
+    statusCheckInterval.current = setInterval(checkCameraStatus, 15000); // Reduced frequency: 15s instead of 5s
 
     return () => {
       if (statusCheckInterval.current) {
         clearInterval(statusCheckInterval.current);
       }
-      // Remove WebSocket cleanup
     };
   }, [camera.id]);
 

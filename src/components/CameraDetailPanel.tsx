@@ -206,21 +206,25 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
   // Sync local status when camera enabled state changes (for state synchronization between card and detail views)
   useEffect(() => {
     if (camera) {
-      setStatus(camera.enabled ? 'active' : 'stopped');
+      // Use camera.enabled as the source of truth for status
+      const newStatus = camera.enabled ? 'active' : 'stopped';
+      console.log(`[SYNC] Camera ${camera.id} enabled state changed: ${camera.enabled}, setting status to: ${newStatus}`);
+      setStatus(newStatus);
       
       // Reconnect or disconnect WebSocket based on camera state
       if (camera.enabled && isOpen) {
         // Reconnect WebSocket if camera becomes enabled
+        console.log(`[SYNC] Camera ${camera.id} enabled, connecting WebSocket`);
         connectToPredictionWebSocket();
       } else if (!camera.enabled && predictionWs) {
         // Disconnect WebSocket if camera becomes disabled
-        console.log('Disconnecting WebSocket - camera disabled');
+        console.log(`[SYNC] Camera ${camera.id} disabled, disconnecting WebSocket`);
         predictionWs.close();
         setPredictionWs(null);
         setConnectionStatus('disconnected');
       }
     }
-  }, [camera?.enabled]);
+  }, [camera?.enabled, camera?.id]);
 
   const connectToPredictionWebSocket = () => {
     if (!camera || !camera.enabled) {
@@ -537,14 +541,31 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
       if (camera.enabled) {
         setStatus('stopping');
         await cameraService.disableCamera(camera.id);
-        setStatus('stopped');
+        console.log(`[TOGGLE] Camera ${camera.id} disabled successfully`);
+        
         // Update local camera data immediately
         if (editableCamera) {
           setEditableCamera({ ...editableCamera, enabled: false });
         }
+        
+        // Immediately refresh parent data so camera prop gets updated
+        if (onCameraUpdated) {
+          onCameraUpdated();
+        }
       } else {
         setStatus('starting');
         await cameraService.enableCamera(camera.id);
+        console.log(`[TOGGLE] Camera ${camera.id} enable command sent`);
+        
+        // Update local camera data immediately
+        if (editableCamera) {
+          setEditableCamera({ ...editableCamera, enabled: true });
+        }
+        
+        // Immediately refresh parent data so camera prop gets updated
+        if (onCameraUpdated) {
+          onCameraUpdated();
+        }
         
         // Poll for camera to actually become active (same logic as CameraCard)
         let retries = 0;
@@ -569,15 +590,6 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
           const finalStatus = await cameraService.getCameraStatus(camera.id);
           setStatus(finalStatus || 'error');
         }
-        
-        // Update local camera data immediately
-        if (editableCamera) {
-          setEditableCamera({ ...editableCamera, enabled: true });
-        }
-      }
-      
-      if (onCameraUpdated) {
-        onCameraUpdated();
       }
     } catch (error) {
       console.error('Error toggling camera:', error);
