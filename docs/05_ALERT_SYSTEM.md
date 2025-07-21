@@ -626,4 +626,59 @@ NOTIFICATION_CONFIG = {
 4. **User Experience**
    - Provide clear alert descriptions
    - Enable quick acknowledgment actions
-   - Show relevant context and frame data 
+   - Show relevant context and frame data
+
+5. **Auto-Clearance System**
+   - Configure appropriate timeouts for different severity levels
+   - Regular alerts auto-clear after 12 hours by default
+   - Critical alerts auto-clear after 24 hours by default
+   - Monitor auto-clearance logs for system health
+
+## Auto-Clearance Feature
+
+The alert system includes an automated clearance feature to prevent alert buildup and maintain system performance.
+
+### Configuration
+
+Set these environment variables to configure auto-clearance:
+
+```bash
+# Enable/disable auto-clearance
+ALERT_AUTO_CLEAR_ENABLED=true
+
+# Timeout for regular alerts (hours)
+ALERT_AUTO_CLEAR_HOURS=12
+
+# Timeout for critical alerts (hours)
+ALERT_CRITICAL_AUTO_CLEAR_HOURS=24
+
+# How often to run auto-clearance (minutes)
+ALERT_AUTO_CLEAR_INTERVAL_MINUTES=60
+```
+
+### How It Works
+
+1. **Periodic Task**: Runs every hour by default via Celery Beat
+2. **Age-Based Clearing**: Checks alert creation time against configured thresholds
+3. **Severity-Aware**: Critical alerts get extended timeout (24 hours vs 12 hours)
+4. **Automatic Resolution**: Old alerts are marked as "resolved" with system user
+5. **Logging**: All auto-clearance actions are logged for audit purposes
+
+### Manual Triggering
+
+Administrators can manually trigger auto-clearance:
+
+```bash
+# Check current configuration
+GET /api/alerts/auto-clear/config
+
+# Manually trigger auto-clearance
+POST /api/alerts/auto-clear
+```
+
+### Benefits
+
+- **Prevents Alert Buildup**: Automatically resolves stale alerts
+- **Improves Performance**: Reduces active alert count for better query performance
+- **Maintains Focus**: Keeps operators focused on recent, actionable alerts
+- **Configurable**: Flexible timeouts based on alert severity and operational needs 

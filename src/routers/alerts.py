@@ -7,6 +7,7 @@ from loguru import logger
 from pydantic import BaseModel
 
 from src.services.alert_manager import AlertManager, get_alert_manager
+from src.routers.users import require_admin
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -25,6 +26,13 @@ class AlertFilterRequest(BaseModel):
     confidenceMin: Optional[float] = None
     confidenceMax: Optional[float] = None
     dateRange: Optional[Dict[str, str]] = None
+
+
+class BulkAlertActionRequest(BaseModel):
+    alert_ids: List[str]
+    action: str  # "acknowledge" or "resolve"
+    user_id: str
+    notes: Optional[str] = None
 
 
 class AlertResponse(BaseModel):
@@ -399,4 +407,133 @@ async def create_sample_alerts(
 
     except Exception as e:
         logger.error(f"[ERROR] Error creating sample alerts: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/auto-clear", summary="Manually trigger auto-clearance of old alerts")
+async def manual_auto_clear_alerts(
+    alert_service: AlertManager = Depends(get_alert_service),
+    current_user = Depends(require_admin),
+) -> AlertResponse:
+    """Manually trigger the auto-clearance process for old alerts."""
+    try:
+        logger.info(f"[AUTO-CLEAR] Manual auto-clearance triggered by user {current_user.username}")
+        
+        cleared_count = alert_service.auto_clear_old_alerts()
+        
+        logger.info(f"[SUCCESS] Manual auto-clearance completed: {cleared_count} alerts cleared")
+        
+        return AlertResponse(
+            success=True,
+            message=f"Auto-clearance completed successfully",
+            data={
+                "cleared_count": cleared_count,
+                "triggered_by": current_user.username,
+                "timestamp": time.time()
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"[ERROR] Error during manual auto-clearance: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/auto-clear/config", summary="Get auto-clearance configuration")
+async def get_auto_clear_config(
+    current_user = Depends(require_admin),
+) -> AlertResponse:
+    """Get the current auto-clearance configuration."""
+    try:
+        import os
+        
+        config = {
+            "enabled": os.getenv("ALERT_AUTO_CLEAR_ENABLED", "true").lower() == "true",
+            "regular_timeout_hours": int(os.getenv("ALERT_AUTO_CLEAR_HOURS", "12")),
+            "critical_timeout_hours": int(os.getenv("ALERT_CRITICAL_AUTO_CLEAR_HOURS", "24")),
+            "interval_minutes": int(os.getenv("ALERT_AUTO_CLEAR_INTERVAL_MINUTES", "60")),
+        }
+        
+        logger.info("[SUCCESS] Retrieved auto-clearance configuration")
+        
+        return AlertResponse(
+            success=True,
+            message="Auto-clearance configuration retrieved",
+            data=config
+        )
+        
+    except Exception as e:
+        logger.error(f"[ERROR] Error getting auto-clearance config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/bulk-action", summary="Perform bulk actions on multiple alerts")
+async def bulk_alert_action(
+    request: BulkAlertActionRequest,
+    alert_service: AlertManager = Depends(get_alert_service),
+    current_user = Depends(require_admin),
+) -> AlertResponse:
+    """Perform bulk acknowledge or resolve actions on multiple alerts."""
+    try:
+        if not request.alert_ids:
+            raise HTTPException(status_code=400, detail="No alert IDs provided")
+        
+        if request.action not in ["acknowledge", "resolve"]:
+            raise HTTPException(status_code=400, detail="Action must be 'acknowledge' or 'resolve'")
+        
+        logger.info(f"[BULK] User {current_user.username} performing {request.action} on {len(request.alert_ids)} alerts")
+        
+        successful_actions = []
+        failed_actions = []
+        
+        for alert_id in request.alert_ids:
+            try:
+                if request.action == "acknowledge":
+                    success = alert_service.acknowledge_alert(
+                        alert_id=alert_id,
+                        user_id=current_user.username,
+                        notes=request.notes
+                    )
+                elif request.action == "resolve":
+                    success = alert_service.resolve_alert(
+                        alert_id=alert_id,
+                        user_id=current_user.username,
+                        notes=request.notes
+                    )
+                
+                if success:
+                    successful_actions.append(alert_id)
+                    logger.debug(f"[BULK] Successfully {request.action}d alert {alert_id}")
+                else:
+                    failed_actions.append({"alert_id": alert_id, "error": "Alert not found or already processed"})
+                    logger.warning(f"[BULK] Failed to {request.action} alert {alert_id} - not found")
+                    
+            except Exception as e:
+                failed_actions.append({"alert_id": alert_id, "error": str(e)})
+                logger.error(f"[BULK] Error {request.action}ing alert {alert_id}: {e}")
+        
+        total_processed = len(successful_actions) + len(failed_actions)
+        success_rate = len(successful_actions) / total_processed if total_processed > 0 else 0
+        
+        logger.info(f"[BULK] Completed bulk {request.action}: {len(successful_actions)} successful, {len(failed_actions)} failed")
+        
+        return AlertResponse(
+            success=True,
+            message=f"Bulk {request.action} completed: {len(successful_actions)}/{total_processed} successful",
+            data={
+                "action": request.action,
+                "total_requested": len(request.alert_ids),
+                "successful": len(successful_actions),
+                "failed": len(failed_actions),
+                "success_rate": round(success_rate * 100, 1),
+                "successful_alert_ids": successful_actions,
+                "failed_actions": failed_actions,
+                "performed_by": current_user.username,
+                "timestamp": time.time()
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[ERROR] Error during bulk action: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -8,6 +8,7 @@ import {
 } from '../components/alerts';
 import { apiService } from '../services/api.service';
 import { authService } from '../services/auth.service';
+import { alertService } from '../services/alert.service';
 
 interface AlertsPageProps {}
 
@@ -113,6 +114,48 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
     }
   };
 
+  const handleBulkAcknowledge = async (alertIds: string[], notes?: string) => {
+    try {
+      const result = await alertService.bulkAcknowledge(alertIds, notes);
+      
+      if (result.successful > 0) {
+        // Show success message
+        setError(null);
+        console.log(`Successfully acknowledged ${result.successful} alerts`);
+      }
+      
+      if (result.failed > 0) {
+        console.warn(`Failed to acknowledge ${result.failed} alerts`);
+        // You might want to show a more detailed error message here
+      }
+      
+      fetchData(); // Refresh data
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to bulk acknowledge alerts');
+    }
+  };
+
+  const handleBulkResolve = async (alertIds: string[], notes?: string) => {
+    try {
+      const result = await alertService.bulkResolve(alertIds, notes);
+      
+      if (result.successful > 0) {
+        // Show success message
+        setError(null);
+        console.log(`Successfully resolved ${result.successful} alerts`);
+      }
+      
+      if (result.failed > 0) {
+        console.warn(`Failed to resolve ${result.failed} alerts`);
+        // You might want to show a more detailed error message here
+      }
+      
+      fetchData(); // Refresh data
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to bulk resolve alerts');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -163,6 +206,9 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
           onAcknowledge={acknowledgeAlert}
           onResolve={resolveAlert}
           onViewDetails={setSelectedAlert}
+          onBulkAcknowledge={handleBulkAcknowledge}
+          onBulkResolve={handleBulkResolve}
+          showBulkActions={view === 'active'}
         />
       )}
 
