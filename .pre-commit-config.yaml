@@ -30,4 +30,10 @@ repos:
     hooks:
       - id: mypy
         args: [--config-file=mypy.ini]
-        additional_dependencies: [types-PyYAML, types-requests, types-redis]
+        additional_dependencies: [
+          types-PyYAML,
+          types-requests,
+          types-redis,
+          types-psutil,
+          types-Pillow
+        ]
