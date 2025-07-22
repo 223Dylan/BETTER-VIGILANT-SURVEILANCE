@@ -24,7 +24,7 @@ repos:
       - id: check-added-large-files
       - id: check-merge-conflict
 
-  # MyPy - Type checking (lenient configuration for existing codebase)
+    # MyPy - Type checking (lenient configuration for existing codebase)
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.11.0
     hooks:
@@ -37,3 +37,13 @@ repos:
           types-psutil,
           types-Pillow
         ]
+
+  # Pytest - Run tests (commented out due to external dependencies)
+  # - repo: local
+  #   hooks:
+  #     - id: pytest
+  #       name: pytest
+  #       entry: pytest
+  #       language: system
+  #       pass_filenames: false
+  #       always_run: true

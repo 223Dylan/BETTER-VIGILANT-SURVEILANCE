@@ -13,6 +13,8 @@ from .config import (
 from .image_utils import resize_frame
 from .secrets import secrets_manager
 
+# Function is in src.utils module, not the utils package
+
 __all__ = [
     "Config",
     "CameraConfig",
