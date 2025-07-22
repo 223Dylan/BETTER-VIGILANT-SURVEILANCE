@@ -23,3 +23,11 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict
+
+  # MyPy - Type checking (lenient configuration for existing codebase)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.0
+    hooks:
+      - id: mypy
+        args: [--config-file=mypy.ini]
+        additional_dependencies: [types-PyYAML, types-requests, types-redis]
