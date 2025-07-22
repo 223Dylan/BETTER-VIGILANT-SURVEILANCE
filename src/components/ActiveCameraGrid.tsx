@@ -35,7 +35,7 @@ const ActiveCameraCard: React.FC<ActiveCameraCardProps> = ({ camera }) => {
             <span>Live</span>
           </span>
         </div>
-        
+
         {camera.zone_name && (
           <div className="text-sm text-gray-500 mb-2 truncate flex items-center space-x-1">
             <LocationIcon className="w-4 h-4" />
@@ -43,18 +43,18 @@ const ActiveCameraCard: React.FC<ActiveCameraCardProps> = ({ camera }) => {
           </div>
         )}
       </div>
-      
+
       {/* Video Feed */}
       <div className="px-4 pb-2">
-        <VideoPlayer 
-          cameraId={camera.id} 
-          camera={camera} 
-          width="100%" 
+        <VideoPlayer
+          cameraId={camera.id}
+          camera={camera}
+          width="100%"
           height="200px"
           streamType="mjpeg"
         />
       </div>
-      
+
       <div className="px-4 pb-4">
         <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
           <span className="flex items-center space-x-1">
@@ -66,7 +66,7 @@ const ActiveCameraCard: React.FC<ActiveCameraCardProps> = ({ camera }) => {
             <span>{camera.fps} FPS</span>
           </span>
         </div>
-        
+
         {camera.health && camera.health.status !== 'healthy' && (
           <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded flex items-center space-x-1">
             <WarningIcon className="w-3 h-3" />
@@ -85,10 +85,10 @@ const ActiveCameraGrid: React.FC = () => {
 
   useEffect(() => {
     loadActiveCameras();
-    
+
     // Refresh active cameras every 10 seconds
           const interval = setInterval(loadActiveCameras, 20000); // Reduced frequency: 20s instead of 10s
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -170,13 +170,13 @@ const ActiveCameraGrid: React.FC = () => {
           <span>Manage All Cameras →</span>
         </Link>
       </div>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {activeCameras.map(camera => (
           <ActiveCameraCard key={camera.id} camera={camera} />
         ))}
       </div>
-      
+
       {/* Real-time status indicator */}
       <div className="text-center text-sm text-gray-500">
         <span className="inline-flex items-center">
@@ -188,4 +188,4 @@ const ActiveCameraGrid: React.FC = () => {
   );
 };
 
-export default ActiveCameraGrid; 
+export default ActiveCameraGrid;

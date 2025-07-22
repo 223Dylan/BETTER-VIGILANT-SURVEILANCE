@@ -112,7 +112,7 @@ class MetricsService {
       time_range: timeRange,
       confidence_threshold: confidenceThreshold.toString()
     });
-    
+
     if (cameraId) {
       params.append('camera_id', cameraId);
     }
@@ -266,4 +266,4 @@ export type {
   CameraPerformance,
   Alert,
   HealthStatus
-}; 
+};

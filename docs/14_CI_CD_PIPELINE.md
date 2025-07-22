@@ -105,4 +105,4 @@ git push origin v1.0.0
 
 This will trigger the release workflow and create:
 - A new GitHub release
-- Docker images tagged with the version number 
+- Docker images tagged with the version number

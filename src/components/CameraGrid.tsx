@@ -21,7 +21,7 @@ const CameraGrid: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [addCameraModalOpen, setAddCameraModalOpen] = useState(false);
-  
+
   // Track stream types for each camera
   const [cameraStreamTypes, setCameraStreamTypes] = useState<{ [cameraId: string]: 'mjpeg' | 'mjpeg-ws' | 'hls' | 'webrtc' }>({});
 
@@ -34,7 +34,7 @@ const CameraGrid: React.FC = () => {
       setLoading(true);
       const cameras = await cameraService.getCameras();
       setCameraList(cameras);
-      
+
       // Update the detail camera if it's currently open
       if (detailCamera) {
         const updatedDetailCamera = cameras.find(c => c.id === detailCamera.id);
@@ -42,7 +42,7 @@ const CameraGrid: React.FC = () => {
           setDetailCamera(updatedDetailCamera);
         }
       }
-      
+
       setError(null);
     } catch (err) {
       console.error('Error loading cameras:', err);
@@ -57,7 +57,7 @@ const CameraGrid: React.FC = () => {
       setRefreshing(true);
       const cameras = await cameraService.getCameras();
       setCameraList(cameras);
-      
+
       // Update the detail camera if it's currently open
       if (detailCamera) {
         const updatedDetailCamera = cameras.find(c => c.id === detailCamera.id);
@@ -65,7 +65,7 @@ const CameraGrid: React.FC = () => {
           setDetailCamera(updatedDetailCamera);
         }
       }
-      
+
       setError(null);
     } catch (err) {
       console.error('Error refreshing cameras:', err);
@@ -152,7 +152,7 @@ const CameraGrid: React.FC = () => {
             <span>Add Camera</span>
           </button>
         </div>
-        
+
         <div className="text-center p-8">
           <div className="text-gray-500 mb-4 text-lg flex items-center justify-center space-x-2">
             <VideocamIcon className="w-6 h-6" />
@@ -212,11 +212,11 @@ const CameraGrid: React.FC = () => {
       </div>
 
       {/* Quick Settings Panel */}
-      {/* <QuickSettingsPanel 
-        cameras={cameraList} 
-        onCameraUpdated={refreshCameras} 
+      {/* <QuickSettingsPanel
+        cameras={cameraList}
+        onCameraUpdated={refreshCameras}
       /> */}
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {cameraList.map(camera => (
           <CameraCard
@@ -230,7 +230,7 @@ const CameraGrid: React.FC = () => {
           />
         ))}
       </div>
-      
+
       {/* Detail Panel */}
       <CameraDetailPanel
         camera={detailCamera}

@@ -90,4 +90,4 @@ The system follows a microservices architecture with the following components:
 - 8 CPU cores
 - 500GB SSD storage
 - GPU (NVIDIA GTX 1060 or better)
-- Ubuntu 22.04 LTS 
+- Ubuntu 22.04 LTS

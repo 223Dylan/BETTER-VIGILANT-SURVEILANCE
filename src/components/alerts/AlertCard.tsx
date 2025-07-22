@@ -43,7 +43,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
               />
             </div>
           )}
-          
+
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <div className={`w-3 h-3 rounded-full ${getStatusColor(alert.status)}`}></div>
@@ -53,12 +53,12 @@ const AlertCard: React.FC<AlertCardProps> = ({
               <span className="text-sm text-gray-500 font-mono">{alert.cameraId}</span>
               <span className="text-sm text-gray-500">{formatTimestamp(alert.timestamp)}</span>
             </div>
-          
+
           <div className="mb-2">
             <h3 className="font-medium text-gray-900 mb-1">{alert.message}</h3>
             <div className="text-sm text-gray-600">
-              Confidence: {Math.round(alert.confidence * 100)}% | 
-              Type: {alert.type.replace('_', ' ')} | 
+              Confidence: {Math.round(alert.confidence * 100)}% |
+              Type: {alert.type.replace('_', ' ')} |
               Status: {alert.status}
             </div>
           </div>
@@ -96,4 +96,4 @@ const AlertCard: React.FC<AlertCardProps> = ({
   );
 };
 
-export default AlertCard; 
+export default AlertCard;

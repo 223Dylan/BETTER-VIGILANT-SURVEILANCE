@@ -17,7 +17,7 @@ const AlertActions: React.FC<AlertActionsProps> = ({
   onViewDetails,
   compact = false,
 }) => {
-  const buttonClasses = compact 
+  const buttonClasses = compact
     ? "px-2 py-1 rounded text-xs hover:opacity-80 transition-colors flex items-center gap-1"
     : "px-3 py-1 rounded text-sm hover:opacity-80 transition-colors flex items-center gap-1";
 
@@ -43,7 +43,7 @@ const AlertActions: React.FC<AlertActionsProps> = ({
           </button>
         </>
       )}
-      
+
       <button
         onClick={() => onViewDetails(alert)}
         className={`bg-blue-600 text-white ${buttonClasses}`}
@@ -56,4 +56,4 @@ const AlertActions: React.FC<AlertActionsProps> = ({
   );
 };
 
-export default AlertActions; 
+export default AlertActions;

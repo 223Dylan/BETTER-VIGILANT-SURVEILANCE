@@ -31,4 +31,4 @@ use_parentheses = true
 ensure_newline_before_comments = true
 src_paths = ["src", "scripts", "tests", "utils"]
 known_first_party = ["src"]
-sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"] 
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]

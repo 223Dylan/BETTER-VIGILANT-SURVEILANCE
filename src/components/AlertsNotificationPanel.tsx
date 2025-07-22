@@ -21,7 +21,7 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
 
   useEffect(() => {
     loadAlerts();
-    
+
     if (realTime) {
       setupWebSocket();
     } else {
@@ -42,7 +42,7 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
       setAlerts(alertsData);
       setLoading(false);
       setError(null);
-      
+
       // Update last alert time
       if (alertsData.length > 0) {
         const latest = new Date(alertsData[0].timestamp).getTime();
@@ -68,29 +68,29 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
       wsRef.current.onmessage = (event) => {
         try {
           const message = metricsService.parseWebSocketMessage(event);
-          
+
           if (message?.type === 'alerts_update') {
             const { new_alerts, total_recent } = message;
-            
+
             if (new_alerts && new_alerts.length > 0) {
               // Add new alerts to the beginning of the list
               setAlerts(prev => {
                 const combined = [...new_alerts, ...prev];
                 return combined.slice(0, limit); // Keep only the latest alerts
               });
-              
+
               // Count truly new alerts (after last known alert)
               const newCount = new_alerts.filter((alert: Alert) => {
                 const alertTime = new Date(alert.timestamp).getTime();
                 return alertTime > lastAlertTime.current;
               }).length;
-              
+
               if (newCount > 0) {
                 setNewAlertsCount(prev => prev + newCount);
                 // Update last alert time
                 const latestTime = Math.max(...new_alerts.map((a: Alert) => new Date(a.timestamp).getTime()));
                 lastAlertTime.current = Math.max(lastAlertTime.current, latestTime);
-                
+
                 // Play notification sound or show browser notification
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification(`${newCount} new security alert${newCount > 1 ? 's' : ''}`, {
@@ -161,13 +161,13 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
     const now = new Date().getTime();
     const alertTime = new Date(timestamp).getTime();
     const diffMinutes = Math.floor((now - alertTime) / (1000 * 60));
-    
+
     if (diffMinutes < 1) return 'Just now';
     if (diffMinutes < 60) return `${diffMinutes}m ago`;
-    
+
     const diffHours = Math.floor(diffMinutes / 60);
     if (diffHours < 24) return `${diffHours}h ago`;
-    
+
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays}d ago`;
   };
@@ -313,4 +313,4 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
   );
 };
 
-export default AlertsNotificationPanel; 
+export default AlertsNotificationPanel;

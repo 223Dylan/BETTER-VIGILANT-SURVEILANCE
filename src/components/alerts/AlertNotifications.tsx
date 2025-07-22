@@ -23,7 +23,7 @@ const AlertNotifications: React.FC<AlertNotificationsProps> = ({
 
   useEffect(() => {
     const ws = new WebSocket(websocketUrl);
-    
+
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -33,7 +33,7 @@ const AlertNotifications: React.FC<AlertNotificationsProps> = ({
             notificationId: `${data.alert.id}-${Date.now()}`,
             showTime: Date.now(),
           };
-          
+
           setNotifications(prev => {
             const updated = [newNotification, ...prev].slice(0, maxNotifications);
             return updated;
@@ -53,7 +53,7 @@ const AlertNotifications: React.FC<AlertNotificationsProps> = ({
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.filter(notification => now - notification.showTime < autoHideDelay)
       );
     }, 1000);
@@ -62,7 +62,7 @@ const AlertNotifications: React.FC<AlertNotificationsProps> = ({
   }, [autoHideDelay]);
 
   const hideNotification = (notificationId: string) => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.filter(notification => notification.notificationId !== notificationId)
     );
   };
@@ -94,7 +94,7 @@ const AlertNotifications: React.FC<AlertNotificationsProps> = ({
             <div className="flex-shrink-0">
               {getSeverityIcon(notification.severity)}
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${getSeverityColor(notification.severity)}`}>
@@ -104,20 +104,20 @@ const AlertNotifications: React.FC<AlertNotificationsProps> = ({
                   {notification.cameraId}
                 </span>
               </div>
-              
+
               <p className="text-sm font-medium text-gray-900 mb-1">
                 {notification.type.replace('_', ' ').toUpperCase()} DETECTED
               </p>
-              
+
               <p className="text-xs text-gray-600 line-clamp-2">
                 {notification.message}
               </p>
-              
+
               <div className="text-xs text-gray-500 mt-1">
                 Confidence: {Math.round(notification.confidence * 100)}%
               </div>
             </div>
-            
+
             <button
               onClick={() => hideNotification(notification.notificationId)}
               className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
@@ -125,10 +125,10 @@ const AlertNotifications: React.FC<AlertNotificationsProps> = ({
               <XMarkIcon className="h-4 w-4" />
             </button>
           </div>
-          
+
           {/* Progress bar for auto-hide */}
           <div className="mt-3 w-full bg-gray-200 rounded-full h-1">
-            <div 
+            <div
               className="bg-blue-500 h-1 rounded-full transition-all duration-1000 ease-linear"
               style={{
                 width: `${Math.max(0, 100 - ((Date.now() - notification.showTime) / autoHideDelay) * 100)}%`
@@ -141,4 +141,4 @@ const AlertNotifications: React.FC<AlertNotificationsProps> = ({
   );
 };
 
-export default AlertNotifications; 
+export default AlertNotifications;

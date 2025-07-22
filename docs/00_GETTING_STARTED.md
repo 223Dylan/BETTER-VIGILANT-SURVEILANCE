@@ -43,10 +43,10 @@ chmod +x scripts/setup_dev.sh
 1. **Create virtual environment:**
    ```bash
    python3 -m venv .venv
-   
+
    # Linux/macOS
    source .venv/bin/activate
-   
+
    # Windows
    .venv\Scripts\activate
    ```
@@ -256,4 +256,4 @@ If you encounter issues:
 - Use environment variables for sensitive data
 - Enable HTTPS in production
 - Regularly update dependencies
-- Review camera access permissions 
+- Review camera access permissions

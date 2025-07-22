@@ -28,13 +28,13 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     loadCameraStats();
     loadHealthStatus();
-    
+
     // Update stats every 30 seconds
     const interval = setInterval(() => {
       loadCameraStats();
       loadHealthStatus();
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -43,14 +43,14 @@ const Dashboard: React.FC = () => {
       const cameras = await cameraService.getCameras();
       const active = cameras.filter(c => c.enabled).length;
       const error = cameras.filter(c => c.health?.status === 'error').length;
-      
+
       setCameraStats({
         total: cameras.length,
         active,
         error,
         detectionRate: active > 0 ? '98%' : '0%' // Mock detection rate
       });
-      
+
       // Set first active camera as selected if none selected
       if (!selectedCamera && active > 0) {
         const firstActive = cameras.find(c => c.enabled);
@@ -73,21 +73,21 @@ const Dashboard: React.FC = () => {
   };
 
   const stats = [
-    { 
-      name: 'Active Cameras', 
-      value: `${cameraStats.active}/${cameraStats.total}`, 
+    {
+      name: 'Active Cameras',
+      value: `${cameraStats.active}/${cameraStats.total}`,
       icon: VideoCameraIcon,
       color: cameraStats.active > 0 ? 'bg-green-500' : 'bg-gray-400'
     },
-    { 
-      name: 'System Alerts', 
-      value: cameraStats.error.toString(), 
+    {
+      name: 'System Alerts',
+      value: cameraStats.error.toString(),
       icon: cameraStats.error > 0 ? ExclamationTriangleIcon : BellIcon,
       color: cameraStats.error > 0 ? 'bg-red-500' : 'bg-blue-500'
     },
-    { 
-      name: 'Detection Rate', 
-      value: cameraStats.detectionRate, 
+    {
+      name: 'Detection Rate',
+      value: cameraStats.detectionRate,
       icon: ChartBarIcon,
       color: 'bg-purple-500'
     },
@@ -177,7 +177,7 @@ const Dashboard: React.FC = () => {
               </h3>
               <div className="mt-2 text-sm text-red-700">
                 <p>
-                  {cameraStats.error} camera{cameraStats.error > 1 ? 's' : ''} {cameraStats.error > 1 ? 'are' : 'is'} experiencing issues. 
+                  {cameraStats.error} camera{cameraStats.error > 1 ? 's' : ''} {cameraStats.error > 1 ? 'are' : 'is'} experiencing issues.
                   <Link to="/cameras" className="font-medium underline text-red-800 hover:text-red-900 ml-1">
                     Check camera status →
                   </Link>
@@ -215,9 +215,9 @@ const Dashboard: React.FC = () => {
                   <option value="testing-camera">Testing Camera</option>
                 </select>
               </div>
-              <CameraPerformancePanel 
-                cameraId={selectedCamera} 
-                timeRange="1h" 
+              <CameraPerformancePanel
+                cameraId={selectedCamera}
+                timeRange="1h"
                 realTime={true}
               />
             </div>
@@ -227,8 +227,8 @@ const Dashboard: React.FC = () => {
         {/* Right Column - Alerts & Quick Stats */}
         <div className="space-y-6">
           {/* Real-time Alerts */}
-          <AlertsNotificationPanel 
-            limit={15} 
+          <AlertsNotificationPanel
+            limit={15}
             realTime={true}
             onAlertClick={(alert) => {
               console.log('Alert clicked:', alert);

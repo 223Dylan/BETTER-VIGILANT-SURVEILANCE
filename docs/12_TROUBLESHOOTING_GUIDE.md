@@ -282,7 +282,7 @@ ps aux | grep python | head -10
 processing:
   processing_threads: 2
   max_queue_size: 20
-  
+
 # Restart with memory limits
 python -X dev main.py
 ```
@@ -438,7 +438,7 @@ top -p $(pgrep -f api_server.py)
 processing:
   processing_threads: 2
   skip_frames: 2  # Process every 3rd frame
-  
+
 cameras:
   defaults:
     fps: 10  # Reduce from 30
@@ -587,7 +587,7 @@ LOG_LEVEL=DEBUG
 # In config.yaml
 api:
   debug: true
-  
+
 logging:
   level: "DEBUG"
 ```
@@ -634,4 +634,4 @@ If you've tried the solutions above and still have issues:
 4. **Verify system requirements** are met
 5. **Consider environmental factors** (network, permissions, etc.)
 
-For hardware-specific issues (cameras, GPUs), consult the manufacturer's documentation and ensure proper drivers are installed. 
+For hardware-specific issues (cameras, GPUs), consult the manufacturer's documentation and ensure proper drivers are installed.

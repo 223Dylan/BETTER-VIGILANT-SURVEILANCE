@@ -6,9 +6,9 @@ This directory contains the machine learning models used for shoplifting detecti
 
 The system requires an LRCN (Long-term Recurrent Convolutional Network) model for video sequence analysis:
 
-**File:** `lrcn_160S_90_90Q.h5`  
-**Type:** Keras/TensorFlow H5 model  
-**Input:** 160 frames of 90x90 grayscale images  
+**File:** `lrcn_160S_90_90Q.h5`
+**Type:** Keras/TensorFlow H5 model
+**Input:** 160 frames of 90x90 grayscale images
 **Output:** Binary classification (shoplifting vs normal behavior)
 
 ## Getting the Model
@@ -152,4 +152,4 @@ If you train a better model or improve the architecture:
 
 ## License
 
-Model weights and training data usage should comply with your organization's data policies and applicable laws regarding surveillance footage. 
+Model weights and training data usage should comply with your organization's data policies and applicable laws regarding surveillance footage.

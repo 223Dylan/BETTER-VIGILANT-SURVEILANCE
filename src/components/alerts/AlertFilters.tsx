@@ -88,4 +88,4 @@ const AlertFilters: React.FC<AlertFiltersProps> = ({
   );
 };
 
-export default AlertFilters; 
+export default AlertFilters;

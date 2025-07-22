@@ -31,8 +31,8 @@ interface CameraCardProps {
   onStreamTypeChange?: (cameraId: string, streamType: 'mjpeg' | 'mjpeg-ws' | 'hls' | 'webrtc') => void;
 }
 
-const CameraCard: React.FC<CameraCardProps> = ({ 
-  camera, 
+const CameraCard: React.FC<CameraCardProps> = ({
+  camera,
   onToggleEnabled,
   onCameraUpdated,
   onCardClick,
@@ -48,7 +48,7 @@ const CameraCard: React.FC<CameraCardProps> = ({
     if ((e.target as HTMLElement).closest('button')) {
       return;
     }
-    
+
     if (onCardClick) {
       onCardClick(camera);
     }
@@ -67,14 +67,14 @@ const CameraCard: React.FC<CameraCardProps> = ({
   // Enhanced toggle functionality with better loading feedback
   const handleToggle = async () => {
     if (isToggling) return;
-    
+
     setIsToggling(true);
     try {
       if (camera.enabled) {
         setStatus('stopping');
         await cameraService.disableCamera(camera.id);
         console.log(`[CARD] Camera ${camera.id} disabled successfully`);
-        
+
         // Immediately refresh parent data so all components sync
         if (onCameraUpdated) {
           onCameraUpdated();
@@ -83,20 +83,20 @@ const CameraCard: React.FC<CameraCardProps> = ({
         setStatus('starting');
         await cameraService.enableCamera(camera.id);
         console.log(`[CARD] Camera ${camera.id} enable command sent`);
-        
+
         // Immediately refresh parent data so all components sync
         if (onCameraUpdated) {
           onCameraUpdated();
         }
-        
+
         // Poll for camera to actually become active
         let retries = 0;
         const maxRetries = 10; // 10 seconds max wait time
-        
+
         while (retries < maxRetries) {
           await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
           const currentStatus = await cameraService.getCameraStatus(camera.id);
-          
+
           if (currentStatus === 'active') {
             setStatus('active');
             break;
@@ -104,17 +104,17 @@ const CameraCard: React.FC<CameraCardProps> = ({
             setStatus('error');
             break;
           }
-          
+
           retries++;
         }
-        
+
         // If we've exceeded retries and still not active, check one more time
         if (retries >= maxRetries) {
           const finalStatus = await cameraService.getCameraStatus(camera.id);
           setStatus(finalStatus || 'error');
         }
       }
-      
+
       // Call parent's toggle handler for legacy compatibility
       onToggleEnabled();
     } catch (error) {
@@ -185,7 +185,7 @@ const CameraCard: React.FC<CameraCardProps> = ({
 
 
   return (
-    <div 
+    <div
       className="bg-white rounded-lg shadow-md p-4 flex flex-col border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer"
       onClick={handleCardClick}
     >
@@ -197,7 +197,7 @@ const CameraCard: React.FC<CameraCardProps> = ({
           {getStatusText()}
         </span>
       </div>
-      
+
       {camera.zone_name && (
         <div className="text-sm text-gray-500 mb-1">
           <span className="inline-flex items-center space-x-1">
@@ -206,7 +206,7 @@ const CameraCard: React.FC<CameraCardProps> = ({
           </span>
         </div>
       )}
-      
+
       {camera.model && (
         <div className="text-sm text-gray-500 mb-2">
           <span className="inline-flex items-center space-x-1">
@@ -215,26 +215,26 @@ const CameraCard: React.FC<CameraCardProps> = ({
           </span>
         </div>
       )}
-      
+
       <div className="mb-3 rounded-lg overflow-hidden bg-gray-100 relative">
-        <VideoFeed 
-          cameraId={camera.id} 
-          camera={camera} 
-          width="100%" 
-          height="auto" 
+        <VideoFeed
+          cameraId={camera.id}
+          camera={camera}
+          width="100%"
+          height="auto"
           streamType={currentStreamType}
         />
-        
+
         {/* Loading Overlay */}
         <LoadingOverlay
           isVisible={status === 'starting' || status === 'stopping' || status === 'restarting'}
           message={
-            status === 'starting' ? 'Starting Camera...' : 
-            status === 'stopping' ? 'Stopping Camera...' : 
+            status === 'starting' ? 'Starting Camera...' :
+            status === 'stopping' ? 'Stopping Camera...' :
             status === 'restarting' ? 'Applying Settings...' : ''
           }
           subMessage={
-            status === 'starting' ? 'Initializing video stream' : 
+            status === 'starting' ? 'Initializing video stream' :
             status === 'stopping' ? 'Closing video stream' :
             status === 'restarting' ? 'Restarting with new brightness' : ''
           }
@@ -272,7 +272,7 @@ const CameraCard: React.FC<CameraCardProps> = ({
           ))}
         </div>
       </div>
-      
+
       {camera.ptz && (
         <div className="flex flex-wrap gap-2 mb-3">
           <div className="text-xs text-gray-500 w-full mb-1">PTZ Controls:</div>
@@ -296,7 +296,7 @@ const CameraCard: React.FC<CameraCardProps> = ({
           </button>
         </div>
       )}
-      
+
       <div className="flex gap-2 mt-auto">
         <button
           onClick={handleToggle}
@@ -326,7 +326,7 @@ const CameraCard: React.FC<CameraCardProps> = ({
           </div>
         </button>
       </div>
-      
+
       <div className="text-xs text-gray-400 text-center mt-2">
         Click card for detailed view
       </div>

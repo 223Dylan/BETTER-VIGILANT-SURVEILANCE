@@ -21,7 +21,7 @@ The API System provides a comprehensive RESTful interface built with FastAPI, of
 /api/v1/
 ├── /auth          - Authentication endpoints
 ├── /cameras       - Camera management
-├── /alerts        - Alert operations  
+├── /alerts        - Alert operations
 ├── /users         - User management
 ├── /frames        - Frame data access
 ├── /stream        - Video streaming
@@ -53,12 +53,12 @@ async def lifespan(app: FastAPI):
     """Application lifecycle management."""
     # Startup
     print("Starting API server...")
-    
+
     # Create database tables
     Base.metadata.create_all(bind=engine)
-    
+
     yield
-    
+
     # Shutdown
     print("Shutting down API server...")
 
@@ -158,13 +158,13 @@ async def login(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username},
         expires_delta=access_token_expires
     )
-    
+
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -187,7 +187,7 @@ async def refresh_token(
         data={"sub": current_user.username},
         expires_delta=access_token_expires
     )
-    
+
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -201,7 +201,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
-    
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -216,7 +216,7 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -225,7 +225,7 @@ async def get_current_user(
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    
+
     user = get_user_by_username(db, username=token_data.username)
     if user is None:
         raise credentials_exception
@@ -249,7 +249,7 @@ async def get_cameras(
     query = db.query(Camera)
     if enabled_only:
         query = query.filter(Camera.enabled == True)
-    
+
     cameras = query.all()
     return cameras
 
@@ -276,7 +276,7 @@ async def create_camera(
     existing = db.query(Camera).filter(Camera.id == camera.id).first()
     if existing:
         raise HTTPException(status_code=400, detail="Camera ID already exists")
-    
+
     db_camera = Camera(
         id=camera.id,
         name=camera.name,
@@ -292,11 +292,11 @@ async def create_camera(
         location=camera.location,
         zone=camera.zone
     )
-    
+
     db.add(db_camera)
     db.commit()
     db.refresh(db_camera)
-    
+
     return db_camera
 
 @router.put("/{camera_id}", response_model=CameraResponse)
@@ -310,15 +310,15 @@ async def update_camera(
     camera = db.query(Camera).filter(Camera.id == camera_id).first()
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")
-    
+
     # Update fields
     update_data = camera_update.dict(exclude_unset=True)
     for field, value in update_data.items():
         setattr(camera, field, value)
-    
+
     camera.updated_at = datetime.utcnow()
     db.commit()
-    
+
     return camera
 
 @router.delete("/{camera_id}")
@@ -331,10 +331,10 @@ async def delete_camera(
     camera = db.query(Camera).filter(Camera.id == camera_id).first()
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")
-    
+
     db.delete(camera)
     db.commit()
-    
+
     return {"message": "Camera deleted successfully"}
 
 @router.post("/{camera_id}/control")
@@ -346,10 +346,10 @@ async def control_camera(
     """Control camera (start/stop/restart)."""
     # Import camera manager
     from src.camera_manager import camera_manager
-    
+
     if not camera_manager:
         raise HTTPException(status_code=503, detail="Camera manager not available")
-    
+
     if action.action == "start":
         result = camera_manager.start_camera(camera_id)
     elif action.action == "stop":
@@ -359,7 +359,7 @@ async def control_camera(
         result = camera_manager.start_camera(camera_id)
     else:
         raise HTTPException(status_code=400, detail="Invalid action")
-    
+
     return {"success": result, "action": action.action}
 
 @router.get("/{camera_id}/status")
@@ -369,13 +369,13 @@ async def get_camera_status(
 ):
     """Get camera status and statistics."""
     from src.camera_manager import camera_manager
-    
+
     if not camera_manager:
         raise HTTPException(status_code=503, detail="Camera manager not available")
-    
+
     status = camera_manager.get_camera_status(camera_id)
     stats = camera_manager.get_stats(camera_id)
-    
+
     return {
         "camera_id": camera_id,
         "status": status,
@@ -405,7 +405,7 @@ async def get_alerts(
 ):
     """Get alerts with filtering and pagination."""
     query = db.query(Alert)
-    
+
     # Apply filters
     if status:
         query = query.filter(Alert.status == status)
@@ -417,13 +417,13 @@ async def get_alerts(
         query = query.filter(Alert.timestamp >= start_date)
     if end_date:
         query = query.filter(Alert.timestamp <= end_date)
-    
+
     # Order by timestamp (newest first)
     query = query.order_by(Alert.timestamp.desc())
-    
+
     # Apply pagination
     alerts = query.offset(skip).limit(limit).all()
-    
+
     return alerts
 
 @router.get("/stats/summary")
@@ -442,15 +442,15 @@ async def get_alert_statistics(
         "7d": timedelta(days=7),
         "30d": timedelta(days=30)
     }
-    
+
     start_time = now - period_map[period]
-    
+
     query = db.query(Alert).filter(Alert.timestamp >= start_time)
     if camera_id:
         query = query.filter(Alert.camera_id == camera_id)
-    
+
     alerts = query.all()
-    
+
     # Calculate statistics
     stats = {
         "total_alerts": len(alerts),
@@ -471,7 +471,7 @@ async def get_alert_statistics(
         },
         "avg_confidence": sum(a.confidence for a in alerts) / len(alerts) if alerts else 0
     }
-    
+
     return stats
 
 @router.post("/{alert_id}/acknowledge")
@@ -484,20 +484,20 @@ async def acknowledge_alert(
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
-    
+
     if alert.status != "active":
         raise HTTPException(status_code=400, detail="Alert is not active")
-    
+
     alert.status = "acknowledged"
     alert.acknowledged_by = current_user.id
     alert.acknowledged_at = datetime.utcnow()
     alert.updated_at = datetime.utcnow()
-    
+
     db.commit()
-    
+
     # Broadcast update via WebSocket
     await broadcast_alert_update(alert)
-    
+
     return {"message": "Alert acknowledged successfully"}
 
 @router.post("/{alert_id}/resolve")
@@ -511,20 +511,20 @@ async def resolve_alert(
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
-    
+
     alert.status = "resolved"
     alert.resolved_by = current_user.id
     alert.resolved_at = datetime.utcnow()
     alert.updated_at = datetime.utcnow()
-    
+
     if resolution.notes:
         alert.notes = resolution.notes
-    
+
     db.commit()
-    
+
     # Broadcast update via WebSocket
     await broadcast_alert_update(alert)
-    
+
     return {"message": "Alert resolved successfully"}
 ```
 
@@ -544,17 +544,17 @@ router = APIRouter()
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
-    
+
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
-    
+
     def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
-    
+
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
-    
+
     async def broadcast(self, message: str):
         for connection in self.active_connections:
             try:
@@ -573,7 +573,7 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             # Keep connection alive
             data = await websocket.receive_text()
-            
+
             # Handle incoming messages
             try:
                 message = json.loads(data)
@@ -583,20 +583,20 @@ async def websocket_endpoint(websocket: WebSocket):
                     "type": "error",
                     "message": "Invalid JSON format"
                 }))
-                
+
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
 async def handle_websocket_message(message: dict, websocket: WebSocket):
     """Handle incoming WebSocket messages."""
     message_type = message.get("type")
-    
+
     if message_type == "ping":
         await websocket.send_text(json.dumps({
             "type": "pong",
             "timestamp": datetime.utcnow().isoformat()
         }))
-    
+
     elif message_type == "subscribe":
         # Handle subscription to specific events
         channels = message.get("channels", [])
@@ -604,7 +604,7 @@ async def handle_websocket_message(message: dict, websocket: WebSocket):
             "type": "subscribed",
             "channels": channels
         }))
-    
+
     else:
         await websocket.send_text(json.dumps({
             "type": "error",
@@ -623,7 +623,7 @@ async def broadcast_alert_update(alert):
             "timestamp": alert.timestamp.isoformat()
         }
     }
-    
+
     await manager.broadcast(json.dumps(message))
 
 async def broadcast_camera_status(camera_id: str, status: str):
@@ -636,7 +636,7 @@ async def broadcast_camera_status(camera_id: str, status: str):
             "timestamp": datetime.utcnow().isoformat()
         }
     }
-    
+
     await manager.broadcast(json.dumps(message))
 ```
 
@@ -683,7 +683,7 @@ class CameraResponse(CameraBase):
     status: str
     created_at: datetime
     updated_at: Optional[datetime]
-    
+
     class Config:
         from_attributes = True
 
@@ -714,7 +714,7 @@ class AlertResponse(AlertBase):
     resolved_by: Optional[str]
     resolved_at: Optional[datetime]
     notes: Optional[str]
-    
+
     class Config:
         from_attributes = True
 
@@ -733,7 +733,7 @@ class UserResponse(UserBase):
     is_active: bool
     created_at: datetime
     last_login: Optional[datetime]
-    
+
     class Config:
         from_attributes = True
 
@@ -793,7 +793,7 @@ async def validation_exception_handler(request: Request, exc: ValidationError):
 async def general_exception_handler(request: Request, exc: Exception):
     """Handle unexpected exceptions."""
     logger.error(f"Unexpected error: {str(exc)}", exc_info=True)
-    
+
     return JSONResponse(
         status_code=500,
         content={
@@ -823,18 +823,18 @@ def test_authentication():
         "username": "admin",
         "password": "admin123"
     })
-    
+
     assert response.status_code == 200
     token_data = response.json()
     assert "access_token" in token_data
-    
+
     return token_data["access_token"]
 
 def test_camera_management():
     """Test camera CRUD operations."""
     token = test_authentication()
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     # Create camera
     camera_data = {
         "id": "test-camera",
@@ -842,26 +842,26 @@ def test_camera_management():
         "source": "0",
         "source_type": "webcam"
     }
-    
-    response = requests.post(f"{BASE_URL}/cameras", 
-                           json=camera_data, 
+
+    response = requests.post(f"{BASE_URL}/cameras",
+                           json=camera_data,
                            headers=headers)
     assert response.status_code == 200
-    
+
     # Get camera
-    response = requests.get(f"{BASE_URL}/cameras/test-camera", 
+    response = requests.get(f"{BASE_URL}/cameras/test-camera",
                           headers=headers)
     assert response.status_code == 200
-    
+
     # Update camera
     update_data = {"name": "Updated Camera"}
-    response = requests.put(f"{BASE_URL}/cameras/test-camera", 
-                          json=update_data, 
+    response = requests.put(f"{BASE_URL}/cameras/test-camera",
+                          json=update_data,
                           headers=headers)
     assert response.status_code == 200
-    
+
     # Delete camera
-    response = requests.delete(f"{BASE_URL}/cameras/test-camera", 
+    response = requests.delete(f"{BASE_URL}/cameras/test-camera",
                              headers=headers)
     assert response.status_code == 200
 
@@ -869,13 +869,13 @@ def test_alert_operations():
     """Test alert management."""
     token = test_authentication()
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     # Get alerts
     response = requests.get(f"{BASE_URL}/alerts", headers=headers)
     assert response.status_code == 200
-    
+
     # Get alert statistics
-    response = requests.get(f"{BASE_URL}/alerts/stats/summary", 
+    response = requests.get(f"{BASE_URL}/alerts/stats/summary",
                           headers=headers)
     assert response.status_code == 200
     assert "total_alerts" in response.json()
@@ -905,4 +905,4 @@ def test_alert_operations():
    - Log all requests
    - Track performance metrics
    - Monitor error rates
-   - Set up health checks 
+   - Set up health checks

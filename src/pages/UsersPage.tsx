@@ -80,9 +80,9 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, onUserSave
           role: formData.role,
           permissions: customPermissions ? permissions : undefined,
         };
-        
+
         await userService.updateUser(user.id, updateData);
-        
+
         // Handle password separately if provided
         if (formData.password) {
           await userService.changePassword(user.id, formData.password);
@@ -114,7 +114,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, onUserSave
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             {user ? 'Edit User' : 'Create New User'}
           </h3>
-          
+
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {error}
@@ -447,13 +447,13 @@ const UsersPage: React.FC = () => {
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
-                              {user.first_name && user.last_name 
-                                ? `${user.first_name} ${user.last_name}` 
+                              {user.first_name && user.last_name
+                                ? `${user.first_name} ${user.last_name}`
                                 : user.username}
                             </div>
                             <div className="text-sm text-gray-500">{user.email}</div>
-                            {user.username !== (user.first_name && user.last_name 
-                              ? `${user.first_name} ${user.last_name}` 
+                            {user.username !== (user.first_name && user.last_name
+                              ? `${user.first_name} ${user.last_name}`
                               : user.username) && (
                               <div className="text-xs text-gray-400">@{user.username}</div>
                             )}
@@ -467,8 +467,8 @@ const UsersPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.is_active 
-                            ? 'bg-green-100 text-green-800' 
+                          user.is_active
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                         }`}>
                           {user.is_active ? 'Active' : 'Inactive'}
@@ -546,4 +546,4 @@ const UsersPage: React.FC = () => {
   );
 };
 
-export default UsersPage; 
+export default UsersPage;

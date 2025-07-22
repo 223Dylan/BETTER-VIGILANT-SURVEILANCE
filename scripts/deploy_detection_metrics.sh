@@ -44,18 +44,18 @@ check_service() {
     local attempt=1
 
     print_status "Checking $service_name..."
-    
+
     while [ $attempt -le $max_attempts ]; do
         if curl -s "$url" > /dev/null 2>&1; then
             print_success "$service_name is running"
             return 0
         fi
-        
+
         print_status "Waiting for $service_name... (attempt $attempt/$max_attempts)"
         sleep 2
         ((attempt++))
     done
-    
+
     print_error "$service_name is not responding after $max_attempts attempts"
     return 1
 }
@@ -63,7 +63,7 @@ check_service() {
 # Function to start ELK stack (if using Docker)
 start_elk_stack() {
     print_status "Starting ELK stack with Docker Compose..."
-    
+
     if [ -f "docker-compose.yml" ]; then
         # Check if ELK services are defined in docker-compose
         if grep -q "elasticsearch\|kibana\|logstash" docker-compose.yml; then
@@ -82,16 +82,16 @@ start_elk_stack() {
 # Function to setup Python environment
 setup_python_env() {
     print_status "Setting up Python environment..."
-    
+
     # Check if virtual environment exists
     if [ ! -d ".venv" ]; then
         print_status "Creating virtual environment..."
         python -m venv .venv
     fi
-    
+
     # Activate virtual environment
     source .venv/bin/activate || source .venv/Scripts/activate
-    
+
     # Install requirements
     if [ -f "requirements.txt" ]; then
         print_status "Installing Python requirements..."
@@ -103,7 +103,7 @@ setup_python_env() {
 # Function to run the detection metrics setup
 run_setup_script() {
     print_status "Running detection metrics setup..."
-    
+
     if [ -f "scripts/setup_detection_metrics.py" ]; then
         python scripts/setup_detection_metrics.py
         print_success "Detection metrics setup completed"
@@ -116,10 +116,10 @@ run_setup_script() {
 # Function to validate Logstash configuration
 validate_logstash_config() {
     print_status "Validating Logstash configuration..."
-    
+
     if [ -f "$LOGSTASH_CONFIG" ]; then
         print_success "Logstash configuration file found"
-        
+
         # Basic validation - check for required sections
         if grep -q "input\|filter\|output" "$LOGSTASH_CONFIG"; then
             print_success "Logstash configuration appears valid"
@@ -135,7 +135,7 @@ validate_logstash_config() {
 # Function to check detection system integration
 check_detection_integration() {
     print_status "Checking detection system integration..."
-    
+
     # Check if detection metrics module exists
     if [ -f "src/detection_metrics.py" ]; then
         print_success "Detection metrics module found"
@@ -143,14 +143,14 @@ check_detection_integration() {
         print_error "Detection metrics module not found: src/detection_metrics.py"
         return 1
     fi
-    
+
     # Check if tasks.py has been updated
     if grep -q "detection_metrics" "src/tasks.py" 2>/dev/null; then
         print_success "Celery tasks updated with metrics logging"
     else
         print_warning "Celery tasks may not be integrated with metrics logging"
     fi
-    
+
     # Check if frame processor has been updated
     if grep -q "detection_metrics" "src/frame_processor.py" 2>/dev/null; then
         print_success "Frame processor updated with metrics logging"
@@ -198,37 +198,37 @@ show_post_deployment_info() {
 # Main deployment flow
 main() {
     print_status "Starting Enhanced Detection Metrics System deployment..."
-    
+
     # Setup Python environment
     setup_python_env
-    
+
     # Start ELK stack (if using Docker)
     start_elk_stack
-    
+
     # Wait for services to be ready
     print_status "Waiting for services to start..."
     sleep 10
-    
+
     # Check Elasticsearch
     if ! check_service "Elasticsearch" "$ELASTICSEARCH_URL"; then
         print_error "Deployment failed: Elasticsearch not available"
         exit 1
     fi
-    
+
     # Check Kibana
     if ! check_service "Kibana" "$KIBANA_URL/api/status"; then
         print_warning "Kibana not available - dashboard import may fail"
     fi
-    
+
     # Validate Logstash configuration
     validate_logstash_config
-    
+
     # Run setup script
     run_setup_script
-    
+
     # Check integration
     check_detection_integration
-    
+
     # Show post-deployment information
     show_post_deployment_info
 }
@@ -237,4 +237,4 @@ main() {
 trap 'print_error "Deployment interrupted"; exit 1' INT TERM
 
 # Run main function
-main "$@" 
+main "$@"

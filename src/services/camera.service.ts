@@ -42,14 +42,14 @@ class CameraService {
     try {
       // Get available cameras from config
       const availableCameras = await apiService.get<CameraApiResponse[]>('/cameras/available')
-      
+
       // Get current camera status
       const cameraStatus = await apiService.get<CameraStatusResponse>('/cameras/status')
-      
+
       const cameras = availableCameras.map((camera: CameraApiResponse) => {
         const status = cameraStatus[camera.id] || 'stopped'
         const isActive = status === 'active'
-        
+
         // Determine health status with proper typing
         let healthStatus: 'healthy' | 'error' | 'warning' = 'warning'
         if (isActive) {
@@ -57,7 +57,7 @@ class CameraService {
         } else if (status === 'error') {
           healthStatus = 'error'
         }
-        
+
         return {
           id: camera.id,
           name: camera.name,
@@ -69,9 +69,9 @@ class CameraService {
           lastActive: camera.last_online || new Date().toISOString(),
           health: {
             status: healthStatus,
-            message: isActive 
-              ? 'Camera is running normally' 
-              : status === 'error' 
+            message: isActive
+              ? 'Camera is running normally'
+              : status === 'error'
               ? 'Camera encountered an error'
               : 'Camera is stopped',
           },
@@ -93,7 +93,7 @@ class CameraService {
           source_type: camera.source_type as 'webcam' | 'rtsp' | 'file',
         }
       })
-      
+
       return cameras
     } catch (error) {
       console.error('Error fetching cameras from API:', error)
@@ -180,7 +180,7 @@ class CameraService {
       return response
     } catch (error: any) {
       console.error('Error creating camera:', error)
-      
+
       // Extract error message from API response
       let errorMessage = 'Failed to create camera'
       if (error?.response?.data?.detail) {
@@ -188,7 +188,7 @@ class CameraService {
       } else if (error?.message) {
         errorMessage = error.message
       }
-      
+
       return {
         status: 'error',
         message: errorMessage

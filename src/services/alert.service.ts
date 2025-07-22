@@ -101,8 +101,8 @@ class AlertService {
    * Perform bulk action on multiple alerts
    */
   async bulkAction(
-    alertIds: string[], 
-    action: 'acknowledge' | 'resolve', 
+    alertIds: string[],
+    action: 'acknowledge' | 'resolve',
     notes?: string
   ): Promise<BulkActionResult> {
     try {
@@ -114,7 +114,7 @@ class AlertService {
       };
 
       const response = await apiService.post<AlertActionResponse>('/api/alerts/bulk-action', requestData);
-      
+
       if (!response.success) {
         throw new Error(response.message || 'Bulk action failed');
       }
@@ -189,4 +189,4 @@ class AlertService {
 }
 
 export const alertService = AlertService.getInstance();
-export default alertService; 
+export default alertService;

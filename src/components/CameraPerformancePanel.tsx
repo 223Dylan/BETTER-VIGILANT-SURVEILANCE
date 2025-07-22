@@ -32,7 +32,7 @@ const CameraPerformancePanel: React.FC<CameraPerformancePanelProps> = ({
 
   useEffect(() => {
     loadPerformanceData();
-    
+
     if (realTime) {
       setupWebSocket();
     } else {
@@ -53,7 +53,7 @@ const CameraPerformancePanel: React.FC<CameraPerformancePanelProps> = ({
         metricsService.getCameraPerformance(cameraId, timeRange),
         metricsService.getCameraMetrics()
       ]);
-      
+
       setPerformance(performanceData);
       const camera = camerasData.find(c => c.camera_id === cameraId);
       setCurrentMetrics(camera || null);
@@ -77,12 +77,12 @@ const CameraPerformancePanel: React.FC<CameraPerformancePanelProps> = ({
       wsRef.current.onmessage = (event) => {
         try {
           const message = metricsService.parseWebSocketMessage(event);
-          
+
           if (message?.type === 'camera_metrics_update' && message.camera_id === cameraId) {
             if (message.performance) {
               setPerformance(message.performance);
             }
-            
+
             // Update current metrics with latest data point if available
             if (message.performance?.data && message.performance.data.length > 0) {
               const latest = message.performance.data[message.performance.data.length - 1];
@@ -200,8 +200,8 @@ const CameraPerformancePanel: React.FC<CameraPerformancePanelProps> = ({
         <div className="px-6 py-4 bg-gray-50">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold" style={{ 
-                color: getPerformanceColor(currentMetrics.fps_actual, currentMetrics.fps_target) 
+              <div className="text-2xl font-bold" style={{
+                color: getPerformanceColor(currentMetrics.fps_actual, currentMetrics.fps_target)
               }}>
                 {currentMetrics.fps_actual.toFixed(1)}
               </div>
@@ -243,12 +243,12 @@ const CameraPerformancePanel: React.FC<CameraPerformancePanelProps> = ({
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={performance.data}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="timestamp" 
+                  <XAxis
+                    dataKey="timestamp"
                     tickFormatter={(value) => new Date(value).toLocaleTimeString()}
                   />
                   <YAxis />
-                  <Tooltip 
+                  <Tooltip
                     labelFormatter={(value) => new Date(value).toLocaleString()}
                     formatter={(value: number) => [value.toFixed(1), 'FPS']}
                   />
@@ -272,12 +272,12 @@ const CameraPerformancePanel: React.FC<CameraPerformancePanelProps> = ({
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={performance.data}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="timestamp" 
+                  <XAxis
+                    dataKey="timestamp"
                     tickFormatter={(value) => new Date(value).toLocaleTimeString()}
                   />
                   <YAxis tickFormatter={(value) => `${value}ms`} />
-                  <Tooltip 
+                  <Tooltip
                     labelFormatter={(value) => new Date(value).toLocaleString()}
                     formatter={(value: number) => [formatLatency(value), 'Latency']}
                   />
@@ -300,12 +300,12 @@ const CameraPerformancePanel: React.FC<CameraPerformancePanelProps> = ({
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={performance.data}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="timestamp" 
+                  <XAxis
+                    dataKey="timestamp"
                     tickFormatter={(value) => new Date(value).toLocaleTimeString()}
                   />
                   <YAxis />
-                  <Tooltip 
+                  <Tooltip
                     labelFormatter={(value) => new Date(value).toLocaleString()}
                   />
                   <Legend />
@@ -343,4 +343,4 @@ const CameraPerformancePanel: React.FC<CameraPerformancePanelProps> = ({
   );
 };
 
-export default CameraPerformancePanel; 
+export default CameraPerformancePanel;

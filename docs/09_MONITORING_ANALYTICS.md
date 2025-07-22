@@ -148,7 +148,7 @@ filter {
         "[@metadata][target_index]" => "detection-metrics-%{+YYYY.MM.dd}"
       }
     }
-    
+
     # Parse confidence levels
     if [prediction][confidence] {
       ruby {
@@ -169,7 +169,7 @@ filter {
       }
     }
   }
-  
+
   # Parse alert events
   if [type] == "alert_event" {
     mutate {
@@ -177,7 +177,7 @@ filter {
         "[@metadata][target_index]" => "detection-alerts-%{+YYYY.MM.dd}"
       }
     }
-    
+
     # Add alert metadata
     if [alert_id] {
       mutate {
@@ -186,7 +186,7 @@ filter {
       }
     }
   }
-  
+
   # Parse system performance metrics
   if [type] == "system_performance" {
     mutate {
@@ -194,14 +194,14 @@ filter {
         "[@metadata][target_index]" => "system-performance-%{+YYYY.MM.dd}"
       }
     }
-    
+
     # Calculate performance status
     if [performance][cpu_usage] {
       ruby {
         code => "
           cpu_usage = event.get('[performance][cpu_usage]')
           memory_usage = event.get('[performance][memory_usage]')
-          
+
           if cpu_usage.to_f > 80 || memory_usage.to_f > 80
             event.set('performance_status', 'critical')
           elsif cpu_usage.to_f > 60 || memory_usage.to_f > 60
@@ -213,7 +213,7 @@ filter {
       }
     }
   }
-  
+
   # Parse camera events
   if [type] == "camera_event" {
     mutate {
@@ -221,7 +221,7 @@ filter {
         "[@metadata][target_index]" => "camera-events-%{+YYYY.MM.dd}"
       }
     }
-    
+
     # Enrich camera data
     if [camera_id] {
       # Add camera metadata (location, zone, etc.)
@@ -230,27 +230,27 @@ filter {
       }
     }
   }
-  
+
   # Add common fields
   mutate {
     add_field => { "environment" => "production" }
     add_field => { "service" => "shoplifting_detection" }
   }
-  
+
   # Parse timestamp if not already set
   if ![timestamp] {
     mutate {
       add_field => { "timestamp" => "%{@timestamp}" }
     }
   }
-  
+
   # Remove sensitive data
   if [password] {
     mutate {
       remove_field => [ "password" ]
     }
   }
-  
+
   if [token] {
     mutate {
       remove_field => [ "token" ]
@@ -265,7 +265,7 @@ output {
     template_name => "shoplifting_detection"
     template_pattern => "detection-*,camera-*,system-*"
   }
-  
+
   # Debug output (remove in production)
   if [loglevel] == "debug" {
     stdout {
@@ -298,12 +298,12 @@ class DetectionMetrics:
     prediction: Dict[str, Any]
     performance: Dict[str, float]
     type: str = "detection_metrics"
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return asdict(self)
 
-@dataclass  
+@dataclass
 class AlertMetrics:
     """Structure for alert-related metrics."""
     timestamp: str
@@ -313,7 +313,7 @@ class AlertMetrics:
     confidence: float
     status: str
     type: str = "alert_event"
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
@@ -324,42 +324,42 @@ class PerformanceMetrics:
     performance: Dict[str, float]
     system_info: Dict[str, Any]
     type: str = "system_performance"
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
 class MetricsLogger:
     """Centralized metrics logging to ELK stack."""
-    
+
     def __init__(self, logstash_host: str = "localhost", logstash_port: int = 5000):
         self.logstash_host = logstash_host
         self.logstash_port = logstash_port
         self.logger = logging.getLogger("metrics")
-        
+
         # Setup logger to send to Logstash
         self._setup_logstash_handler()
-    
+
     def _setup_logstash_handler(self):
         """Setup handler to send logs to Logstash."""
         try:
             # Create socket handler for Logstash
             socket_handler = logging.handlers.SocketHandler(
-                self.logstash_host, 
+                self.logstash_host,
                 self.logstash_port
             )
             socket_handler.setLevel(logging.INFO)
-            
+
             # JSON formatter
             formatter = logging.Formatter('%(message)s')
             socket_handler.setFormatter(formatter)
-            
+
             self.logger.addHandler(socket_handler)
             self.logger.setLevel(logging.INFO)
-            
+
         except Exception as e:
             print(f"Failed to setup Logstash handler: {e}")
-    
-    def log_detection_metrics(self, camera_id: str, prediction: Dict[str, Any], 
+
+    def log_detection_metrics(self, camera_id: str, prediction: Dict[str, Any],
                             performance: Dict[str, float]):
         """Log detection prediction metrics."""
         metrics = DetectionMetrics(
@@ -368,13 +368,13 @@ class MetricsLogger:
             prediction=prediction,
             performance=performance
         )
-        
+
         try:
             self.logger.info(json.dumps(metrics.to_dict()))
         except Exception as e:
             print(f"Failed to log detection metrics: {e}")
-    
-    def log_alert_metrics(self, alert_id: str, camera_id: str, severity: str, 
+
+    def log_alert_metrics(self, alert_id: str, camera_id: str, severity: str,
                          confidence: float, status: str):
         """Log alert-related metrics."""
         metrics = AlertMetrics(
@@ -385,13 +385,13 @@ class MetricsLogger:
             confidence=confidence,
             status=status
         )
-        
+
         try:
             self.logger.info(json.dumps(metrics.to_dict()))
         except Exception as e:
             print(f"Failed to log alert metrics: {e}")
-    
-    def log_performance_metrics(self, performance: Dict[str, float], 
+
+    def log_performance_metrics(self, performance: Dict[str, float],
                               system_info: Dict[str, Any]):
         """Log system performance metrics."""
         metrics = PerformanceMetrics(
@@ -399,7 +399,7 @@ class MetricsLogger:
             performance=performance,
             system_info=system_info
         )
-        
+
         try:
             self.logger.info(json.dumps(metrics.to_dict()))
         except Exception as e:
@@ -422,12 +422,12 @@ from typing import Dict, Any
 
 class SystemMonitor:
     """Monitor system performance and resources."""
-    
+
     def __init__(self, interval: int = 60):
         self.interval = interval
         self.monitoring = False
         self.monitor_thread = None
-    
+
     def start_monitoring(self):
         """Start system monitoring."""
         if not self.monitoring:
@@ -435,55 +435,55 @@ class SystemMonitor:
             self.monitor_thread = threading.Thread(target=self._monitor_loop)
             self.monitor_thread.daemon = True
             self.monitor_thread.start()
-    
+
     def stop_monitoring(self):
         """Stop system monitoring."""
         self.monitoring = False
         if self.monitor_thread:
             self.monitor_thread.join()
-    
+
     def _monitor_loop(self):
         """Main monitoring loop."""
         while self.monitoring:
             try:
                 metrics = self.collect_system_metrics()
-                
+
                 # Log metrics to ELK stack
                 from src.detection_metrics import metrics_logger
                 metrics_logger.log_performance_metrics(
                     performance=metrics['performance'],
                     system_info=metrics['system_info']
                 )
-                
+
                 time.sleep(self.interval)
-                
+
             except Exception as e:
                 print(f"System monitoring error: {e}")
                 time.sleep(self.interval)
-    
+
     def collect_system_metrics(self) -> Dict[str, Any]:
         """Collect current system metrics."""
         # CPU metrics
         cpu_percent = psutil.cpu_percent(interval=1)
         cpu_count = psutil.cpu_count()
         cpu_freq = psutil.cpu_freq()
-        
+
         # Memory metrics
         memory = psutil.virtual_memory()
         swap = psutil.swap_memory()
-        
+
         # Disk metrics
         disk = psutil.disk_usage('/')
         disk_io = psutil.disk_io_counters()
-        
+
         # Network metrics
         network_io = psutil.net_io_counters()
-        
+
         # Process metrics
         process = psutil.Process()
         process_memory = process.memory_info()
         process_cpu = process.cpu_percent()
-        
+
         return {
             'performance': {
                 'cpu_usage': cpu_percent,
@@ -582,7 +582,7 @@ system_monitor = SystemMonitor()
 ```json
 {
   "id": "confidence-distribution",
-  "type": "visualization", 
+  "type": "visualization",
   "attributes": {
     "title": "Confidence Score Distribution",
     "visState": {
@@ -763,7 +763,7 @@ ELASTICSEARCH_URL = "http://localhost:9200"
 def create_index_template(name: str, template: dict) -> bool:
     """Create Elasticsearch index template."""
     url = f"{ELASTICSEARCH_URL}/_index_template/{name}"
-    
+
     try:
         response = requests.put(url, json=template)
         if response.status_code in [200, 201]:
@@ -779,7 +779,7 @@ def create_index_template(name: str, template: dict) -> bool:
 def main():
     """Main setup function."""
     print("Setting up Elasticsearch templates for detection metrics...")
-    
+
     # Detection metrics template
     detection_template = {
         "index_patterns": ["detection-metrics-*"],
@@ -811,7 +811,7 @@ def main():
             }
         }
     }
-    
+
     # Alert metrics template
     alert_template = {
         "index_patterns": ["detection-alerts-*"],
@@ -832,12 +832,12 @@ def main():
             }
         }
     }
-    
+
     # Create templates
     success = True
     success &= create_index_template("detection-metrics", detection_template)
     success &= create_index_template("detection-alerts", alert_template)
-    
+
     if success:
         print("All templates created successfully")
         return 0
@@ -873,4 +873,4 @@ if __name__ == "__main__":
    - Define retention policies
    - Archive historical data
    - Monitor storage usage
-   - Implement automated cleanup 
+   - Implement automated cleanup

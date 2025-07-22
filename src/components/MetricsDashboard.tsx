@@ -60,7 +60,7 @@ const MetricsDashboard: React.FC = () => {
   useEffect(() => {
     // Initial load
     fetchInitialData();
-    
+
     // Setup WebSocket for real-time updates
     if (isRealTime) {
       setupWebSocket();
@@ -97,7 +97,7 @@ const MetricsDashboard: React.FC = () => {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       const data = await response.json();
-      
+
       const formattedMetrics = data.map((item: any) => ({
         timestamp: new Date(item.timestamp).toLocaleTimeString(),
         cpu_usage: item.cpu_usage,
@@ -130,7 +130,7 @@ const MetricsDashboard: React.FC = () => {
   const setupWebSocket = () => {
     try {
       const wsUrl = 'ws://localhost:8001/ws/metrics';
-      
+
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
@@ -141,11 +141,11 @@ const MetricsDashboard: React.FC = () => {
       wsRef.current.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-          
+
           if (message.type === 'metrics_update') {
             const data = message.data as MetricsSummary;
             setSummary(data);
-            
+
             // Update system metrics chart with latest data point
             if (data.system) {
               const newPoint = {
@@ -155,7 +155,7 @@ const MetricsDashboard: React.FC = () => {
                 disk_usage: data.system.disk_usage,
                 active_cameras: data.system.active_cameras
               };
-              
+
               setMetrics(prev => {
                 const updated = [...prev, newPoint];
                 // Keep last 50 data points
@@ -204,7 +204,7 @@ const MetricsDashboard: React.FC = () => {
 
   const getCameraStatusData = () => {
     if (!summary?.cameras) return [];
-    
+
     const statusCounts = summary.cameras.reduce((acc, camera) => {
       const status = camera.status || 'unknown';
       acc[status] = (acc[status] || 0) + 1;
@@ -388,4 +388,4 @@ const MetricsDashboard: React.FC = () => {
   );
 };
 
-export default MetricsDashboard; 
+export default MetricsDashboard;

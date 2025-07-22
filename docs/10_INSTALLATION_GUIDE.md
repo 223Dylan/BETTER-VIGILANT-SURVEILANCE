@@ -180,7 +180,7 @@ sudo -u postgres createuser --interactive --pwprompt shoplifting_user
 # Ubuntu/Debian
 sudo apt-get install redis-server
 
-# macOS (with Homebrew)  
+# macOS (with Homebrew)
 brew install redis
 
 # Windows
@@ -389,7 +389,7 @@ docker-compose -f docker-compose.dev.yml exec redis redis-cli ping
 - **postgres**: Database
 - **redis**: Message broker and cache
 
-#### Optional Services  
+#### Optional Services
 - **elasticsearch**: Log storage and search
 - **kibana**: Log visualization
 - **logstash**: Log processing
@@ -449,4 +449,4 @@ docker-compose -f docker-compose.dev.yml exec postgres psql -U postgres shoplift
 # Reset everything
 docker-compose -f docker-compose.dev.yml down -v
 python scripts/init_system.py
-``` 
+```

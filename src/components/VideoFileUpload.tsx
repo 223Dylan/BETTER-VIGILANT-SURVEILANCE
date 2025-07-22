@@ -279,4 +279,4 @@ const VideoFileUpload: React.FC<VideoFileUploadProps> = ({
   );
 };
 
-export default VideoFileUpload; 
+export default VideoFileUpload;

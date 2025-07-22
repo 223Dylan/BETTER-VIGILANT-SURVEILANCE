@@ -7,7 +7,7 @@
 2. Select **Vertical bar chart**
 3. Choose index: `detection-metrics-*`
 4. **Y-axis**: Count (default)
-5. **X-axis**: 
+5. **X-axis**:
    - Aggregation: Terms
    - Field: `confidence_level`
 6. Click **Update** → **Save** as "Detection Confidence"
@@ -62,4 +62,4 @@ Your enhanced detection metrics system is now working with:
 - Proper index templates
 - Data flowing into Elasticsearch
 - Index patterns configured
-- Ready for dashboard creation 
+- Ready for dashboard creation

@@ -22,8 +22,8 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
     <div className={`absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm ${className}`}>
       <Box className="text-center text-white animate-pulse">
         <div className="relative mb-3">
-          <CircularProgress 
-            size={size} 
+          <CircularProgress
+            size={size}
             sx={{ color: 'white' }}
           />
           <div className="absolute inset-0 rounded-full border-2 border-white opacity-20 animate-ping"></div>
@@ -41,4 +41,4 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   );
 };
 
-export default LoadingOverlay; 
+export default LoadingOverlay;

@@ -57,5 +57,3 @@ mypy>=1.5.0
 # Testing (optional but recommended)
 pytest>=7.0.0
 pytest-cov>=4.0.0
-
- 

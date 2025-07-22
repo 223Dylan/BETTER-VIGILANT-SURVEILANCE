@@ -54,4 +54,4 @@ updates:
       - "223Dylan"
     commit-message:
       prefix: "deps"
-      include: "scope" 
+      include: "scope"

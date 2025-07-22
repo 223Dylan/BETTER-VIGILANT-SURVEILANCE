@@ -46,89 +46,89 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class JWTHandler:
     """JWT token management."""
-    
+
     @staticmethod
     def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
         """Create JWT access token."""
         to_encode = data.copy()
-        
+
         if expires_delta:
             expire = datetime.utcnow() + expires_delta
         else:
             expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        
+
         to_encode.update({
             "exp": expire,
             "type": "access",
             "iat": datetime.utcnow()
         })
-        
+
         encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
         return encoded_jwt
-    
+
     @staticmethod
     def create_refresh_token(data: dict) -> str:
         """Create JWT refresh token."""
         to_encode = data.copy()
         expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-        
+
         to_encode.update({
             "exp": expire,
             "type": "refresh",
             "iat": datetime.utcnow()
         })
-        
+
         encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
         return encoded_jwt
-    
+
     @staticmethod
     def verify_token(token: str) -> Optional[Dict[str, Any]]:
         """Verify and decode JWT token."""
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            
+
             # Check token type
             if payload.get("type") != "access":
                 return None
-            
+
             # Check expiration
             exp = payload.get("exp")
             if exp and datetime.fromtimestamp(exp) < datetime.utcnow():
                 return None
-                
+
             return payload
-            
+
         except JWTError:
             return None
-    
+
     @staticmethod
     def verify_refresh_token(token: str) -> Optional[Dict[str, Any]]:
         """Verify refresh token."""
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            
+
             # Check token type
             if payload.get("type") != "refresh":
                 return None
-                
+
             return payload
-            
+
         except JWTError:
             return None
 
 class PasswordHandler:
     """Password hashing and verification."""
-    
+
     @staticmethod
     def hash_password(password: str) -> str:
         """Hash password using bcrypt."""
         return pwd_context.hash(password)
-    
+
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """Verify password against hash."""
         return pwd_context.verify(plain_password, hashed_password)
-    
+
     @staticmethod
     def generate_password_reset_token(user_id: str) -> str:
         """Generate password reset token."""
@@ -159,21 +159,21 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     # Verify token
     payload = JWTHandler.verify_token(token)
     if not payload:
         raise credentials_exception
-    
+
     # Get user
     username = payload.get("sub")
     if not username:
         raise credentials_exception
-    
+
     user = db.query(User).filter(User.username == username).first()
     if not user or not user.is_active:
         raise credentials_exception
-    
+
     return user
 
 async def get_current_active_user(
@@ -199,7 +199,7 @@ def require_permissions(required_permissions: list):
     """Dependency to require specific permissions."""
     def permission_checker(current_user: User = Depends(get_current_user)):
         user_permissions = current_user.permissions or {}
-        
+
         for permission in required_permissions:
             if not user_permissions.get(permission, False):
                 raise HTTPException(
@@ -233,19 +233,19 @@ class Permission(str, Enum):
     CAMERA_UPDATE = "camera:update"
     CAMERA_DELETE = "camera:delete"
     CAMERA_CONTROL = "camera:control"
-    
+
     # Alert permissions
     ALERT_VIEW = "alert:view"
     ALERT_ACKNOWLEDGE = "alert:acknowledge"
     ALERT_RESOLVE = "alert:resolve"
     ALERT_DELETE = "alert:delete"
-    
+
     # User permissions
     USER_VIEW = "user:view"
     USER_CREATE = "user:create"
     USER_UPDATE = "user:update"
     USER_DELETE = "user:delete"
-    
+
     # System permissions
     SYSTEM_CONFIG = "system:config"
     SYSTEM_LOGS = "system:logs"
@@ -291,12 +291,12 @@ def has_permission(user: User, permission: Permission) -> bool:
     # Admin has all permissions
     if user.role == UserRole.ADMIN:
         return True
-    
+
     # Check role-based permissions
     role_permissions = get_user_permissions(UserRole(user.role))
     if permission in role_permissions:
         return True
-    
+
     # Check custom user permissions
     user_permissions = user.permissions or {}
     return user_permissions.get(permission.value, False)
@@ -319,7 +319,7 @@ import os
 
 class SymmetricEncryption:
     """Symmetric encryption using Fernet."""
-    
+
     def __init__(self, key: bytes = None):
         if key is None:
             key = self._derive_key_from_password(
@@ -327,7 +327,7 @@ class SymmetricEncryption:
                 os.getenv("ENCRYPTION_SALT", "default-salt").encode()
             )
         self.fernet = Fernet(key)
-    
+
     @staticmethod
     def _derive_key_from_password(password: bytes, salt: bytes) -> bytes:
         """Derive encryption key from password."""
@@ -339,12 +339,12 @@ class SymmetricEncryption:
         )
         key = base64.urlsafe_b64encode(kdf.derive(password))
         return key
-    
+
     def encrypt(self, data: str) -> str:
         """Encrypt string data."""
         encrypted_data = self.fernet.encrypt(data.encode())
         return base64.urlsafe_b64encode(encrypted_data).decode()
-    
+
     def decrypt(self, encrypted_data: str) -> str:
         """Decrypt string data."""
         try:
@@ -356,14 +356,14 @@ class SymmetricEncryption:
 
 class AsymmetricEncryption:
     """Asymmetric encryption using RSA."""
-    
+
     def __init__(self, private_key_path: str = None, public_key_path: str = None):
         self.private_key_path = private_key_path or "keys/private_key.pem"
         self.public_key_path = public_key_path or "keys/public_key.pem"
-        
+
         self.private_key = self._load_private_key()
         self.public_key = self._load_public_key()
-    
+
     def _load_private_key(self):
         """Load private key from file."""
         try:
@@ -376,7 +376,7 @@ class AsymmetricEncryption:
         except FileNotFoundError:
             # Generate new key pair if not found
             return self._generate_key_pair()
-    
+
     def _load_public_key(self):
         """Load public key from file."""
         try:
@@ -385,14 +385,14 @@ class AsymmetricEncryption:
             return public_key
         except FileNotFoundError:
             return self.private_key.public_key()
-    
+
     def _generate_key_pair(self):
         """Generate new RSA key pair."""
         private_key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=2048
         )
-        
+
         # Save private key
         os.makedirs(os.path.dirname(self.private_key_path), exist_ok=True)
         with open(self.private_key_path, "wb") as f:
@@ -401,7 +401,7 @@ class AsymmetricEncryption:
                 format=serialization.PrivateFormat.PKCS8,
                 encryption_algorithm=serialization.NoEncryption()
             ))
-        
+
         # Save public key
         public_key = private_key.public_key()
         with open(self.public_key_path, "wb") as f:
@@ -409,9 +409,9 @@ class AsymmetricEncryption:
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PublicFormat.SubjectPublicKeyInfo
             ))
-        
+
         return private_key
-    
+
     def encrypt(self, data: str) -> str:
         """Encrypt data with public key."""
         encrypted_data = self.public_key.encrypt(
@@ -423,7 +423,7 @@ class AsymmetricEncryption:
             )
         )
         return base64.urlsafe_b64encode(encrypted_data).decode()
-    
+
     def decrypt(self, encrypted_data: str) -> str:
         """Decrypt data with private key."""
         try:
@@ -458,10 +458,10 @@ from typing import Callable
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to all responses."""
-    
+
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         response = await call_next(request)
-        
+
         # Security headers
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
@@ -469,7 +469,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-        
+
         # Content Security Policy
         csp_policy = (
             "default-src 'self'; "
@@ -483,7 +483,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "frame-src 'none'"
         )
         response.headers["Content-Security-Policy"] = csp_policy
-        
+
         return response
 ```
 
@@ -500,18 +500,18 @@ from collections import defaultdict, deque
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Rate limiting middleware using sliding window."""
-    
+
     def __init__(self, app, requests_per_minute: int = 60, requests_per_second: int = 10):
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
         self.requests_per_second = requests_per_second
         self.minute_windows: Dict[str, deque] = defaultdict(deque)
         self.second_windows: Dict[str, deque] = defaultdict(deque)
-    
+
     async def dispatch(self, request: Request, call_next):
         client_ip = self._get_client_ip(request)
         current_time = time.time()
-        
+
         # Check rate limits
         if self._is_rate_limited(client_ip, current_time):
             raise HTTPException(
@@ -519,55 +519,55 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 detail="Rate limit exceeded. Please try again later.",
                 headers={"Retry-After": "60"}
             )
-        
+
         # Record request
         self._record_request(client_ip, current_time)
-        
+
         response = await call_next(request)
         return response
-    
+
     def _get_client_ip(self, request: Request) -> str:
         """Get client IP address."""
         # Check for forwarded headers
         forwarded_for = request.headers.get("X-Forwarded-For")
         if forwarded_for:
             return forwarded_for.split(",")[0].strip()
-        
+
         real_ip = request.headers.get("X-Real-IP")
         if real_ip:
             return real_ip
-        
+
         return request.client.host
-    
+
     def _is_rate_limited(self, client_ip: str, current_time: float) -> bool:
         """Check if client is rate limited."""
         # Clean old entries
         self._clean_old_entries(client_ip, current_time)
-        
+
         # Check per-second limit
         second_window = self.second_windows[client_ip]
         if len(second_window) >= self.requests_per_second:
             return True
-        
+
         # Check per-minute limit
         minute_window = self.minute_windows[client_ip]
         if len(minute_window) >= self.requests_per_minute:
             return True
-        
+
         return False
-    
+
     def _record_request(self, client_ip: str, current_time: float):
         """Record request timestamp."""
         self.second_windows[client_ip].append(current_time)
         self.minute_windows[client_ip].append(current_time)
-    
+
     def _clean_old_entries(self, client_ip: str, current_time: float):
         """Remove old entries from sliding windows."""
         # Clean second window (keep last second)
         second_window = self.second_windows[client_ip]
         while second_window and current_time - second_window[0] > 1:
             second_window.popleft()
-        
+
         # Clean minute window (keep last minute)
         minute_window = self.minute_windows[client_ip]
         while minute_window and current_time - minute_window[0] > 60:
@@ -600,7 +600,7 @@ audit_logger.setLevel(logging.INFO)
 
 class AuditLoggerMiddleware(BaseHTTPMiddleware):
     """Log security-relevant events."""
-    
+
     SENSITIVE_ENDPOINTS = {
         "/api/v1/auth/token",
         "/api/v1/auth/refresh",
@@ -608,16 +608,16 @@ class AuditLoggerMiddleware(BaseHTTPMiddleware):
         "/api/v1/cameras",
         "/api/v1/alerts"
     }
-    
+
     async def dispatch(self, request: Request, call_next):
         start_time = datetime.utcnow()
-        
+
         # Extract request info
         client_ip = self._get_client_ip(request)
         user_agent = request.headers.get("User-Agent", "")
         method = request.method
         path = request.url.path
-        
+
         # Get user info if available
         user_id = None
         username = None
@@ -631,19 +631,19 @@ class AuditLoggerMiddleware(BaseHTTPMiddleware):
                     username = payload.get("sub")
         except:
             pass
-        
+
         # Process request
         response = await call_next(request)
-        
+
         # Calculate response time
         end_time = datetime.utcnow()
         response_time = (end_time - start_time).total_seconds()
-        
+
         # Log if sensitive endpoint or error
-        if (path in self.SENSITIVE_ENDPOINTS or 
+        if (path in self.SENSITIVE_ENDPOINTS or
             response.status_code >= 400 or
             method in ["POST", "PUT", "DELETE"]):
-            
+
             audit_event = {
                 "timestamp": start_time.isoformat(),
                 "event_type": "api_request",
@@ -656,35 +656,35 @@ class AuditLoggerMiddleware(BaseHTTPMiddleware):
                 "response_time": response_time,
                 "success": response.status_code < 400
             }
-            
+
             # Add extra context for failures
             if response.status_code >= 400:
                 audit_event["event_type"] = "api_error"
                 audit_event["error_category"] = self._categorize_error(response.status_code)
-            
+
             # Log authentication events
             if path == "/api/v1/auth/token":
                 if response.status_code == 200:
                     audit_event["event_type"] = "login_success"
                 else:
                     audit_event["event_type"] = "login_failure"
-            
+
             audit_logger.info(json.dumps(audit_event))
-        
+
         return response
-    
+
     def _get_client_ip(self, request: Request) -> str:
         """Get client IP address."""
         forwarded_for = request.headers.get("X-Forwarded-For")
         if forwarded_for:
             return forwarded_for.split(",")[0].strip()
-        
+
         real_ip = request.headers.get("X-Real-IP")
         if real_ip:
             return real_ip
-        
+
         return request.client.host if request.client else "unknown"
-    
+
     def _categorize_error(self, status_code: int) -> str:
         """Categorize error by status code."""
         if status_code == 401:
@@ -710,7 +710,7 @@ def log_security_event(event_type: str, details: dict, user_id: Optional[str] = 
         "user_id": user_id,
         **details
     }
-    
+
     audit_logger.warning(json.dumps(audit_event))
 ```
 
@@ -767,4 +767,4 @@ DB_SSL_ROOT_CERT=/path/to/ca-cert.pem
    - Encrypt sensitive data at rest
    - Use HTTPS for all communications
    - Implement proper key management
-   - Regular security audits 
+   - Regular security audits

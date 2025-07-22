@@ -33,7 +33,7 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({
 
     try {
       const response = await cameraService.createCamera(cameraData);
-      
+
       if (response.status === 'success') {
         setSuccessMessage(`Camera "${cameraData.name}" created successfully!`);
         // Close modal after a short delay to show success message
@@ -97,7 +97,7 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        
+
         <DialogContent dividers>
           <AddCameraForm
             onSubmit={handleSubmit}
@@ -126,4 +126,4 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({
   );
 };
 
-export default AddCameraModal; 
+export default AddCameraModal;

@@ -40,7 +40,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     try {
       // Load HLS.js dynamically
       let Hls;
-      
+
       if (typeof window !== 'undefined') {
         // Check if HLS is already loaded
         if ((window as any).Hls) {
@@ -51,7 +51,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           Hls = HlsModule.default;
           (window as any).Hls = Hls; // Cache for future use
         }
-        
+
         if (Hls.isSupported() && videoRef.current) {
           // Clean up any existing HLS instance
           if (hlsRef.current) {
@@ -70,11 +70,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           // Try simple HLS first, fallback to complex HLS
           const simpleHlsUrl = `http://localhost:8001/api/simple/hls/${cameraId}/playlist.m3u8`;
           const complexHlsUrl = `http://localhost:8001/api/video/hls/${cameraId}/playlist.m3u8`;
-          
+
           console.log(`Trying Simple HLS for camera ${cameraId}`);
           hls.loadSource(simpleHlsUrl);
           hls.attachMedia(videoRef.current);
-          
+
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             console.log('HLS manifest loaded, starting playback');
             setIsLoading(false);
@@ -153,17 +153,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     try {
       if (imgRef.current) {
         const mjpegUrl = `http://localhost:8001/api/video/mjpeg/${cameraId}`;
-        
+
         console.log(`MJPEG HTTP stream loading for camera ${cameraId}`);
         setIsLoading(true);
-        
+
         imgRef.current.onload = () => {
           console.log(`MJPEG HTTP stream ready for camera ${cameraId}`);
           setIsLoading(false);
           setError(null);
           setIsPlaying(true);
         };
-        
+
         imgRef.current.onerror = () => {
           console.error(`MJPEG HTTP stream failed for camera ${cameraId}`);
           setError('Failed to load MJPEG stream');
@@ -174,7 +174,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             imgRef.current.src = '';
           }
         };
-        
+
         // Set the src last to trigger loading
         imgRef.current.src = mjpegUrl;
       }
@@ -193,7 +193,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     try {
       const ws = new WebSocket(`ws://localhost:8001/api/video/stream/${cameraId}`);
-      
+
       ws.onopen = () => {
         console.log(`Video WebSocket connected for camera ${cameraId}`);
         setError(null);
@@ -205,7 +205,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           if (event.data instanceof Blob) {
             // Handle JPEG frame data
             const url = URL.createObjectURL(new Blob([event.data], { type: 'image/jpeg' }));
-            
+
             // Clean up previous blob URL
             if (currentBlobUrl.current) {
               URL.revokeObjectURL(currentBlobUrl.current);
@@ -225,14 +225,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               const canvas = canvasRef.current;
               const ctx = canvas.getContext('2d');
               const img = new Image();
-              
+
               img.onload = () => {
                 canvas.width = img.width;
                 canvas.height = img.height;
                 ctx?.drawImage(img, 0, 0);
                 URL.revokeObjectURL(url);
               };
-              
+
               img.src = url;
             }
           } else {
@@ -269,7 +269,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         setError('Video stream disconnected');
         setIsLoading(false);
         setIsPlaying(false);
-        
+
         // Only attempt to reconnect if we should stay connected
         if (shouldStayConnected.current && camera.enabled) {
           setTimeout(connectMJPEGWebSocket, 3000);
@@ -286,7 +286,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   // WebRTC implementation (placeholder for future)
   const initializeWebRTC = async () => {
     if (streamType !== 'webrtc') return;
-    
+
     console.log('WebRTC streaming not yet implemented');
     setError('WebRTC streaming coming soon');
     setIsLoading(false);
@@ -464,4 +464,4 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   );
 };
 
-export default VideoPlayer; 
+export default VideoPlayer;

@@ -44,7 +44,7 @@ Database Config → CameraManager → CameraController → FrameCapture → Fram
 **Configuration:**
 ```python
 {
-    "id": "ip-cam-001", 
+    "id": "ip-cam-001",
     "name": "Checkout Area Camera",
     "source": "rtsp://username:password@192.168.1.100:554/stream",
     "camera_type": "ip",
@@ -66,35 +66,35 @@ Database Config → CameraManager → CameraController → FrameCapture → Fram
 ```python
 class Camera(Base):
     __tablename__ = "cameras"
-    
+
     # Primary identification
     id = Column(String, primary_key=True)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     enabled = Column(Boolean, default=True)
-    
+
     # Connection details
     source = Column(String(255), nullable=False)
     source_type = Column(String(50), default="webcam")
-    
+
     # Video settings
     fps = Column(Integer, default=15)
     resolution_width = Column(Integer, default=640)
     resolution_height = Column(Integer, default=480)
     brightness = Column(Float, default=1.0)
-    
+
     # Processing settings
     detection_enabled = Column(Boolean, default=True)
     detection_sensitivity = Column(Float, default=0.5)
     recording_enabled = Column(Boolean, default=False)
-    
+
     # Location metadata
     location = Column(String(255))
     zone = Column(String(100))
-    
+
     # Advanced settings (JSON)
     advanced_settings = Column(JSON, default={})
-    
+
     # Status tracking
     status = Column(String(50), default="stopped")
     error_message = Column(Text)
@@ -117,27 +117,27 @@ class CameraManager(BaseComponent):
             'stats': {},
             'commands': {}
         }
-    
+
     def initialize_cameras(self, camera_configs):
         """Initialize cameras from database configuration."""
         for config in camera_configs:
             if config.enabled:
                 self.add_camera(config)
         return True
-    
+
     def add_camera(self, camera_config):
         """Add and start a new camera."""
         camera_id = camera_config.id
-        
+
         # Create camera process
         process = CameraPipeline(
             camera_config=camera_config,
             shared_data=self.shared_data
         )
-        
+
         self.camera_processes[camera_id] = process
         process.start()
-        
+
         logger.info(f"Camera {camera_id} added and started")
 ```
 
@@ -182,26 +182,26 @@ class CameraPipeline:
         self.shared_data = shared_data
         self._stop_event = threading.Event()
         self._process = None
-    
+
     def run(self):
         """Main pipeline execution."""
         try:
             # Load configuration
             global_config = load_config("config/config.yaml")
-            
+
             # Initialize components
             self.camera_manager = CameraManager()
             self.frame_processor = FrameProcessor(model_params)
-            
+
             # Start processing loop
             while not self._stop_event.is_set():
                 frame = self.camera_manager.get_frame(self.camera_config.id)
-                
+
                 if frame is not None:
                     self._handle_frame(frame)
-                
+
                 time.sleep(self._min_frame_interval)
-                
+
         except Exception as e:
             logger.error(f"Pipeline error for {self.camera_config.id}: {e}")
         finally:
@@ -219,15 +219,15 @@ def _handle_frame(self, frame):
         success, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         if success:
             stream_manager.process_frame(self.camera_config.id, buffer.tobytes())
-    
+
     # Store for other uses
     self.shared_data['frames'][self.camera_config.id] = frame
-    
+
     # Process for predictions
     if self.frame_processor:
         self.frame_processor.process_frame(frame)
         self._check_and_trigger_predictions()
-    
+
     # Update statistics
     self._update_stats()
 ```
@@ -264,18 +264,18 @@ async def create_camera(camera: CameraCreate, db: Session = Depends(get_db)):
 
 @router.put("/{camera_id}")
 async def update_camera(
-    camera_id: str, 
-    camera_update: CameraUpdate, 
+    camera_id: str,
+    camera_update: CameraUpdate,
     db: Session = Depends(get_db)
 ):
     """Update camera configuration."""
     camera = db.query(Camera).filter(Camera.id == camera_id).first()
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")
-    
+
     for field, value in camera_update.dict(exclude_unset=True).items():
         setattr(camera, field, value)
-    
+
     db.commit()
     return camera
 
@@ -283,7 +283,7 @@ async def update_camera(
 async def control_camera(camera_id: str, action: CameraAction):
     """Control camera (start/stop/restart)."""
     from src.camera_manager import camera_manager
-    
+
     if action.action == "start":
         result = camera_manager.start_camera(camera_id)
     elif action.action == "stop":
@@ -293,7 +293,7 @@ async def control_camera(camera_id: str, action: CameraAction):
         result = camera_manager.start_camera(camera_id)
     else:
         raise HTTPException(status_code=400, detail="Invalid action")
-    
+
     return {"success": result, "action": action.action}
 ```
 
@@ -309,15 +309,15 @@ class VideoStreamManager:
         self.streams = {}
         self.buffer_size = buffer_size
         self._running = False
-        
+
     def process_frame(self, camera_id: str, frame: bytes) -> bool:
         """Add frame to camera stream buffer."""
         if camera_id not in self.streams:
             self.streams[camera_id] = deque(maxlen=self.buffer_size)
-        
+
         self.streams[camera_id].append(frame)
         return True
-    
+
     def get_latest_frame(self, camera_id: str) -> Optional[bytes]:
         """Get latest frame for camera."""
         if camera_id in self.streams and self.streams[camera_id]:
@@ -419,10 +419,10 @@ def monitor_camera_status():
             status = "active"
         else:
             status = "stopped"
-            
+
         # Update database
         update_camera_status(camera_id, status)
-        
+
         # Log metrics
         log_camera_health_metrics(camera_id, {
             "status": status,
@@ -441,7 +441,7 @@ def monitor_camera_status():
    cap = cv2.VideoCapture(camera_source)
    if not cap.isOpened():
        logger.error(f"Cannot open camera: {camera_source}")
-   
+
    # Test RTSP connection
    import requests
    try:
@@ -496,4 +496,4 @@ print(f"Connection test: {result}")
 4. **Security**
    - Use secure credentials for IP cameras
    - Implement camera access controls
-   - Monitor for unauthorized access attempts 
+   - Monitor for unauthorized access attempts

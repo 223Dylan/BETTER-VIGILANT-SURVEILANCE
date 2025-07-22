@@ -40,38 +40,38 @@ The Database System uses PostgreSQL with SQLAlchemy ORM and Alembic for migratio
 class Camera(Base):
     """Camera configuration and status model."""
     __tablename__ = "cameras"
-    
+
     # Primary identification
     id = Column(String, primary_key=True)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     enabled = Column(Boolean, default=True, nullable=False)
-    
+
     # Connection details
     source = Column(String(255), nullable=False)
     source_type = Column(String(50), nullable=False, default="webcam")
-    
+
     # Video settings
     fps = Column(Integer, default=15, nullable=False)
     resolution_width = Column(Integer, default=640)
     resolution_height = Column(Integer, default=480)
     brightness = Column(Float, default=1.0, nullable=False)
-    
+
     # Processing settings
     detection_enabled = Column(Boolean, default=True, nullable=False)
     detection_sensitivity = Column(Float, default=0.5)
     recording_enabled = Column(Boolean, default=False, nullable=False)
-    
+
     # Location and metadata
     location = Column(String(255))
     zone = Column(String(100))
     advanced_settings = Column(JSON, default={})
-    
+
     # Status tracking
     status = Column(String(50), default="stopped")
     error_message = Column(Text)
     last_online = Column(DateTime(timezone=True))
-    
+
     # Audit fields
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -85,30 +85,30 @@ class Camera(Base):
 class User(Base):
     """User authentication and authorization model."""
     __tablename__ = "users"
-    
+
     # Primary identification
     id = Column(String, primary_key=True)
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(100), unique=True, nullable=False, index=True)
-    
+
     # Authentication
     password_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-    
+
     # Authorization
     role = Column(String(50), default="user", nullable=False)
     permissions = Column(JSON, default={})
-    
+
     # Profile information
     full_name = Column(String(100))
     last_login = Column(DateTime(timezone=True))
     login_count = Column(Integer, default=0)
-    
+
     # Security settings
     failed_login_attempts = Column(Integer, default=0)
     locked_until = Column(DateTime(timezone=True))
     password_changed_at = Column(DateTime(timezone=True))
-    
+
     # Audit fields
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -122,34 +122,34 @@ class User(Base):
 class Alert(Base):
     """Security alert and incident model."""
     __tablename__ = "alerts"
-    
+
     # Primary identification
     id = Column(String, primary_key=True)
     camera_id = Column(String(255), nullable=False, index=True)
-    
+
     # Classification
     type = Column(String(100), nullable=False, index=True)
     severity = Column(String(50), nullable=False, index=True)
     status = Column(String(50), nullable=False, default="active", index=True)
-    
+
     # Detection data
     confidence = Column(Float, nullable=False)
     message = Column(Text, nullable=False)
     source = Column(String(100), default="detection", nullable=False)
     detection_data = Column(JSON, default={})
-    
+
     # Timestamps
     timestamp = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     # Lifecycle management
     acknowledged_by = Column(String(255), nullable=True)
     acknowledged_at = Column(DateTime(timezone=True), nullable=True)
     resolved_by = Column(String(255), nullable=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     notes = Column(Text, nullable=True)
-    
+
     # Indexes for performance
     __table_args__ = (
         Index('idx_alert_camera_timestamp', 'camera_id', 'timestamp'),
@@ -166,22 +166,22 @@ class Alert(Base):
 class Frame(Base):
     """Video frame storage and metadata model."""
     __tablename__ = "frames"
-    
+
     # Primary identification
     id = Column(Integer, primary_key=True, index=True)
-    
+
     # Temporal data
     timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     sequence_number = Column(Integer, index=True)
-    
+
     # Frame data
     frame_data = Column(LargeBinary)  # Compressed frame
     frame_metadata = Column(JSON)    # Processing metadata
-    
+
     # Processing status
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     processed_at = Column(DateTime(timezone=True), nullable=True)
-    
+
     # Indexes for performance
     __table_args__ = (
         Index('idx_frame_timestamp_seq', 'timestamp', 'sequence_number'),
@@ -365,18 +365,18 @@ alembic upgrade head --sql
 class CameraService:
     def __init__(self, db: Session):
         self.db = db
-    
+
     def get_camera(self, camera_id: str) -> Optional[Camera]:
         """Get camera by ID."""
         return self.db.query(Camera).filter(Camera.id == camera_id).first()
-    
+
     def get_cameras(self, enabled_only: bool = False) -> List[Camera]:
         """Get all cameras."""
         query = self.db.query(Camera)
         if enabled_only:
             query = query.filter(Camera.enabled == True)
         return query.all()
-    
+
     def create_camera(self, camera_data: dict) -> Camera:
         """Create new camera."""
         camera = Camera(**camera_data)
@@ -384,27 +384,27 @@ class CameraService:
         self.db.commit()
         self.db.refresh(camera)
         return camera
-    
+
     def update_camera(self, camera_id: str, updates: dict) -> Optional[Camera]:
         """Update camera configuration."""
         camera = self.get_camera(camera_id)
         if not camera:
             return None
-        
+
         for field, value in updates.items():
             if hasattr(camera, field):
                 setattr(camera, field, value)
-        
+
         camera.updated_at = datetime.utcnow()
         self.db.commit()
         return camera
-    
+
     def delete_camera(self, camera_id: str) -> bool:
         """Delete camera."""
         camera = self.get_camera(camera_id)
         if not camera:
             return False
-        
+
         self.db.delete(camera)
         self.db.commit()
         return True
@@ -416,12 +416,12 @@ class CameraService:
 class UserService:
     def __init__(self, db: Session):
         self.db = db
-    
+
     def create_user(self, user_data: dict) -> User:
         """Create new user."""
         # Hash password
         password_hash = self._hash_password(user_data['password'])
-        
+
         user = User(
             id=str(uuid.uuid4()),
             username=user_data['username'],
@@ -430,19 +430,19 @@ class UserService:
             full_name=user_data.get('full_name'),
             role=user_data.get('role', 'user')
         )
-        
+
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
         return user
-    
+
     def authenticate_user(self, username: str, password: str) -> Optional[User]:
         """Authenticate user credentials."""
         user = self.db.query(User).filter(
             User.username == username,
             User.is_active == True
         ).first()
-        
+
         if not user or not self._verify_password(password, user.password_hash):
             if user:
                 user.failed_login_attempts += 1
@@ -450,20 +450,20 @@ class UserService:
                     user.locked_until = datetime.utcnow() + timedelta(minutes=15)
                 self.db.commit()
             return None
-        
+
         # Reset failed attempts on successful login
         user.failed_login_attempts = 0
         user.last_login = datetime.utcnow()
         user.login_count += 1
         self.db.commit()
-        
+
         return user
-    
+
     def _hash_password(self, password: str) -> str:
         """Hash password using bcrypt."""
         import bcrypt
         return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    
+
     def _verify_password(self, password: str, hash: str) -> bool:
         """Verify password against hash."""
         import bcrypt
@@ -491,17 +491,17 @@ def init_database():
     try:
         # Create engine
         engine = create_engine(DATABASE_URL)
-        
+
         # Create all tables
         logger.info("Creating database tables...")
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables created successfully")
-        
+
         # Create default admin user
         create_default_admin()
-        
+
         logger.info("Database initialization completed")
-        
+
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
         raise
@@ -509,17 +509,17 @@ def init_database():
 def create_default_admin():
     """Create default admin user."""
     from src.database.base import SessionLocal
-    
+
     db = SessionLocal()
     try:
         user_service = UserService(db)
-        
+
         # Check if admin exists
         admin = db.query(User).filter(User.username == "admin").first()
         if admin:
             logger.info("Admin user already exists")
             return
-        
+
         # Create admin user
         admin_data = {
             "username": "admin",
@@ -528,10 +528,10 @@ def create_default_admin():
             "full_name": "System Administrator",
             "role": "admin"
         }
-        
+
         admin = user_service.create_user(admin_data)
         logger.info(f"Created admin user: {admin.username}")
-        
+
     finally:
         db.close()
 
@@ -560,7 +560,7 @@ CREATE INDEX CONCURRENTLY idx_user_email ON users(email);
 def get_recent_alerts(camera_id: str, hours: int = 24):
     """Get recent alerts with optimized query."""
     start_time = datetime.utcnow() - timedelta(hours=hours)
-    
+
     return db.query(Alert)\
         .filter(
             Alert.camera_id == camera_id,
@@ -574,7 +574,7 @@ def get_recent_alerts(camera_id: str, hours: int = 24):
 def get_alerts_paginated(page: int = 1, size: int = 50):
     """Get paginated alerts."""
     offset = (page - 1) * size
-    
+
     return db.query(Alert)\
         .order_by(Alert.timestamp.desc())\
         .offset(offset)\
@@ -643,20 +643,20 @@ def check_database_health():
     """Check database connectivity and performance."""
     try:
         from src.database.base import engine
-        
+
         # Test connection
         with engine.connect() as conn:
             result = conn.execute("SELECT 1")
-            
+
         # Check table sizes
         table_stats = get_table_statistics()
-        
+
         return {
             "status": "healthy",
             "connection": "ok",
             "tables": table_stats
         }
-        
+
     except Exception as e:
         return {
             "status": "unhealthy",
@@ -666,19 +666,19 @@ def check_database_health():
 def get_table_statistics():
     """Get table row counts and sizes."""
     from src.database.base import SessionLocal
-    
+
     db = SessionLocal()
     try:
         stats = {}
-        
+
         # Count rows in each table
         stats['cameras'] = db.query(Camera).count()
         stats['users'] = db.query(User).count()
         stats['alerts'] = db.query(Alert).count()
         stats['frames'] = db.query(Frame).count()
-        
+
         return stats
-        
+
     finally:
         db.close()
 ```
@@ -703,4 +703,4 @@ def get_table_statistics():
 4. **Security**
    - Use environment variables for credentials
    - Enable SSL for production
-   - Implement proper user permissions 
+   - Implement proper user permissions

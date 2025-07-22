@@ -80,4 +80,4 @@ const AlertStats: React.FC<AlertStatsProps> = ({ stats }) => {
   );
 };
 
-export default AlertStats; 
+export default AlertStats;

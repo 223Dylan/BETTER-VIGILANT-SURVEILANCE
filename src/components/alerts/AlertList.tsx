@@ -61,7 +61,7 @@ const AlertList: React.FC<AlertListProps> = ({
 
   const handleBulkAction = (action: 'acknowledge' | 'resolve') => {
     if (selectedAlerts.size === 0) return;
-    
+
     setPendingAction(action);
     setShowNotesInput(true);
   };
@@ -70,7 +70,7 @@ const AlertList: React.FC<AlertListProps> = ({
     if (!pendingAction || selectedAlerts.size === 0) return;
 
     const alertIds = Array.from(selectedAlerts);
-    
+
     if (pendingAction === 'acknowledge' && onBulkAcknowledge) {
       onBulkAcknowledge(alertIds, bulkActionNotes || undefined);
     } else if (pendingAction === 'resolve' && onBulkResolve) {
@@ -116,7 +116,7 @@ const AlertList: React.FC<AlertListProps> = ({
                   {selectedAlerts.size} selected
                 </span>
               )}
-              
+
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -206,4 +206,4 @@ const AlertList: React.FC<AlertListProps> = ({
   );
 };
 
-export default AlertList; 
+export default AlertList;

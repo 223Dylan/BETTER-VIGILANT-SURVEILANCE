@@ -8,4 +8,4 @@ export { default as AlertDetailModal } from './AlertDetailModal';
 export { default as AlertNotifications } from './AlertNotifications';
 
 // Export utility functions (no default export)
-export { getSeverityColor, getStatusColor, formatTimestamp } from './AlertUtils'; 
+export { getSeverityColor, getStatusColor, formatTimestamp } from './AlertUtils';

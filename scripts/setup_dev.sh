@@ -43,7 +43,7 @@ check_python_version() {
         PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
         PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
         PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
-        
+
         if [ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -ge 8 ]; then
             print_success "Python $PYTHON_VERSION found"
             return 0
@@ -60,32 +60,32 @@ check_python_version() {
 # Function to install Python dependencies
 install_python_deps() {
     print_status "Installing Python dependencies..."
-    
+
     # Create virtual environment if it doesn't exist
     if [ ! -d ".venv" ]; then
         print_status "Creating virtual environment..."
         python3 -m venv .venv
     fi
-    
+
     # Activate virtual environment
     print_status "Activating virtual environment..."
     source .venv/bin/activate
-    
+
     # Upgrade pip
     print_status "Upgrading pip..."
     pip install --upgrade pip
-    
+
     # Install dependencies
     print_status "Installing requirements..."
     pip install -r requirements.txt
-    
+
     print_success "Python dependencies installed"
 }
 
 # Function to setup configuration files
 setup_config() {
     print_status "Setting up configuration files..."
-    
+
     # Copy environment variables
     if [ ! -f ".env" ]; then
         cp .env.example .env
@@ -94,7 +94,7 @@ setup_config() {
     else
         print_warning ".env file already exists"
     fi
-    
+
     # Copy main configuration
     if [ ! -f "config/config.yaml" ]; then
         cp config/config.example.yaml config/config.yaml
@@ -102,7 +102,7 @@ setup_config() {
     else
         print_warning "config/config.yaml already exists"
     fi
-    
+
     # Copy Alembic configuration
     if [ ! -f "alembic.ini" ] && [ -f "alembic.example.ini" ]; then
         cp alembic.example.ini alembic.ini
@@ -113,7 +113,7 @@ setup_config() {
 # Function to create necessary directories
 create_directories() {
     print_status "Creating necessary directories..."
-    
+
     directories=(
         "logs"
         "uploads"
@@ -124,31 +124,31 @@ create_directories() {
         "data"
         "models"
     )
-    
+
     for dir in "${directories[@]}"; do
         if [ ! -d "$dir" ]; then
             mkdir -p "$dir"
             print_status "Created directory: $dir"
         fi
     done
-    
+
     print_success "Directories created"
 }
 
 # Function to generate RSA keys
 generate_keys() {
     print_status "Generating RSA key pairs for encryption..."
-    
+
     if [ ! -f "keys/private_key.pem" ] || [ ! -f "keys/public_key.pem" ]; then
         # Generate private key
         openssl genpkey -algorithm RSA -out keys/private_key.pem -pkcs8 -aes-256-cbc -pass pass:development_key_password 2>/dev/null || {
             # Fallback to older OpenSSL syntax
             openssl genrsa -aes256 -passout pass:development_key_password -out keys/private_key.pem 2048
         }
-        
+
         # Generate public key
         openssl rsa -pubout -in keys/private_key.pem -passin pass:development_key_password -out keys/public_key.pem
-        
+
         print_success "RSA keys generated"
         print_warning "Development keys created with password: development_key_password"
         print_warning "Change this for production use!"
@@ -160,20 +160,20 @@ generate_keys() {
 # Function to setup database with Docker
 setup_database_docker() {
     print_status "Setting up database with Docker..."
-    
+
     if command_exists docker && command_exists docker-compose; then
         # Start only the database services
         docker-compose -f docker-compose.dev.yml up -d postgres redis
-        
+
         # Wait for database to be ready
         print_status "Waiting for database to be ready..."
         sleep 10
-        
+
         # Run database migrations
         print_status "Running database migrations..."
         source .venv/bin/activate
         alembic upgrade head
-        
+
         print_success "Database setup complete"
     else
         print_error "Docker or docker-compose not found"
@@ -194,17 +194,17 @@ setup_database_manual() {
 # Function to download sample model (placeholder)
 setup_model() {
     print_status "Setting up AI model..."
-    
+
     if [ ! -f "models/lrcn_160S_90_90Q.h5" ]; then
         print_warning "LRCN model file not found"
         print_status "Please place your trained model file at: models/lrcn_160S_90_90Q.h5"
         print_status "Or update the MODEL_PATH in your configuration"
-        
+
         # Create a placeholder file
         touch models/lrcn_160S_90_90Q.h5
         echo "# This is a placeholder model file" > models/README.md
         echo "# Place your actual LRCN model (lrcn_160S_90_90Q.h5) in this directory" >> models/README.md
-        
+
         print_status "Created placeholder model file"
     else
         print_success "Model file found"
@@ -215,7 +215,7 @@ setup_model() {
 setup_frontend() {
     if [ -f "package.json" ]; then
         print_status "Setting up frontend dependencies..."
-        
+
         if command_exists npm; then
             npm install
             print_success "Frontend dependencies installed"
@@ -232,7 +232,7 @@ setup_frontend() {
 run_tests() {
     print_status "Running tests..."
     source .venv/bin/activate
-    
+
     if [ -d "tests" ]; then
         python -m pytest tests/ -v
         print_success "Tests completed"
@@ -247,22 +247,22 @@ main() {
     echo "    SHOPLIFTING DETECTION SYSTEM - DEVELOPMENT SETUP"
     echo "======================================================================="
     echo ""
-    
+
     print_status "Starting development environment setup..."
-    
+
     # Check prerequisites
     print_status "Checking prerequisites..."
-    
+
     if ! check_python_version; then
         print_error "Please install Python 3.8 or higher"
         exit 1
     fi
-    
+
     if ! command_exists git; then
         print_error "Git not found. Please install Git"
         exit 1
     fi
-    
+
     # Setup steps
     create_directories
     setup_config
@@ -270,13 +270,13 @@ main() {
     install_python_deps
     setup_model
     setup_frontend
-    
+
     # Database setup
     print_status "Choose database setup method:"
     echo "1) Docker (recommended)"
     echo "2) Manual setup"
     read -p "Enter choice (1 or 2): " db_choice
-    
+
     case $db_choice in
         1)
             setup_database_docker
@@ -288,20 +288,20 @@ main() {
             print_warning "Invalid choice, skipping database setup"
             ;;
     esac
-    
+
     # Optional: Run tests
     read -p "Run tests? (y/N): " run_test_choice
     if [[ $run_test_choice =~ ^[Yy]$ ]]; then
         run_tests
     fi
-    
+
     # Setup complete
     echo ""
     echo "======================================================================="
     print_success "DEVELOPMENT ENVIRONMENT SETUP COMPLETE!"
     echo "======================================================================="
     echo ""
-    
+
     print_status "Next steps:"
     echo "1. Edit .env file with your specific configuration"
     echo "2. Place your LRCN model file in models/ directory"
@@ -314,12 +314,12 @@ main() {
     echo "   - Database Admin: http://localhost:8080 (if using Docker)"
     echo "   - Kibana Dashboard: http://localhost:5601 (if using Docker)"
     echo ""
-    
+
     print_status "For Docker users:"
     echo "   docker-compose -f docker-compose.dev.yml up -d    # Start all services"
     echo "   docker-compose -f docker-compose.dev.yml down     # Stop all services"
     echo ""
-    
+
     print_warning "Remember to:"
     echo "- Change default passwords in production"
     echo "- Update JWT secret keys"
@@ -328,4 +328,4 @@ main() {
 }
 
 # Run main function
-main "$@" 
+main "$@"

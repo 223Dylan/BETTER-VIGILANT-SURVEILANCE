@@ -69,50 +69,50 @@ graph TB
         IP[IP Cameras]
         FILE[Video Files]
     end
-    
+
     subgraph "Processing Pipeline"
         CAPTURE[Frame Capture]
         PREPROCESS[Preprocessing]
         MODEL[LRCN Model]
         DETECTION[Detection Engine]
     end
-    
+
     subgraph "Core Services"
         API[FastAPI Server]
         DB[(PostgreSQL)]
         REDIS[(Redis Cache)]
         CELERY[Celery Workers]
     end
-    
+
     subgraph "Monitoring Stack"
         ES[(Elasticsearch)]
         LS[Logstash]
         KB[Kibana]
     end
-    
+
     subgraph "Output"
         ALERTS[Real-time Alerts]
         DASH[Dashboard]
         REPORTS[Analytics]
     end
-    
+
     USB --> CAPTURE
     IP --> CAPTURE
     FILE --> CAPTURE
-    
+
     CAPTURE --> PREPROCESS
     PREPROCESS --> MODEL
     MODEL --> DETECTION
-    
+
     DETECTION --> API
     API --> DB
     API --> REDIS
     API --> CELERY
-    
+
     API --> ES
     ES --> LS
     LS --> KB
-    
+
     API --> ALERTS
     API --> DASH
     KB --> REPORTS
@@ -212,4 +212,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with care for retail security and loss prevention** 
+**Built with care for retail security and loss prevention**

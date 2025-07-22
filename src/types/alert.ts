@@ -8,10 +8,10 @@ export interface Alert {
   confidence: number;
   message: string;
   source: 'detection' | 'system' | 'manual';
-  
+
   // Optional frame data for visual alerts (base64 encoded)
   frame?: string;
-  
+
   // Detection-specific data from Celery worker
   detectionData: {
     isShoplifting: boolean;
@@ -24,14 +24,14 @@ export interface Alert {
     processingTime?: number;
     modelVersion?: string;
   };
-  
+
   // Alert management
   acknowledgedBy?: string;
   acknowledgedAt?: string;
   resolvedBy?: string;
   resolvedAt?: string;
   notes?: string;
-  
+
   // Auto-generated metadata
   createdAt: string;
   updatedAt: string;

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, AlertStats as AlertStatsType } from '../types';
-import { 
-  AlertStats, 
-  AlertFilters, 
-  AlertList, 
-  AlertDetailModal 
+import {
+  AlertStats,
+  AlertFilters,
+  AlertList,
+  AlertDetailModal
 } from '../components/alerts';
 import { apiService } from '../services/api.service';
 import { authService } from '../services/auth.service';
@@ -20,24 +20,24 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'active' | 'all' | 'stats'>('active');
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
-  
+
   // Filters
   const [severityFilter, setSeverityFilter] = useState<string[]>([]);
   const [cameraFilter, setCameraFilter] = useState<string>('');
 
   useEffect(() => {
     fetchData();
-    
+
     // Set up real-time updates via WebSocket
     const ws = new WebSocket(`ws://localhost:8000/ws/predictions/all`);
-    
+
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'alert_created' || data.type === 'alert_updated') {
         fetchData(); // Refresh data when alerts are updated
       }
     };
-    
+
     return () => {
       ws.close();
     };
@@ -46,7 +46,7 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // Build filter query
       const filterParams = new URLSearchParams();
       if (severityFilter.length > 0) {
@@ -84,11 +84,11 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
         return;
       }
 
-      await apiService.post(`/api/alerts/${alertId}/acknowledge`, { 
+      await apiService.post(`/api/alerts/${alertId}/acknowledge`, {
         userId: currentUser.id,
-        notes 
+        notes
       });
-      
+
       fetchData(); // Refresh data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to acknowledge alert');
@@ -103,11 +103,11 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
         return;
       }
 
-      await apiService.post(`/api/alerts/${alertId}/resolve`, { 
+      await apiService.post(`/api/alerts/${alertId}/resolve`, {
         userId: currentUser.id,
-        notes 
+        notes
       });
-      
+
       fetchData(); // Refresh data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to resolve alert');
@@ -117,18 +117,18 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
   const handleBulkAcknowledge = async (alertIds: string[], notes?: string) => {
     try {
       const result = await alertService.bulkAcknowledge(alertIds, notes);
-      
+
       if (result.successful > 0) {
         // Show success message
         setError(null);
         console.log(`Successfully acknowledged ${result.successful} alerts`);
       }
-      
+
       if (result.failed > 0) {
         console.warn(`Failed to acknowledge ${result.failed} alerts`);
         // You might want to show a more detailed error message here
       }
-      
+
       fetchData(); // Refresh data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to bulk acknowledge alerts');
@@ -138,18 +138,18 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
   const handleBulkResolve = async (alertIds: string[], notes?: string) => {
     try {
       const result = await alertService.bulkResolve(alertIds, notes);
-      
+
       if (result.successful > 0) {
         // Show success message
         setError(null);
         console.log(`Successfully resolved ${result.successful} alerts`);
       }
-      
+
       if (result.failed > 0) {
         console.warn(`Failed to resolve ${result.failed} alerts`);
         // You might want to show a more detailed error message here
       }
-      
+
       fetchData(); // Refresh data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to bulk resolve alerts');
@@ -224,4 +224,4 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
   );
 };
 
-export default AlertsPage; 
+export default AlertsPage;

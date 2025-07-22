@@ -95,12 +95,12 @@ echo [INFO] Setting up AI model...
 if not exist "models\lrcn_160S_90_90Q.h5" (
     echo [WARNING] LRCN model file not found
     echo [INFO] Please place your trained model file at: models\lrcn_160S_90_90Q.h5
-    
+
     REM Create placeholder file and README
     type nul > "models\lrcn_160S_90_90Q.h5"
     echo # This is a placeholder model file > "models\README.md"
     echo # Place your actual LRCN model (lrcn_160S_90_90Q.h5) in this directory >> "models\README.md"
-    
+
     echo [INFO] Created placeholder model file
 ) else (
     echo [SUCCESS] Model file found
@@ -133,13 +133,13 @@ if "%choice%"=="1" (
     if %errorlevel% equ 0 (
         echo [INFO] Starting database services with Docker...
         docker-compose -f docker-compose.dev.yml up -d postgres redis
-        
+
         echo [INFO] Waiting for database to be ready...
         timeout /t 15 /nobreak >nul
-        
+
         echo [INFO] Running database migrations...
         alembic upgrade head
-        
+
         echo [SUCCESS] Database setup complete with Docker
     ) else (
         echo [ERROR] Docker not found. Please install Docker Desktop
@@ -221,4 +221,4 @@ echo.
 
 echo [INFO] Development environment setup completed successfully!
 echo Press any key to exit...
-pause >nul 
+pause >nul

@@ -110,7 +110,7 @@ const AddCameraForm: React.FC<AddCameraFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -123,7 +123,7 @@ const AddCameraForm: React.FC<AddCameraFormProps> = ({
       ...prev,
       [field]: value,
     }));
-    
+
     // Clear validation error for this field
     if (validationErrors[field]) {
       setValidationErrors(prev => ({
@@ -135,7 +135,7 @@ const AddCameraForm: React.FC<AddCameraFormProps> = ({
 
   const handleResolutionPresetChange = (preset: string) => {
     setSelectedResolution(preset);
-    
+
     if (preset === 'Custom') {
       setCustomResolution(true);
     } else {
@@ -162,7 +162,7 @@ const AddCameraForm: React.FC<AddCameraFormProps> = ({
     setUploadedVideoFile(filePath);
     setUploadError(null);
     handleInputChange('source', filePath);
-    
+
     // Clear validation error if present
     if (validationErrors.source) {
       setValidationErrors(prev => ({
@@ -184,7 +184,7 @@ const AddCameraForm: React.FC<AddCameraFormProps> = ({
     handleInputChange('source', '');
     setUploadedVideoFile(null);
     setUploadError(null);
-    
+
     // Clear validation errors
     if (validationErrors.source) {
       setValidationErrors(prev => ({
@@ -443,4 +443,4 @@ const AddCameraForm: React.FC<AddCameraFormProps> = ({
   );
 };
 
-export default AddCameraForm; 
+export default AddCameraForm;

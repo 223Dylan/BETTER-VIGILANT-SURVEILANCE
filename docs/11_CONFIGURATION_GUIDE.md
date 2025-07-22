@@ -217,12 +217,12 @@ WDS_SOCKET_PATH=/ws
 model:
   # Path to the LRCN model file
   path: "models/lrcn_160S_90_90Q.h5"
-  
+
   # Model parameters
   sequence_length: 160
   frame_size: 90
   input_shape: [160, 90, 90, 1]
-  
+
   # Performance settings
   use_gpu: false
   batch_size: 1
@@ -238,18 +238,18 @@ preprocessing:
   resize_width: 90
   resize_height: 90
   normalize: true
-  
+
   # Advanced preprocessing (optional)
   background_removal: false
   shadow_removal: false
   shadow_threshold: 10
   gaussian_blur: false
   blur_kernel_size: 5
-  
+
   # Color adjustments
   brightness: 1.0
   contrast: 1.0
-  
+
   # Data augmentation
   augmentation:
     enabled: false
@@ -267,19 +267,19 @@ processing:
   skip_frames: 0
   max_queue_size: 50
   processing_threads: 4
-  
+
   # Detection thresholds
   probability_thresholds:
     low: 0.3
     medium: 0.6
     high: 0.8
-  
+
   # Alert settings
   alert_settings:
     cooldown_period: 60
     max_alerts_per_minute: 5
     auto_dismiss_threshold: 0.2
-  
+
   # Frame buffer
   frame_buffer:
     max_size: 160
@@ -298,7 +298,7 @@ cameras:
     timeout: 5.0
     retry_attempts: 3
     retry_delay: 5
-  
+
   # Individual camera configurations
   usb_camera_1:
     name: "Front Door Camera"
@@ -309,7 +309,7 @@ cameras:
     enabled: true
     detection_enabled: true
     detection_sensitivity: 0.6
-    
+
   ip_camera_1:
     name: "Checkout Camera 1"
     source: "rtsp://username:password@192.168.1.100:554/stream"
@@ -319,7 +319,7 @@ cameras:
     enabled: true
     detection_enabled: true
     detection_sensitivity: 0.7
-    
+
   video_file_1:
     name: "Test Video"
     source: "uploads/videos/test_video.mp4"
@@ -338,17 +338,17 @@ streaming:
   # Protocol settings
   enable_hls: true
   enable_mjpeg: true
-  
+
   # HLS configuration
   hls:
     segment_duration: 2
     playlist_size: 5
-    
+
   # MJPEG configuration
   mjpeg:
     quality: 85
     fps: 15
-    
+
   # Buffer settings
   buffer_size: 50
   max_clients: 10
@@ -364,13 +364,13 @@ database:
   name: "shoplifting_detection"
   user: "postgres"
   password: "password"
-  
+
   # Pool settings
   pool_size: 20
   max_overflow: 30
   pool_timeout: 30
   pool_recycle: 3600
-  
+
   # Migration settings
   auto_migrate: true
   backup_before_migration: true
@@ -382,19 +382,19 @@ database:
 logging:
   # Global log level
   level: "INFO"
-  
+
   # File logging
   file:
     enabled: true
     path: "logs/main.log"
     max_size_mb: 10
     backup_count: 5
-    
+
   # Console logging
   console:
     enabled: true
     format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    
+
   # Component-specific loggers
   loggers:
     detection: "INFO"
@@ -411,13 +411,13 @@ monitoring:
   # System monitoring
   enabled: true
   interval: 60
-  
+
   # Metrics collection
   collect_system_metrics: true
   collect_detection_metrics: true
   collect_camera_metrics: true
   collect_api_metrics: true
-  
+
   # ELK integration
   elk:
     enabled: true
@@ -437,19 +437,19 @@ security:
     access_token_expire_minutes: 30
     refresh_token_expire_days: 7
     algorithm: "HS256"
-    
+
   # Encryption
   encryption:
     enabled: true
     password: "change-this-encryption-password"
     salt: "change-this-encryption-salt"
-    
+
   # Rate limiting
   rate_limiting:
     enabled: true
     requests_per_minute: 60
     requests_per_second: 10
-    
+
   # CORS
   cors:
     enabled: true
@@ -470,16 +470,16 @@ api:
   workers: 4
   debug: true
   reload: true
-  
+
   # Documentation
   docs_url: "/docs"
   redoc_url: "/redoc"
   openapi_url: "/openapi.json"
-  
+
   # Request settings
   max_request_size: 100  # MB
   request_timeout: 300   # seconds
-  
+
   # WebSocket settings
   websocket:
     enabled: true
@@ -501,14 +501,14 @@ notifications:
     from_address: "your-email@gmail.com"
     to_addresses:
       - "admin@yourcompany.com"
-      
+
   # Webhook notifications
   webhook:
     enabled: false
     url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
     timeout: 10
     retry_attempts: 3
-    
+
   # Push notifications
   push:
     enabled: false
@@ -550,10 +550,10 @@ notifications:
 api:
   debug: true
   reload: true
-  
+
 logging:
   level: "DEBUG"
-  
+
 security:
   rate_limiting:
     enabled: false
@@ -565,10 +565,10 @@ api:
   debug: false
   reload: false
   workers: 8
-  
+
 logging:
   level: "INFO"
-  
+
 security:
   rate_limiting:
     enabled: true
@@ -598,4 +598,4 @@ python -c "from src.camera_manager import CameraManager; cm = CameraManager(); p
 4. **Port conflicts** - Ensure ports are available and not in use
 5. **Memory issues** - Adjust memory limits and processing threads
 
-For troubleshooting specific issues, see the [Troubleshooting Guide](12_TROUBLESHOOTING_GUIDE.md). 
+For troubleshooting specific issues, see the [Troubleshooting Guide](12_TROUBLESHOOTING_GUIDE.md).

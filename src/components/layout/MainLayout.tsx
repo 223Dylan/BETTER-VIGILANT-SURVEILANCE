@@ -127,7 +127,7 @@ const UserProfileDropdown: React.FC<{
                     <p className="font-medium">{user.last_name || 'Not set'}</p>
                   </div>
                 </div>
-                
+
                 <div className="text-sm">
                   <label className="text-gray-500">Member Since</label>
                   <p className="font-medium">{new Date(user.created_at).toLocaleDateString()}</p>
@@ -255,7 +255,7 @@ const MainLayout: React.FC = () => {
     const baseClasses = "inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors";
     const activeClasses = "border-blue-500 text-blue-600";
     const inactiveClasses = "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700";
-    
+
     return `${baseClasses} ${isActiveLink(path) ? activeClasses : inactiveClasses}`;
   };
 

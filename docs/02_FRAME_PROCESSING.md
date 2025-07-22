@@ -244,4 +244,4 @@ print(f"Sequence ready: {ready}")
 4. **Memory Management**
    - Regularly monitor memory usage
    - Clean up resources properly
-   - Use frame compression for storage 
+   - Use frame compression for storage

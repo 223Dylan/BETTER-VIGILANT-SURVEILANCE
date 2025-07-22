@@ -45,4 +45,4 @@ COPY . .
 EXPOSE 8000
 
 # Start Xvfb and run the application
-CMD Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & python main.py 
+CMD Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & python main.py

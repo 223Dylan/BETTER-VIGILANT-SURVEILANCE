@@ -48,35 +48,35 @@ Model Prediction → AlertManager → Database → Notifications
 ```python
 class Alert(Base):
     __tablename__ = "alerts"
-    
+
     # Primary identification
     id = Column(String, primary_key=True)  # UUID
     camera_id = Column(String(255), nullable=False, index=True)
-    
+
     # Classification
     type = Column(String(100), nullable=False, index=True)
     severity = Column(String(50), nullable=False, index=True)
     status = Column(String(50), default="active", index=True)
-    
+
     # Detection data
     confidence = Column(Float, nullable=False)
     message = Column(Text, nullable=False)
     source = Column(String(100), default="detection")
-    
+
     # Metadata (JSON)
     detection_data = Column(JSON, default={})
-    
+
     # Timestamps
     timestamp = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     # Lifecycle management
     acknowledged_by = Column(String(255))
     acknowledged_at = Column(DateTime(timezone=True))
     resolved_by = Column(String(255))
     resolved_at = Column(DateTime(timezone=True))
-    
+
     # Additional notes
     notes = Column(Text)
 ```
@@ -92,7 +92,7 @@ class AlertManager:
     def __init__(self, db_session):
         self.db = db_session
         self.notification_service = NotificationService()
-        
+
     def create_alert(self, alert_data: dict) -> Alert:
         """Create new alert from detection result."""
         alert = Alert(
@@ -106,18 +106,18 @@ class AlertManager:
             detection_data=alert_data.get('detection_data', {}),
             status="active"
         )
-        
+
         self.db.add(alert)
         self.db.commit()
-        
+
         # Send notifications
         self._send_notifications(alert)
-        
+
         # Log metrics
         self._log_alert_metrics(alert)
-        
+
         return alert
-    
+
     def _determine_severity(self, confidence: float) -> str:
         """Determine alert severity based on confidence."""
         if confidence >= 0.8:
@@ -128,12 +128,12 @@ class AlertManager:
             return "medium"
         else:
             return "low"
-    
+
     def _generate_message(self, alert_data: dict) -> str:
         """Generate human-readable alert message."""
         confidence = alert_data['confidence']
         camera_id = alert_data['camera_id']
-        
+
         if confidence >= 0.8:
             return f"High-confidence shoplifting detected on camera {camera_id}"
         elif confidence >= 0.6:
@@ -150,16 +150,16 @@ def acknowledge_alert(self, alert_id: str, user_id: str) -> bool:
     alert = self.db.query(Alert).filter(Alert.id == alert_id).first()
     if not alert:
         return False
-    
+
     alert.status = "acknowledged"
     alert.acknowledged_by = user_id
     alert.acknowledged_at = datetime.utcnow()
-    
+
     self.db.commit()
-    
+
     # Notify via WebSocket
     self._broadcast_alert_update(alert)
-    
+
     return True
 
 def resolve_alert(self, alert_id: str, user_id: str, resolution_notes: str = None) -> bool:
@@ -167,18 +167,18 @@ def resolve_alert(self, alert_id: str, user_id: str, resolution_notes: str = Non
     alert = self.db.query(Alert).filter(Alert.id == alert_id).first()
     if not alert:
         return False
-    
+
     alert.status = "resolved"
     alert.resolved_by = user_id
     alert.resolved_at = datetime.utcnow()
     if resolution_notes:
         alert.notes = resolution_notes
-    
+
     self.db.commit()
-    
+
     # Notify via WebSocket
     self._broadcast_alert_update(alert)
-    
+
     return True
 
 def dismiss_alert(self, alert_id: str, user_id: str, reason: str = None) -> bool:
@@ -186,13 +186,13 @@ def dismiss_alert(self, alert_id: str, user_id: str, reason: str = None) -> bool
     alert = self.db.query(Alert).filter(Alert.id == alert_id).first()
     if not alert:
         return False
-    
+
     alert.status = "dismissed"
     alert.resolved_by = user_id
     alert.resolved_at = datetime.utcnow()
     if reason:
         alert.notes = f"Dismissed: {reason}"
-    
+
     self.db.commit()
     return True
 ```
@@ -212,7 +212,7 @@ class NotificationService:
             'webhook': WebhookNotifier(),
             'push': PushNotifier()
         }
-    
+
     def send_alert_notification(self, alert: Alert):
         """Send notification through all configured channels."""
         notification_data = {
@@ -224,17 +224,17 @@ class NotificationService:
             'confidence': alert.confidence,
             'timestamp': alert.timestamp.isoformat()
         }
-        
+
         # WebSocket (real-time dashboard updates)
         self.channels['websocket'].send(notification_data)
-        
+
         # Email (for critical alerts)
         if alert.severity in ['critical', 'high']:
             self.channels['email'].send(notification_data)
-        
+
         # Webhook (third-party integrations)
         self.channels['webhook'].send(notification_data)
-        
+
         # Push notifications (mobile apps)
         self.channels['push'].send(notification_data)
 ```
@@ -245,14 +245,14 @@ class NotificationService:
 class WebSocketNotifier:
     def __init__(self):
         self.connections = set()
-    
+
     async def send(self, notification_data):
         """Send real-time notification to connected clients."""
         message = {
             "type": "alert_notification",
             "data": notification_data
         }
-        
+
         # Send to all connected clients
         if self.connections:
             await asyncio.gather(
@@ -281,7 +281,7 @@ async def get_alerts(
 ):
     """Get alerts with filtering and pagination."""
     query = db.query(Alert)
-    
+
     # Apply filters
     if status:
         query = query.filter(Alert.status == status)
@@ -293,13 +293,13 @@ async def get_alerts(
         query = query.filter(Alert.timestamp >= start_date)
     if end_date:
         query = query.filter(Alert.timestamp <= end_date)
-    
+
     # Order by timestamp (newest first)
     query = query.order_by(Alert.timestamp.desc())
-    
+
     # Apply pagination
     alerts = query.offset(skip).limit(limit).all()
-    
+
     return alerts
 
 @router.get("/{alert_id}")
@@ -319,10 +319,10 @@ async def acknowledge_alert(
     """Acknowledge an alert."""
     alert_manager = AlertManager(db)
     success = alert_manager.acknowledge_alert(alert_id, current_user.id)
-    
+
     if not success:
         raise HTTPException(status_code=404, detail="Alert not found")
-    
+
     return {"message": "Alert acknowledged successfully"}
 
 @router.post("/{alert_id}/resolve")
@@ -335,14 +335,14 @@ async def resolve_alert(
     """Resolve an alert."""
     alert_manager = AlertManager(db)
     success = alert_manager.resolve_alert(
-        alert_id, 
-        current_user.id, 
+        alert_id,
+        current_user.id,
         resolution.notes
     )
-    
+
     if not success:
         raise HTTPException(status_code=404, detail="Alert not found")
-    
+
     return {"message": "Alert resolved successfully"}
 
 @router.delete("/{alert_id}")
@@ -355,14 +355,14 @@ async def dismiss_alert(
     """Dismiss a false positive alert."""
     alert_manager = AlertManager(db)
     success = alert_manager.dismiss_alert(
-        alert_id, 
-        current_user.id, 
+        alert_id,
+        current_user.id,
         dismissal.reason
     )
-    
+
     if not success:
         raise HTTPException(status_code=404, detail="Alert not found")
-    
+
     return {"message": "Alert dismissed successfully"}
 ```
 
@@ -376,7 +376,7 @@ async def get_alert_stats(
     db: Session = Depends(get_db)
 ):
     """Get alert statistics summary."""
-    
+
     # Calculate time range
     now = datetime.utcnow()
     if period == "1h":
@@ -387,14 +387,14 @@ async def get_alert_stats(
         start_time = now - timedelta(days=7)
     else:
         start_time = now - timedelta(hours=24)
-    
+
     query = db.query(Alert).filter(Alert.timestamp >= start_time)
-    
+
     if camera_id:
         query = query.filter(Alert.camera_id == camera_id)
-    
+
     alerts = query.all()
-    
+
     # Calculate statistics
     stats = {
         "total_alerts": len(alerts),
@@ -404,19 +404,19 @@ async def get_alert_stats(
         "avg_confidence": 0,
         "resolution_time_avg": 0
     }
-    
+
     # Group by severity
     for severity in ["low", "medium", "high", "critical"]:
         stats["by_severity"][severity] = len([a for a in alerts if a.severity == severity])
-    
+
     # Group by status
     for status in ["active", "acknowledged", "resolved", "dismissed"]:
         stats["by_status"][status] = len([a for a in alerts if a.status == status])
-    
+
     # Calculate average confidence
     if alerts:
         stats["avg_confidence"] = sum(a.confidence for a in alerts) / len(alerts)
-    
+
     return stats
 ```
 
@@ -451,8 +451,8 @@ const AlertList: React.FC = () => {
     try {
       await api.post(`/alerts/${alertId}/acknowledge`);
       // Update local state
-      setAlerts(alerts.map(alert => 
-        alert.id === alertId 
+      setAlerts(alerts.map(alert =>
+        alert.id === alertId
           ? { ...alert, status: 'acknowledged' }
           : alert
       ));
@@ -465,8 +465,8 @@ const AlertList: React.FC = () => {
     try {
       await api.post(`/alerts/${alertId}/resolve`, { notes });
       // Update local state
-      setAlerts(alerts.map(alert => 
-        alert.id === alertId 
+      setAlerts(alerts.map(alert =>
+        alert.id === alertId
           ? { ...alert, status: 'resolved' }
           : alert
       ));
@@ -499,13 +499,13 @@ const useAlertNotifications = () => {
 
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:8001/ws');
-    
+
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      
+
       if (data.type === 'alert_notification') {
         setNotifications(prev => [data.data, ...prev.slice(0, 9)]);
-        
+
         // Show browser notification for critical alerts
         if (data.data.severity === 'critical' && 'Notification' in window) {
           new Notification('Critical Security Alert', {
@@ -555,7 +555,7 @@ def log_alert_metrics(alert: Alert):
         "timestamp": alert.timestamp.isoformat(),
         "detection_data": alert.detection_data
     }
-    
+
     # Send to ELK stack
     logger.info(json.dumps(metrics))
 ```
@@ -571,7 +571,7 @@ processing:
     low: 0.3
     medium: 0.6
     high: 0.8
-  
+
   alert_settings:
     cooldown_period: 60  # seconds
     max_alerts_per_minute: 5
@@ -681,4 +681,4 @@ POST /api/alerts/auto-clear
 - **Prevents Alert Buildup**: Automatically resolves stale alerts
 - **Improves Performance**: Reduces active alert count for better query performance
 - **Maintains Focus**: Keeps operators focused on recent, actionable alerts
-- **Configurable**: Flexible timeouts based on alert severity and operational needs 
+- **Configurable**: Flexible timeouts based on alert severity and operational needs

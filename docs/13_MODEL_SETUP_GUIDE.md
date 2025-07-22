@@ -29,14 +29,14 @@ model = Sequential([
     TimeDistributed(MaxPooling2D((2, 2))),
     TimeDistributed(Conv2D(128, (3, 3), activation='relu')),
     TimeDistributed(MaxPooling2D((2, 2))),
-    
+
     # Flatten for LSTM
     TimeDistributed(Flatten()),
-    
+
     # LSTM layers for temporal analysis
     LSTM(256, return_sequences=True),
     LSTM(128),
-    
+
     # Classification layers
     Dense(64, activation='relu'),
     Dropout(0.5),
@@ -125,21 +125,21 @@ def create_lrcn_model(sequence_length=160, frame_height=90, frame_width=90):
         layers.TimeDistributed(layers.Conv2D(128, (3, 3), activation='relu')),
         layers.TimeDistributed(layers.MaxPooling2D((2, 2))),
         layers.TimeDistributed(layers.Flatten()),
-        
+
         layers.LSTM(256, return_sequences=True, dropout=0.3),
         layers.LSTM(128, dropout=0.3),
-        
+
         layers.Dense(64, activation='relu'),
         layers.Dropout(0.5),
         layers.Dense(1, activation='sigmoid')
     ])
-    
+
     model.compile(
         optimizer='adam',
         loss='binary_crossentropy',
         metrics=['accuracy', 'precision', 'recall']
     )
-    
+
     return model
 
 # Train the model
@@ -232,7 +232,7 @@ model:
 processing:
   # Process every nth frame to reduce load
   skip_frames: 2
-  
+
   # Reduce buffer size
   frame_buffer:
     max_size: 80  # Half the sequence length
@@ -370,4 +370,4 @@ models/
 - **[Frame Processing](02_FRAME_PROCESSING.md)** - Video preprocessing pipeline
 - **[System Overview](01_SYSTEM_OVERVIEW.md)** - Overall system architecture
 - **[Configuration Guide](11_CONFIGURATION_GUIDE.md)** - Complete configuration reference
-- **[Troubleshooting](12_TROUBLESHOOTING_GUIDE.md)** - Common issues and solutions 
+- **[Troubleshooting](12_TROUBLESHOOTING_GUIDE.md)** - Common issues and solutions

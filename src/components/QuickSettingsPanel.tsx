@@ -13,9 +13,9 @@ interface QuickSettingsPanelProps {
   onCameraUpdated: () => void;
 }
 
-const QuickSettingsPanel: React.FC<QuickSettingsPanelProps> = ({ 
-  cameras, 
-  onCameraUpdated 
+const QuickSettingsPanel: React.FC<QuickSettingsPanelProps> = ({
+  cameras,
+  onCameraUpdated
 }) => {
   const [selectedCamera, setSelectedCamera] = useState<Camera | null>(null);
 
@@ -105,4 +105,4 @@ const QuickSettingsPanel: React.FC<QuickSettingsPanelProps> = ({
   );
 };
 
-export default QuickSettingsPanel; 
+export default QuickSettingsPanel;

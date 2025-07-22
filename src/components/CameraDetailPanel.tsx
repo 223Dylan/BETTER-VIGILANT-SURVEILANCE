@@ -98,7 +98,7 @@ const AccordionSection: React.FC<AccordionSectionProps> = ({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      
+
       <div className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'max-h-screen' : 'max-h-0'}`}>
         <div className="p-4 bg-white border-t border-gray-200">
           {children}
@@ -137,9 +137,9 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     ptz: false,
     settings: true
   });
-  
 
-  
+
+
   // Real-time metrics state
   const [realTimeStats, setRealTimeStats] = useState({
     actualFPS: 0,
@@ -158,7 +158,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
   // Local editable camera state for the settings form
   const [editableCamera, setEditableCamera] = useState<Camera | null>(null);
-  
+
   // Brightness state
   const [brightness, setBrightness] = useState<number>(1.0);
   const [isUpdatingBrightness, setIsUpdatingBrightness] = useState(false);
@@ -173,18 +173,18 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
       loadCameraStats();
       loadRealTimeStats();
       connectToPredictionWebSocket();
-      
+
       // Update basic stats every 5 seconds
       const statsInterval = setInterval(() => {
         loadCameraStatus();
         loadCameraStats();
       }, 5000);
-      
+
       // Update real-time metrics every 2 seconds for more accurate overlay
       const realTimeInterval = setInterval(() => {
         loadRealTimeStats();
       }, 2000);
-      
+
       return () => {
         clearInterval(statsInterval);
         clearInterval(realTimeInterval);
@@ -210,7 +210,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
       const newStatus = camera.enabled ? 'active' : 'stopped';
       console.log(`[SYNC] Camera ${camera.id} enabled state changed: ${camera.enabled}, setting status to: ${newStatus}`);
       setStatus(newStatus);
-      
+
       // Reconnect or disconnect WebSocket based on camera state
       if (camera.enabled && isOpen) {
         // Reconnect WebSocket if camera becomes enabled
@@ -242,9 +242,9 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     try {
       const wsUrl = `ws://localhost:8001/ws/cameras/${camera.id}/prediction`;
       console.log(`Creating NEW WebSocket connection to: ${wsUrl}`);
-      
+
       const ws = new WebSocket(wsUrl);
-      
+
       ws.onopen = () => {
         console.log(`[SUCCESS] WebSocket opened for ${camera.id}`);
         setConnectionStatus('connected');
@@ -252,14 +252,14 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
       ws.onmessage = (event) => {
         console.log(`[MESSAGE] RAW WebSocket message for ${camera.id}:`, event.data);
-        
+
         try {
           const data = JSON.parse(event.data);
           console.log(`[PARSED] WebSocket message for ${camera.id}:`, data);
-          
+
           if (data.type === 'prediction' && data.prediction) {
             console.log('[PREDICTION] Processing prediction message:', data.prediction);
-            
+
             const prediction = data.prediction;
             const newAlert: Alert = {
               id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -290,23 +290,23 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
             console.log('[ALERT] Adding new alert:', newAlert);
             setAlerts(prev => [newAlert, ...prev.slice(0, 49)]);
             setAlertsReceived(prev => prev + 1);
-            
+
             setStats(prev => ({
               ...prev,
               alertsToday: prev.alertsToday + 1,
               lastAlert: new Date().toLocaleTimeString()
             }));
-            
+
           } else if (data.type === 'connection') {
             console.log('[CONNECTION] Connection confirmed for', camera.id);
-            
+
           } else if (data.type === 'keepalive') {
             console.log('[KEEPALIVE] Keepalive received for', camera.id, 'connections:', data.connections);
-            
+
           } else {
             console.log('[MESSAGE] Other message type:', data.type);
           }
-          
+
         } catch (error) {
           console.error('[ERROR] Error parsing WebSocket message:', error);
           console.error('[RAW] Raw message that failed:', event.data);
@@ -324,7 +324,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
       };
 
       setPredictionWs(ws);
-      
+
     } catch (error) {
       console.error('[ERROR] Failed to create WebSocket:', error);
       setConnectionStatus('error');
@@ -362,7 +362,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
   const loadRealTimeStats = async () => {
     if (!camera) return;
-    
+
     try {
       // For MJPEG streams, get stats from camera manager and provide fallback logic
       if (streamType === 'mjpeg') {
@@ -370,20 +370,20 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
         if (cameraStatsResponse.ok) {
           const allCameraStats = await cameraStatsResponse.json();
           const cameraStats = allCameraStats[camera.id];
-          
+
           if (cameraStats) {
             // For MJPEG, if the backend FPS is 0 but camera is enabled and status is active,
             // assume the stream is working at a reasonable FPS (since we can see the video)
             let effectiveFPS = cameraStats.fps || 0;
             let streamStatus = cameraStats.running && cameraStats.status === 'active';
-            
+
             // Fallback logic for MJPEG: if camera is enabled but FPS is 0, estimate based on visible stream
             if (camera.enabled && streamStatus && effectiveFPS === 0) {
               // If we can see video but FPS is 0, it means the backend isn't tracking properly
               // Estimate a reasonable FPS based on camera configuration
               effectiveFPS = Math.min(camera.fps * 0.7, 15); // Assume 70% of target FPS, max 15
             }
-            
+
             setRealTimeStats(prev => ({
               ...prev,
               actualFPS: effectiveFPS,
@@ -414,7 +414,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
         const streamStatsResponse = await fetch(`http://localhost:8001/api/video/status/${camera.id}`);
         if (streamStatsResponse.ok) {
           const streamStats = await streamStatsResponse.json();
-          
+
           setRealTimeStats(prev => ({
             ...prev,
             actualFPS: streamStats.fps || 0,
@@ -430,7 +430,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
           if (cameraStatsResponse.ok) {
             const allCameraStats = await cameraStatsResponse.json();
             const cameraStats = allCameraStats[camera.id];
-            
+
             if (cameraStats) {
               setRealTimeStats(prev => ({
                 ...prev,
@@ -465,31 +465,31 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
   const updateCameraProperty = async (property: string, value: any) => {
     if (!camera || isUpdatingSettings) return;
-    
+
     setIsUpdatingSettings(true);
     try {
       console.log(`[UPDATE] Updating camera ${camera.id} property ${property} to:`, value);
-      
+
       // Save to backend
       await cameraService.updateCameraProperty(camera.id, property, value);
-      
+
       console.log(`[SUCCESS] Successfully updated ${property} for camera ${camera.id}`);
-      
+
       // Update the local editableCamera state immediately
       if (editableCamera) {
         setEditableCamera({ ...editableCamera, [property]: value });
       }
-      
+
       // Refresh the camera list to get updated data from backend
       if (onCameraUpdated) {
         onCameraUpdated();
       }
     } catch (error) {
       console.error(`[ERROR] Error updating ${property}:`, error);
-      
+
       // Show error to user
       alert(`Failed to update ${property}. Please try again.`);
-      
+
       // Revert the editableCamera state on error
       if (camera && editableCamera) {
         setEditableCamera({ ...camera });
@@ -535,19 +535,19 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
   const handleToggleCamera = async () => {
     if (!camera || isToggling) return;
-    
+
     setIsToggling(true);
     try {
       if (camera.enabled) {
         setStatus('stopping');
         await cameraService.disableCamera(camera.id);
         console.log(`[TOGGLE] Camera ${camera.id} disabled successfully`);
-        
+
         // Update local camera data immediately
         if (editableCamera) {
           setEditableCamera({ ...editableCamera, enabled: false });
         }
-        
+
         // Immediately refresh parent data so camera prop gets updated
         if (onCameraUpdated) {
           onCameraUpdated();
@@ -556,25 +556,25 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
         setStatus('starting');
         await cameraService.enableCamera(camera.id);
         console.log(`[TOGGLE] Camera ${camera.id} enable command sent`);
-        
+
         // Update local camera data immediately
         if (editableCamera) {
           setEditableCamera({ ...editableCamera, enabled: true });
         }
-        
+
         // Immediately refresh parent data so camera prop gets updated
         if (onCameraUpdated) {
           onCameraUpdated();
         }
-        
+
         // Poll for camera to actually become active (same logic as CameraCard)
         let retries = 0;
         const maxRetries = 10;
-        
+
         while (retries < maxRetries) {
           await new Promise(resolve => setTimeout(resolve, 1000));
           const currentStatus = await cameraService.getCameraStatus(camera.id);
-          
+
           if (currentStatus === 'active') {
             setStatus('active');
             break;
@@ -582,10 +582,10 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
             setStatus('error');
             break;
           }
-          
+
           retries++;
         }
-        
+
         if (retries >= maxRetries) {
           const finalStatus = await cameraService.getCameraStatus(camera.id);
           setStatus(finalStatus || 'error');
@@ -651,9 +651,9 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
   const handleCameraFieldBlur = (field: keyof Camera, value: any) => {
     if (!camera || !editableCamera) return;
-    
+
     console.log(`[FIELD] Field blur: ${field}, Current value: ${camera[field]}, New value: ${value}`);
-    
+
     // Only update if the value actually changed
     if (camera[field] !== value && value !== '' && value !== null && value !== undefined) {
       console.log(`[CHANGE] Value changed, updating ${field}...`);
@@ -673,12 +673,12 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     setIsUpdatingBrightness(true);
     try {
       await cameraService.updateCameraBrightness(camera.id, newBrightness);
-      
+
       // Update local camera data
       if (editableCamera) {
         setEditableCamera({ ...editableCamera, brightness: newBrightness });
       }
-      
+
       // No restart needed for brightness - it updates dynamically!
       // Just notify parent to refresh data
       if (onCameraUpdated) {
@@ -696,7 +696,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
   // Handle camera deletion
   const handleDeleteCamera = async () => {
     if (!camera || isDeleting) return;
-    
+
     setIsDeleting(true);
     try {
       const success = await cameraService.deleteCamera(camera.id);
@@ -723,11 +723,11 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onClose}
       />
-      
+
       {/* Panel */}
       <div className="fixed inset-y-0 right-0 flex max-w-full pl-10">
         <div className="w-screen max-w-6xl">
@@ -799,7 +799,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                     streamType={streamType}
                   />
                 </div>
-                
+
                 {/* Video controls */}
                 <div className="mt-4 flex items-center justify-between">
                   <div className="flex items-center space-x-4">
@@ -829,10 +829,10 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                         </>
                       )}
                     </button>
-                    
+
 
                   </div>
-                  
+
                   <div className="text-sm text-gray-500 flex items-center space-x-4">
                     <div className="flex items-center space-x-1">
                       <VideoCameraIcon className="w-4 h-4" />
@@ -991,7 +991,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                         <div>Alerts Received: {alertsReceived}</div>
                         <div>WebSocket URL: ws://localhost:8001/ws/cameras/{camera.id}/prediction</div>
                       </div>
-                      
+
                       <div className="max-h-64 overflow-y-auto space-y-2">
                         {alerts.length === 0 ? (
                           <div className="text-center py-4 text-gray-500">
@@ -1055,7 +1055,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                             <ArrowUpIcon className="w-4 h-4" />
                           </button>
                           <div></div>
-                          
+
                           <button className="p-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center flex items-center justify-center">
                             <ArrowLeftIcon className="w-4 h-4" />
                           </button>
@@ -1065,14 +1065,14 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                           <button className="p-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center flex items-center justify-center">
                             <ArrowRightIcon className="w-4 h-4" />
                           </button>
-                          
+
                           <div></div>
                           <button className="p-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center flex items-center justify-center">
                             <ArrowDownIcon className="w-4 h-4" />
                           </button>
                           <div></div>
                         </div>
-                        
+
                         <div className="flex space-x-2">
                           <button className="flex-1 p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm flex items-center justify-center space-x-1">
                             <ZoomInIcon className="w-4 h-4" />
@@ -1169,7 +1169,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                       {/* Detection Settings */}
                       <div className="mt-3 space-y-2">
                         <h4 className="text-sm font-medium text-gray-700">Detection Settings</h4>
-                        
+
                         <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
                           <label className="text-xs font-medium text-gray-500">Detection Enabled</label>
                           <button
@@ -1276,4 +1276,4 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
   );
 };
 
-export default CameraDetailPanel; 
+export default CameraDetailPanel;

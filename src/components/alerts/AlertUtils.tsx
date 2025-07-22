@@ -20,4 +20,4 @@ export const getStatusColor = (status: string) => {
 
 export const formatTimestamp = (timestamp: string) => {
   return new Date(timestamp).toLocaleString();
-}; 
+};

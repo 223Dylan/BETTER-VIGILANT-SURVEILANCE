@@ -37,7 +37,7 @@ Input (160, 90, 90, 1) → CNN Layers → LSTM → Dense → Output (2)
 ```python
 def load_model(model_path: str) -> tf.keras.Model:
     """Load TensorFlow model with caching and optimization."""
-    
+
     # Custom objects for legacy compatibility
     custom_objects = {
         'Conv2D': Conv2D,
@@ -48,13 +48,13 @@ def load_model(model_path: str) -> tf.keras.Model:
         'TimeDistributed': TimeDistributed,
         'Dropout': Dropout
     }
-    
+
     model = tf.keras.models.load_model(
         model_path,
         custom_objects=custom_objects,
         compile=False
     )
-    
+
     return model
 ```
 
@@ -65,7 +65,7 @@ def load_model(model_path: str) -> tf.keras.Model:
 ```python
 class ModelHandler(BaseComponent):
     """Handles model loading and prediction for shoplifting detection."""
-    
+
     def __init__(self, config=None):
         self.model_path = config.get('model.path', 'models/lrcn_160S_90_90Q.h5')
         self.input_shape = tuple(config.get('model.input_shape', [160, 90, 90, 1]))
@@ -84,15 +84,15 @@ class ModelHandler(BaseComponent):
 @app.task(name='shoplifting_detection.predict_sequence', bind=True, max_retries=3)
 def predict_sequence(self, sequence_data):
     """Predict shoplifting probability for a sequence of frames."""
-    
+
     # Make prediction
     prediction = model.predict(np.expand_dims(sequence, axis=0), verbose=0)[0]
-    
+
     # Process output
     if prediction.shape == (2,):
         probability = float(prediction[1])  # Shoplifting probability
         label = int(prediction[1] > 0.5)
-    
+
     return {
         'probability': probability,
         'label': label,
@@ -205,7 +205,7 @@ _model_cache = {}
 def load_model(model_path: str) -> tf.keras.Model:
     if model_path in _model_cache:
         return _model_cache[model_path]
-    
+
     model = tf.keras.models.load_model(model_path, ...)
     _model_cache[model_path] = model
     return model
@@ -218,14 +218,14 @@ def predict_batch(sequences):
     """Process multiple sequences in batch for efficiency."""
     batch_input = np.array(sequences)
     predictions = model.predict(batch_input, verbose=0)
-    
+
     results = []
     for pred in predictions:
         results.append({
             'probability': float(pred[1]),
             'is_shoplifting': pred[1] > 0.5
         })
-    
+
     return results
 ```
 
@@ -286,19 +286,19 @@ Based on the research paper, the model was trained on:
 def Pre_Process_Video(current_frame, previous_frame):
     # Frame differencing for motion detection
     diff = cv2.absdiff(current_frame, previous_frame)
-    
+
     # Gaussian blur to reduce noise
     diff = cv2.GaussianBlur(diff, (3,3), 0)
-    
+
     # Resize to model input size
     resized_frame = cv2.resize(diff, (90, 90))
-    
+
     # Convert to grayscale
     gray_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
-    
+
     # Normalize
     normalized_frame = gray_frame / 255
-    
+
     return normalized_frame
 ```
 
@@ -365,4 +365,4 @@ print(f"XLA enabled: {tf.config.optimizer.get_jit()}")
 4. **Result Interpretation**
    - Use appropriate probability thresholds
    - Consider confidence levels in decision making
-   - Log predictions for analysis and debugging 
+   - Log predictions for analysis and debugging

@@ -29,7 +29,7 @@ class UserService {
 
   async getUsers(params: UserListParams = {}): Promise<UserListResponse> {
     const searchParams = new URLSearchParams();
-    
+
     if (params.page) searchParams.append('page', params.page.toString());
     if (params.per_page) searchParams.append('per_page', params.per_page.toString());
     if (params.search) searchParams.append('search', params.search);
@@ -38,7 +38,7 @@ class UserService {
 
     const queryString = searchParams.toString();
     const url = queryString ? `/api/users/?${queryString}` : '/api/users/';
-    
+
     return await apiService.get<UserListResponse>(url);
   }
 

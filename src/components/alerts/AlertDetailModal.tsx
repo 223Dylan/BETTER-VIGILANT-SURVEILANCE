@@ -35,7 +35,7 @@ const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
-        
+
         <div className="p-6">
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
@@ -102,7 +102,7 @@ const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
               <div className="bg-gray-50 p-3 rounded space-y-2">
                 {alert.acknowledgedBy && (
                   <div className="text-sm">
-                    <span className="font-medium">Acknowledged</span> by {alert.acknowledgedBy} 
+                    <span className="font-medium">Acknowledged</span> by {alert.acknowledgedBy}
                     {alert.acknowledgedAt && (
                       <span className="text-gray-600 ml-1">
                         on {new Date(alert.acknowledgedAt).toLocaleString()}
@@ -150,4 +150,4 @@ const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
   );
 };
 
-export default AlertDetailModal; 
+export default AlertDetailModal;

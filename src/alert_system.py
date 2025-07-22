@@ -67,7 +67,7 @@ class AlertSystem:
             body = f"""
             Alert Level: {level.upper()}
             Message: {message}
-            
+
             This is an automated alert from the Shoplifting Detection System.
             """
 

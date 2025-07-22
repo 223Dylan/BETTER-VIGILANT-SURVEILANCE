@@ -29,7 +29,7 @@ class AuthService {
 
   private constructor() {
     this.initializeSession();
-    
+
     // Make debug function available globally for testing
     if (typeof window !== 'undefined') {
       (window as any).debugAuth = () => this.debugLocalStorage();
@@ -87,12 +87,12 @@ class AuthService {
           .join('')
       );
       const payload = JSON.parse(jsonPayload);
-      
+
       // Extract user data from JWT payload
       // Handle case where JWT contains minimal info (sub = username, role)
       const username = payload.sub || payload.username || 'unknown';
       const role = payload.role || 'viewer';
-      
+
       return {
         id: payload.user_id || payload.sub || username,
         username: username,
@@ -117,14 +117,14 @@ class AuthService {
   public async login(credentials: LoginCredentials): Promise<User | null> {
     try {
       const response = await apiService.post<AuthResponse>('/api/auth/login', credentials);
-      
+
       // Store refresh token if provided
       if (response.refresh_token) {
         localStorage.setItem(REFRESH_TOKEN_KEY, response.refresh_token);
       }
-      
+
       this.setSessionFromToken(response.access_token);
-      
+
       return this.currentUser;
     } catch (error) {
       console.error('Login failed:', error);
@@ -231,13 +231,13 @@ class AuthService {
     localStorage.setItem(TOKEN_KEY, token);
     const expiryTime = Date.now() + SESSION_TIMEOUT;
     localStorage.setItem(TOKEN_EXPIRY_KEY, expiryTime.toString());
-    
+
     try {
       const userData = this.parseJwt(token);
       this.currentUser = userData;
-      
+
       apiService.setAuthToken(token);
-      
+
       this.setupRefreshTimeout();
     } catch (error) {
       console.error('Error setting session:', error);
@@ -318,7 +318,7 @@ class AuthService {
     console.log('  - refresh_token:', localStorage.getItem('refresh_token') ? 'EXISTS' : 'NOT FOUND');
     console.log('  - token_expiry:', localStorage.getItem('token_expiry'));
     console.log('  - All localStorage keys:', Object.keys(localStorage));
-    
+
     // Check if auth_token exists and is valid
     const token = localStorage.getItem('auth_token');
     if (token) {
@@ -334,11 +334,11 @@ class AuthService {
             .join('')
         );
         const payload = JSON.parse(jsonPayload);
-        console.log('  - Token payload:', { 
-          username: payload.sub, 
-          role: payload.role, 
+        console.log('  - Token payload:', {
+          username: payload.sub,
+          role: payload.role,
           exp: new Date(payload.exp * 1000),
-          type: payload.type 
+          type: payload.type
         });
       } catch (error) {
         console.log('  - Token parse error:', error);

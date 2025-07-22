@@ -13,7 +13,7 @@ This project uses **PostgreSQL** with **SQLAlchemy** ORM and **Alembic** for dat
    - Binary frame storage with metadata
    - Sequence tracking
 
-2. **`Camera`** (`models/camera.py`) 
+2. **`Camera`** (`models/camera.py`)
    - Camera configuration and settings
    - Status tracking (stopped, starting, active, error)
    - Video settings (resolution, FPS, detection sensitivity)
@@ -38,7 +38,7 @@ The project uses **Alembic** for professional database versioning:
 # Check migration status
 alembic current
 
-# View migration history  
+# View migration history
 alembic history --verbose
 
 # Apply migrations
@@ -125,7 +125,7 @@ The database uses SQLAlchemy connection pooling for optimal performance:
 ### Tables Created
 
 1. **`frames`** - Video frame storage
-2. **`cameras`** - Camera configurations  
+2. **`cameras`** - Camera configurations
 3. **`users`** - User management
 4. **`alerts`** - Security alerts
 
@@ -231,4 +231,4 @@ scripts/
 
 ---
 
-**Note:** The old custom migration scripts (`add_alerts_table.py`) are deprecated and should not be used. All schema changes now go through Alembic. 
+**Note:** The old custom migration scripts (`add_alerts_table.py`) are deprecated and should not be used. All schema changes now go through Alembic.

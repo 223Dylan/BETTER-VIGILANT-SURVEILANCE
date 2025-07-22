@@ -104,4 +104,4 @@ volumes:
     driver: local
   elasticsearch_data:
     name: shoplifting_elasticsearch_data
-    driver: local 
+    driver: local

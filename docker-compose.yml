@@ -120,4 +120,4 @@ volumes:
   elasticsearch-data:
     driver: local
   postgres-data:
-    driver: local 
+    driver: local

@@ -127,4 +127,4 @@ This documentation is maintained alongside the codebase. When making changes to 
 
 ---
 
-**Last Updated:** This documentation reflects the current state of the Shoplifting Detection System and should be kept up to date with system changes. 
+**Last Updated:** This documentation reflects the current state of the Shoplifting Detection System and should be kept up to date with system changes.
