@@ -199,6 +199,76 @@ class MetricsService {
   }
 
   /**
+   * Get analytics data for a specific time range
+   */
+  async getAnalyticsData(timeRange: string = '24h'): Promise<{
+    systemMetrics: SystemMetrics[];
+    detectionMetrics: DetectionMetrics[];
+    summary: MetricsSummary;
+  }> {
+    const [systemMetrics, detectionMetrics, summary] = await Promise.all([
+      this.getSystemMetrics(timeRange, 100),
+      this.getDetectionMetrics(timeRange),
+      this.getMetricsSummary()
+    ]);
+
+    return { systemMetrics, detectionMetrics, summary };
+  }
+
+  /**
+   * Get detection statistics for analytics
+   */
+  async getDetectionStatistics(timeRange: string = '24h'): Promise<{
+    totalDetections: number;
+    shopliflingDetections: number;
+    averageConfidence: number;
+    detectionsByHour: Array<{ hour: string; count: number }>;
+  }> {
+    const detections = await this.getDetectionMetrics(timeRange);
+
+    const totalDetections = detections.length;
+    const shopliflingDetections = detections.filter(d => d.is_shoplifting).length;
+    const averageConfidence = detections.length > 0
+      ? detections.reduce((sum, d) => sum + d.confidence, 0) / detections.length
+      : 0;
+
+    // Group detections by hour
+    const detectionsByHour = this.groupDetectionsByHour(detections);
+
+    return {
+      totalDetections,
+      shopliflingDetections,
+      averageConfidence,
+      detectionsByHour
+    };
+  }
+
+  /**
+   * Group detections by hour for time-based analytics
+   */
+  private groupDetectionsByHour(detections: DetectionMetrics[]): Array<{ hour: string; count: number }> {
+    const hourCounts: { [key: string]: number } = {};
+
+    detections.forEach(detection => {
+      const hour = new Date(detection.timestamp).getHours();
+      const hourKey = `${hour}:00`;
+      hourCounts[hourKey] = (hourCounts[hourKey] || 0) + 1;
+    });
+
+    // Create array for all 24 hours
+    const result = [];
+    for (let i = 0; i < 24; i++) {
+      const hourKey = `${i}:00`;
+      result.push({
+        hour: hourKey,
+        count: hourCounts[hourKey] || 0
+      });
+    }
+
+    return result;
+  }
+
+  /**
    * Format timestamp for display
    */
   formatTimestamp(timestamp: string): string {

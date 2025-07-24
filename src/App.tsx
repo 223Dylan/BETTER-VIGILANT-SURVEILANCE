@@ -8,7 +8,7 @@ import Dashboard from './pages/Dashboard';
 import CamerasPage from './pages/CamerasPage';
 import AlertsPage from './pages/AlertsPage';
 import UsersPage from './pages/UsersPage';
-const Analytics = () => <div>Analytics Page</div>;
+import AnalyticsPage from './pages/AnalyticsPage';
 
 const App: React.FC = () => {
   return (
@@ -68,7 +68,7 @@ const App: React.FC = () => {
             path="/analytics"
             element={
               <ProtectedRoute requiredRole="admin">
-                <Analytics />
+                <AnalyticsPage />
               </ProtectedRoute>
             }
           />

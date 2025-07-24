@@ -154,3 +154,61 @@ async def get_recent_alerts(
     except Exception as e:
         logger.error(f"Error fetching recent alerts: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch recent alerts")
+
+
+@router.get("/analytics")
+async def get_analytics_data(
+    time_range: str = Query("24h", description="Time range: 24h, 7d, 30d"),
+):
+    """Get comprehensive analytics data for dashboard."""
+    try:
+        # Get all the data needed for analytics
+        [system_metrics, detection_metrics, summary, health_status, recent_alerts] = (
+            await asyncio.gather(
+                metrics_service.get_system_metrics(time_range, 200),
+                metrics_service.get_detection_metrics(time_range),
+                metrics_service.get_metrics_summary(),
+                metrics_service.get_health_status(),
+                metrics_service.get_recent_alerts(100),
+            )
+        )
+
+        # Calculate additional analytics
+        analytics_data = {
+            "system_metrics": system_metrics,
+            "detection_metrics": detection_metrics,
+            "summary": summary,
+            "health_status": health_status,
+            "recent_alerts": recent_alerts,
+            "time_range": time_range,
+            "generated_at": datetime.now().isoformat(),
+        }
+
+        # Add computed analytics
+        if detection_metrics:
+            total_detections = len(detection_metrics)
+            shoplifting_detections = len(
+                [d for d in detection_metrics if d.get("is_shoplifting", False)]
+            )
+            avg_confidence = (
+                sum(d.get("confidence", 0) for d in detection_metrics)
+                / total_detections
+                if total_detections > 0
+                else 0
+            )
+
+            analytics_data["computed_stats"] = {
+                "total_detections": total_detections,
+                "shoplifting_detections": shoplifting_detections,
+                "average_confidence": round(avg_confidence * 100, 2),
+                "detection_rate": (
+                    round((shoplifting_detections / total_detections * 100), 2)
+                    if total_detections > 0
+                    else 0
+                ),
+            }
+
+        return analytics_data
+    except Exception as e:
+        logger.error(f"Error fetching analytics data: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch analytics data")
