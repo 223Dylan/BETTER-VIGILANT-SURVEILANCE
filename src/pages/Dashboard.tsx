@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { VideoCameraIcon, BellIcon, ChartBarIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import ActiveCameraGrid from '../components/ActiveCameraGrid';
-import MetricsDashboard from '../components/MetricsDashboard';
+import DetectionsByHourDashboard from '../components/DetectionsByHourDashboard';
 import CameraPerformancePanel from '../components/CameraPerformancePanel';
 import AlertsNotificationPanel from '../components/AlertsNotificationPanel';
 import { cameraService } from '../services/camera.service';
@@ -120,29 +120,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Health Status Banner */}
-      {healthStatus && (!healthStatus.elasticsearch || !healthStatus.system_monitor) && (
-        <div className="rounded-md bg-yellow-50 p-4 border border-yellow-200">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" aria-hidden="true" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">
-                Infrastructure Status
-              </h3>
-              <div className="mt-2 text-sm text-yellow-700">
-                <p>
-                  Some monitoring services are offline:
-                  {!healthStatus.elasticsearch && ' Elasticsearch'}
-                  {!healthStatus.prometheus && ' Prometheus'}
-                  {!healthStatus.system_monitor && ' System Monitor'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -195,8 +173,8 @@ const Dashboard: React.FC = () => {
           {/* Active Cameras */}
           <ActiveCameraGrid />
 
-          {/* Enhanced System Metrics */}
-          <MetricsDashboard />
+          {/* Detections by Hour */}
+          <DetectionsByHourDashboard />
 
           {/* Camera Performance Detail */}
           {selectedCamera && (
