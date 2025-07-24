@@ -134,7 +134,14 @@ async def prediction_ws(websocket: WebSocket, camera_id: str):
     try:
         while True:
             # Keep connection alive with heartbeat
-            await websocket.send_json({"type": "heartbeat", "timestamp": time.time()})
+            try:
+                await websocket.send_json(
+                    {"type": "heartbeat", "timestamp": time.time()}
+                )
+            except:
+                # WebSocket closed, exit loop
+                logger.info(f"WebSocket closed for camera {camera_id} predictions")
+                break
             await asyncio.sleep(5)
     except WebSocketDisconnect:
         await websocket_manager.disconnect_prediction(camera_id, websocket)
@@ -156,27 +163,39 @@ async def metrics_ws(websocket: WebSocket):
                 metrics_summary = await metrics_service.get_metrics_summary()
 
                 # Send metrics update
-                await websocket.send_json(
-                    {
-                        "type": "metrics_update",
-                        "timestamp": time.time(),
-                        "data": metrics_summary,
-                    }
-                )
+                try:
+                    await websocket.send_json(
+                        {
+                            "type": "metrics_update",
+                            "timestamp": time.time(),
+                            "data": metrics_summary,
+                        }
+                    )
+                except:
+                    # WebSocket closed, exit loop
+                    logger.info("WebSocket closed during metrics update, exiting loop")
+                    break
 
                 # Wait 5 seconds before next update
                 await asyncio.sleep(5)
 
             except Exception as e:
                 logger.error(f"Error fetching metrics for WebSocket: {e}")
-                # Send error status
-                await websocket.send_json(
-                    {
-                        "type": "error",
-                        "timestamp": time.time(),
-                        "message": "Failed to fetch metrics",
-                    }
-                )
+                # Only try to send error if WebSocket is still open
+                try:
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "timestamp": time.time(),
+                            "message": "Failed to fetch metrics",
+                        }
+                    )
+                except:
+                    # WebSocket is closed, break out of the loop
+                    logger.info(
+                        "WebSocket closed during error handling, exiting metrics loop"
+                    )
+                    break
                 await asyncio.sleep(10)  # Wait longer on error
 
     except WebSocketDisconnect:
