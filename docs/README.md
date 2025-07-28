@@ -47,6 +47,7 @@ Welcome to the Shoplifting Detection System documentation! This guide helps you 
 | **[Frontend Architecture Guide](15_FRONTEND_ARCHITECTURE_GUIDE.md)** | React/TypeScript frontend architecture | Frontend Developers, Architects |
 | **[API Reference](16_API_REFERENCE.md)** | Complete API documentation and examples | Developers, Integrators |
 | **[Development Workflow Guide](17_DEVELOPMENT_WORKFLOW_GUIDE.md)** | Complete development process and best practices | All Developers, DevOps |
+| **[Deployment Guide](18_DEPLOYMENT_GUIDE.md)** | Complete deployment scenarios and infrastructure | DevOps Engineers, System Admins |
 | **[Alert Database Setup](ALERT_DATABASE_SETUP.md)** | Alert system database configuration | Database Admins |
 | **[Alert System Guide](ALERT_SYSTEM_GUIDE.md)** | Advanced alert configuration | Security Operators |
 | **[Detection Metrics Guide](DETECTION_METRICS_GUIDE.md)** | Performance metrics and monitoring | Data Analysts, DevOps |
@@ -79,11 +80,12 @@ Welcome to the Shoplifting Detection System documentation! This guide helps you 
 3. [Detection Metrics Guide](DETECTION_METRICS_GUIDE.md) for performance analysis
 
 ### For **DevOps Engineers**
-1. [Development Workflow Guide](17_DEVELOPMENT_WORKFLOW_GUIDE.md) for CI/CD and deployment process
-2. [Installation Guide](10_INSTALLATION_GUIDE.md) for deployment
-3. [Monitoring & Analytics](09_MONITORING_ANALYTICS.md) for observability
-4. [Configuration Guide](11_CONFIGURATION_GUIDE.md) for environment setup
-5. [Troubleshooting Guide](12_TROUBLESHOOTING_GUIDE.md) for operations
+1. [Deployment Guide](18_DEPLOYMENT_GUIDE.md) for complete deployment scenarios and infrastructure
+2. [Development Workflow Guide](17_DEVELOPMENT_WORKFLOW_GUIDE.md) for CI/CD and deployment process
+3. [Installation Guide](10_INSTALLATION_GUIDE.md) for basic deployment
+4. [Monitoring & Analytics](09_MONITORING_ANALYTICS.md) for observability
+5. [Configuration Guide](11_CONFIGURATION_GUIDE.md) for environment setup
+6. [Troubleshooting Guide](12_TROUBLESHOOTING_GUIDE.md) for operations
 
 ## Configuration Quick Reference
 

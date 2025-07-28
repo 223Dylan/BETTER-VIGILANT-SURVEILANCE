@@ -30,84 +30,129 @@ Client Request → Security Headers → Rate Limiting → JWT Validation → RBA
 **Source:** `src/auth/jwt_auth.py`
 
 ```python
-from jose import JWTError, jwt
-from datetime import datetime, timedelta
-from passlib.context import CryptContext
-from typing import Optional, Dict, Any
 import os
+from datetime import datetime, timedelta
+from typing import Dict, Optional
+import jwt
+from fastapi import HTTPException, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-# Configuration
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "fallback-secret-key")
-ALGORITHM = "HS256"
+# JWT Configuration
+JWT_SECRET = os.getenv("JWT_SECRET", "your-secret-key-here")  # Change in production
+JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+class JWTAuth:
+    """JWT authentication handler with token blacklisting."""
 
-class JWTHandler:
-    """JWT token management."""
+    def __init__(self):
+        self.security = HTTPBearer()
+        self.token_blacklist = set()
 
-    @staticmethod
-    def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-        """Create JWT access token."""
-        to_encode = data.copy()
-
-        if expires_delta:
-            expire = datetime.utcnow() + expires_delta
-        else:
-            expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
-        to_encode.update({
+    def create_access_token(self, user_id: str, role: str) -> str:
+        """Create a new access token."""
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        to_encode = {
             "exp": expire,
-            "type": "access",
-            "iat": datetime.utcnow()
-        })
+            "sub": user_id,    # User identifier
+            "role": role,      # User role
+            "type": "access"   # Token type
+        }
+        return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-        encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-        return encoded_jwt
-
-    @staticmethod
-    def create_refresh_token(data: dict) -> str:
-        """Create JWT refresh token."""
-        to_encode = data.copy()
+    def create_refresh_token(self, user_id: str, role: str) -> str:
+        """Create a new refresh token."""
         expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-
-        to_encode.update({
+        to_encode = {
             "exp": expire,
-            "type": "refresh",
-            "iat": datetime.utcnow()
-        })
+            "sub": user_id,
+            "role": role,
+            "type": "refresh"
+        }
+        return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-        encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-        return encoded_jwt
-
-    @staticmethod
-    def verify_token(token: str) -> Optional[Dict[str, Any]]:
-        """Verify and decode JWT token."""
+    def verify_token(self, token: str) -> Dict:
+        """Verify a JWT token."""
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            # Check if token is blacklisted
+            if token in self.token_blacklist:
+                raise HTTPException(status_code=401, detail="Token has been revoked")
 
-            # Check token type
-            if payload.get("type") != "access":
-                return None
-
-            # Check expiration
-            exp = payload.get("exp")
-            if exp and datetime.fromtimestamp(exp) < datetime.utcnow():
-                return None
-
+            # Decode and verify token
+            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
             return payload
 
-        except JWTError:
-            return None
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail="Token has expired")
+        except jwt.JWTError:
+            raise HTTPException(status_code=401, detail="Invalid token")
 
-    @staticmethod
-    def verify_refresh_token(token: str) -> Optional[Dict[str, Any]]:
-        """Verify refresh token."""
-        try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    def blacklist_token(self, token: str):
+        """Add a token to the blacklist (for logout)."""
+        self.token_blacklist.add(token)
 
-            # Check token type
+    async def __call__(self, credentials: HTTPAuthorizationCredentials = Security(HTTPBearer())) -> Dict:
+        """Validate JWT token and return payload."""
+        return self.verify_token(credentials.credentials)
+
+# Global JWT auth instance
+jwt_auth = JWTAuth()
+```
+
+### Role-Based Permissions
+
+The JWT auth system includes built-in role-based permissions:
+
+```python
+# Role to permissions mapping
+ROLE_PERMISSIONS = {
+    "admin": {
+        "cameras": ["read", "write", "delete", "control"],
+        "users": ["read", "write", "delete"],
+        "system": ["read", "write", "delete"],
+    },
+    "user": {
+        "cameras": ["read", "control"],
+        "users": ["read"],
+        "system": ["read"]
+    },
+    "viewer": {
+        "cameras": ["read"],
+        "users": ["read"],
+        "system": ["read"]
+    },
+}
+
+def check_permission(role: str, resource: str, action: str) -> bool:
+    """Check if a role has permission for a specific resource and action."""
+    if role not in ROLE_PERMISSIONS:
+        return False
+    resource_permissions = ROLE_PERMISSIONS[role].get(resource, [])
+    return action in resource_permissions
+```
+
+### Token Structure
+
+**Access Token Payload:**
+```json
+{
+  "exp": 1609459200,        // Expiration timestamp
+  "sub": "admin",           // User identifier (username)
+  "role": "admin",          // User role
+  "type": "access"          // Token type
+}
+```
+
+**Refresh Token Payload:**
+```json
+{
+  "exp": 1610064000,        // Expiration timestamp (7 days)
+  "sub": "admin",           // User identifier
+  "role": "admin",          // User role
+  "type": "refresh"         // Token type
+}
+```
             if payload.get("type") != "refresh":
                 return None
 

@@ -18,16 +18,43 @@ The Database System uses PostgreSQL with SQLAlchemy ORM and Alembic for migratio
 ### Database Schema
 
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   cameras   │    │    users    │    │   alerts    │    │   frames    │
-├─────────────┤    ├─────────────┤    ├─────────────┤    ├─────────────┤
-│ id (PK)     │    │ id (PK)     │    │ id (PK)     │    │ id (PK)     │
-│ name        │    │ username    │    │ camera_id   │    │ timestamp   │
-│ source      │    │ email       │    │ type        │    │ sequence_no │
-│ fps         │    │ role        │    │ severity    │    │ frame_data  │
-│ enabled     │    │ created_at  │    │ confidence  │    │ metadata    │
-│ ...         │    │ ...         │    │ ...         │    │ ...         │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│      cameras        │    │        users        │    │       alerts        │
+├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
+│ id (PK)             │    │ id (PK)             │    │ id (PK)             │
+│ name                │    │ username (UQ)       │    │ camera_id (FK)      │
+│ description         │    │ email (UQ)          │    │ type                │
+│ enabled             │    │ password_hash       │    │ severity            │
+│ source              │    │ role                │    │ status              │
+│ source_type         │    │ permissions (JSON)  │    │ confidence          │
+│ fps                 │    │ is_active           │    │ message             │
+│ resolution_width    │    │ is_verified         │    │ source              │
+│ resolution_height   │    │ created_at          │    │ detection_data (JSON)│
+│ brightness          │    │ updated_at          │    │ timestamp           │
+│ detection_enabled   │    │ last_login_at       │    │ created_at          │
+│ detection_sensitivity│   │ last_activity_at    │    │ updated_at          │
+│ recording_enabled   │    └─────────────────────┘    │ acknowledged_by     │
+│ location            │                               │ acknowledged_at     │
+│ zone                │                               │ resolved_by         │
+│ advanced_settings (JSON)                          │ resolved_at         │
+│ created_at          │                               │ notes               │
+│ updated_at          │                               └─────────────────────┘
+│ last_online         │
+│ status              │    ┌─────────────────────┐
+│ error_message       │    │       frames        │
+│ uptime_hours        │    ├─────────────────────┤
+└─────────────────────┘    │ id (PK)             │
+                          │ timestamp           │
+                          │ sequence_number     │
+                          │ frame_data (BLOB)   │
+                          │ frame_metadata (JSON)│
+                          │ created_at          │
+                          │ processed_at        │
+                          └─────────────────────┘
+
+Relationships:
+- alerts.camera_id → cameras.id (Many-to-One)
+- frames.camera_id → cameras.id (Many-to-One) [conceptual]
 ```
 
 ## Database Models
@@ -42,40 +69,81 @@ class Camera(Base):
     __tablename__ = "cameras"
 
     # Primary identification
-    id = Column(String, primary_key=True)
+    id = Column(String, primary_key=True)  # e.g., "local-webcam", "ip-cam-001"
     name = Column(String(255), nullable=False)
     description = Column(Text)
     enabled = Column(Boolean, default=True, nullable=False)
 
     # Connection details
-    source = Column(String(255), nullable=False)
-    source_type = Column(String(50), nullable=False, default="webcam")
+    source = Column(String(255), nullable=False)  # URL, device index, etc.
+    source_type = Column(String(50), nullable=False, default="webcam")  # webcam, rtsp, file
 
     # Video settings
     fps = Column(Integer, default=15, nullable=False)
     resolution_width = Column(Integer, default=640)
     resolution_height = Column(Integer, default=480)
-    brightness = Column(Float, default=1.0, nullable=False)
+    brightness = Column(Float, default=1.0, nullable=False)  # 0.0 to 2.0
 
     # Processing settings
     detection_enabled = Column(Boolean, default=True, nullable=False)
-    detection_sensitivity = Column(Float, default=0.5)
+    detection_sensitivity = Column(Float, default=0.5)  # Threshold for ML predictions
     recording_enabled = Column(Boolean, default=False, nullable=False)
 
     # Location and metadata
     location = Column(String(255))
-    zone = Column(String(100))
-    advanced_settings = Column(JSON, default={})
+    zone = Column(String(100))  # e.g., "entrance", "checkout", "aisle-1"
+    advanced_settings = Column(JSON, default={})  # Custom configuration per camera
 
     # Status tracking
-    status = Column(String(50), default="stopped")
+    status = Column(String(50), default="stopped")  # stopped, starting, active, error
     error_message = Column(Text)
+    uptime_hours = Column(Float, default=0.0)
     last_online = Column(DateTime(timezone=True))
 
     # Audit fields
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        """Convert to dictionary for API responses."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "enabled": self.enabled,
+            "source": self.source,
+            "source_type": self.source_type,
+            "fps": self.fps,
+            "resolution": {
+                "width": self.resolution_width,
+                "height": self.resolution_height,
+            },
+            "brightness": self.brightness,
+            "detection_enabled": self.detection_enabled,
+            "detection_sensitivity": self.detection_sensitivity,
+            "recording_enabled": self.recording_enabled,
+            "location": self.location,
+            "zone": self.zone,
+            "advanced_settings": self.advanced_settings or {},
+            "status": self.status,
+            "error_message": self.error_message,
+            "uptime_hours": self.uptime_hours,
+            "last_online": self.last_online.isoformat() if self.last_online else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
 ```
+
+#### Camera Status Values
+- **stopped**: Camera is not active
+- **starting**: Camera is initializing
+- **active**: Camera is running and processing frames
+- **error**: Camera encountered an error
+
+#### Source Types
+- **webcam**: Local USB/built-in camera (source = device index)
+- **rtsp**: RTSP network stream (source = rtsp://...)
+- **file**: Video file input (source = file path)
 
 ### User Model
 
@@ -87,31 +155,67 @@ class User(Base):
     __tablename__ = "users"
 
     # Primary identification
-    id = Column(String, primary_key=True)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(100), unique=True, nullable=False, index=True)
 
     # Authentication
     password_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    is_verified = Column(Boolean, default=False, nullable=False)
 
     # Authorization
-    role = Column(String(50), default="user", nullable=False)
-    permissions = Column(JSON, default={})
+    role = Column(String(20), nullable=False, default="user")
+    permissions = Column(JSON, default=dict)
 
-    # Profile information
-    full_name = Column(String(100))
-    last_login = Column(DateTime(timezone=True))
-    login_count = Column(Integer, default=0)
-
-    # Security settings
-    failed_login_attempts = Column(Integer, default=0)
-    locked_until = Column(DateTime(timezone=True))
-    password_changed_at = Column(DateTime(timezone=True))
+    # Activity tracking
+    last_login_at = Column(DateTime(timezone=True))
+    last_activity_at = Column(DateTime(timezone=True))
 
     # Audit fields
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def to_dict(self):
+        """Convert to dictionary for API responses."""
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "role": self.role,
+            "permissions": self.permissions or {},
+            "is_active": self.is_active,
+            "is_verified": self.is_verified,
+        }
+
+    def has_permission(self, permission_key):
+        """Check if user has specific permission."""
+        if self.role == "admin":
+            return True
+        return (
+            self.permissions.get(permission_key, False) if self.permissions else False
+        )
+```
+
+#### User Roles
+- **admin**: Full system access, can manage users and system settings
+- **user**: Standard access, can view cameras and manage alerts
+- **viewer**: Read-only access, can only view cameras and alerts
+
+#### Permissions System
+The permissions field stores a JSON object with granular permissions:
+
+```json
+{
+  "canViewCameras": true,
+  "canControlCameras": false,
+  "canViewAlerts": true,
+  "canManageAlerts": true,
+  "canViewAnalytics": false,
+  "canManageUsers": false,
+  "canManageSystem": false,
+  "canExportData": false
+}
 ```
 
 ### Alert Model
@@ -124,22 +228,22 @@ class Alert(Base):
     __tablename__ = "alerts"
 
     # Primary identification
-    id = Column(String, primary_key=True)
+    id = Column(String, primary_key=True)  # UUID string
     camera_id = Column(String(255), nullable=False, index=True)
 
     # Classification
-    type = Column(String(100), nullable=False, index=True)
-    severity = Column(String(50), nullable=False, index=True)
-    status = Column(String(50), nullable=False, default="active", index=True)
+    type = Column(String(100), nullable=False, index=True)  # shoplifting, suspicious_activity
+    severity = Column(String(50), nullable=False, index=True)  # low, medium, high, critical
+    status = Column(String(50), nullable=False, default="active", index=True)  # active, acknowledged, resolved, dismissed
 
     # Detection data
     confidence = Column(Float, nullable=False)
     message = Column(Text, nullable=False)
     source = Column(String(100), default="detection", nullable=False)
-    detection_data = Column(JSON, default={})
+    detection_data = Column(JSON, default={})  # Additional detection metadata
 
     # Timestamps
-    timestamp = Column(DateTime(timezone=True), nullable=False)
+    timestamp = Column(DateTime(timezone=True), nullable=False)  # When detection occurred
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -152,10 +256,68 @@ class Alert(Base):
 
     # Indexes for performance
     __table_args__ = (
-        Index('idx_alert_camera_timestamp', 'camera_id', 'timestamp'),
-        Index('idx_alert_status_severity', 'status', 'severity'),
-        Index('idx_alert_type_timestamp', 'type', 'timestamp'),
+        Index("idx_alert_camera_timestamp", "camera_id", "timestamp"),
+        Index("idx_alert_severity_status", "severity", "status"),
+        Index("idx_alert_type_timestamp", "type", "timestamp"),
+        Index("idx_alert_timestamp_desc", "timestamp"),
     )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for API responses."""
+        return {
+            "id": self.id,
+            "camera_id": self.camera_id,
+            "type": self.type,
+            "severity": self.severity,
+            "status": self.status,
+            "confidence": self.confidence,
+            "message": self.message,
+            "source": self.source,
+            "detection_data": self.detection_data or {},
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "acknowledged_by": self.acknowledged_by,
+            "acknowledged_at": (
+                self.acknowledged_at.isoformat() if self.acknowledged_at else None
+            ),
+            "resolved_by": self.resolved_by,
+            "resolved_at": self.resolved_at.isoformat() if self.resolved_at else None,
+            "notes": self.notes,
+        }
+```
+
+#### Alert Types
+- **shoplifting_detection**: Primary detection from LRCN model
+- **suspicious_activity**: Other suspicious behaviors
+- **system_alert**: System-generated alerts
+
+#### Alert Severity Levels
+- **low**: Minor incidents requiring attention
+- **medium**: Moderate incidents requiring review
+- **high**: Serious incidents requiring immediate attention
+- **critical**: Critical incidents requiring immediate response
+
+#### Alert Status Lifecycle
+- **active**: New alert requiring attention
+- **acknowledged**: Alert has been seen by an operator
+- **resolved**: Alert has been investigated and closed
+- **dismissed**: Alert was marked as false positive
+
+#### Detection Data Structure
+The `detection_data` JSON field contains additional metadata:
+
+```json
+{
+  "sequence_stats": {
+    "mean": 0.82,
+    "std": 0.15,
+    "frames": 160
+  },
+  "model_version": "1.0.0",
+  "processing_time_ms": 120.5,
+  "frame_path": "/path/to/frame.jpg"
+}
 ```
 
 ### Frame Model
@@ -357,117 +519,307 @@ alembic current
 alembic upgrade head --sql
 ```
 
+### Recent Migrations
+
+#### Current Schema (Latest Migration: 455924c09f24)
+
+**Migration:** `455924c09f24_add_cameras_users_and_alerts_tables.py`
+
+This migration establishes the core database schema with comprehensive tables:
+
+**Tables Created:**
+- **cameras**: Complete camera configuration and status tracking
+- **users**: User authentication and authorization with role-based permissions
+- **alerts**: Alert management with full lifecycle tracking
+- **frames**: Frame storage and metadata (optional)
+
+**Key Features:**
+- **JSON fields**: `advanced_settings` in cameras, `permissions` in users, `detection_data` in alerts
+- **Indexes**: Optimized for common query patterns
+- **Timestamps**: Created/updated tracking with timezone support
+- **Status tracking**: Comprehensive status fields for monitoring
+
+**Previous Migration:** `4ed1393c0e75_initial_migration.py`
+- Initial database setup and base configuration
+
+#### Migration Best Practices
+
+1. **Always backup before migrations:**
+   ```bash
+   pg_dump shoplifting_detection > backup_before_migration.sql
+   ```
+
+2. **Test migrations on development first:**
+   ```bash
+   # Apply migration to dev environment
+   alembic upgrade head
+
+   # Verify data integrity
+   python scripts/verify_migration.py
+   ```
+
+3. **Use descriptive migration messages:**
+   ```bash
+   alembic revision --autogenerate -m "Add brightness column to cameras table"
+   ```
+
+4. **Review generated migrations before applying:**
+   ```bash
+   # Always review the generated migration file
+   cat src/database/migrations/versions/abc123_migration_name.py
+   ```
+
 ## Database Services
 
-### Camera Service
+### Camera Database Service
+
+**Source:** `src/services/camera_db_service.py`
 
 ```python
-class CameraService:
-    def __init__(self, db: Session):
-        self.db = db
+class CameraDatabaseService:
+    """Service for managing camera configurations in database."""
 
-    def get_camera(self, camera_id: str) -> Optional[Camera]:
+    def __init__(self):
+        # Uses fresh sessions for each operation
+        pass
+
+    def get_session(self) -> Session:
+        """Get a new database session for each operation."""
+        return next(get_db())
+
+    def get_all_cameras(self) -> List[Camera]:
+        """Get all cameras from database."""
+        session = self.get_session()
+        try:
+            cameras = session.query(Camera).all()
+            logger.info(f"Retrieved {len(cameras)} cameras from database")
+            return cameras
+        except Exception as e:
+            logger.error(f"Error retrieving cameras: {e}")
+            return []
+        finally:
+            session.close()
+
+    def get_camera_by_id(self, camera_id: str) -> Optional[Camera]:
         """Get camera by ID."""
-        return self.db.query(Camera).filter(Camera.id == camera_id).first()
-
-    def get_cameras(self, enabled_only: bool = False) -> List[Camera]:
-        """Get all cameras."""
-        query = self.db.query(Camera)
-        if enabled_only:
-            query = query.filter(Camera.enabled == True)
-        return query.all()
-
-    def create_camera(self, camera_data: dict) -> Camera:
-        """Create new camera."""
-        camera = Camera(**camera_data)
-        self.db.add(camera)
-        self.db.commit()
-        self.db.refresh(camera)
-        return camera
-
-    def update_camera(self, camera_id: str, updates: dict) -> Optional[Camera]:
-        """Update camera configuration."""
-        camera = self.get_camera(camera_id)
-        if not camera:
+        session = self.get_session()
+        try:
+            camera = session.query(Camera).filter(Camera.id == camera_id).first()
+            return camera
+        except Exception as e:
+            logger.error(f"Error retrieving camera {camera_id}: {e}")
             return None
+        finally:
+            session.close()
 
-        for field, value in updates.items():
-            if hasattr(camera, field):
-                setattr(camera, field, value)
+    def create_camera(self, camera: Camera) -> bool:
+        """Create new camera in database."""
+        session = self.get_session()
+        try:
+            session.add(camera)
+            session.commit()
+            logger.info(f"Created camera: {camera.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error creating camera: {e}")
+            session.rollback()
+            return False
+        finally:
+            session.close()
 
-        camera.updated_at = datetime.utcnow()
-        self.db.commit()
-        return camera
+    def update_camera(self, camera_id: str, updates: Dict[str, Any]) -> bool:
+        """Update camera configuration."""
+        session = self.get_session()
+        try:
+            camera = session.query(Camera).filter(Camera.id == camera_id).first()
+            if not camera:
+                return False
+
+            for field, value in updates.items():
+                if hasattr(camera, field):
+                    setattr(camera, field, value)
+
+            camera.updated_at = datetime.utcnow()
+            session.commit()
+            logger.info(f"Updated camera {camera_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating camera {camera_id}: {e}")
+            session.rollback()
+            return False
+        finally:
+            session.close()
 
     def delete_camera(self, camera_id: str) -> bool:
-        """Delete camera."""
-        camera = self.get_camera(camera_id)
-        if not camera:
-            return False
+        """Delete camera from database."""
+        session = self.get_session()
+        try:
+            camera = session.query(Camera).filter(Camera.id == camera_id).first()
+            if not camera:
+                return False
 
-        self.db.delete(camera)
-        self.db.commit()
-        return True
+            session.delete(camera)
+            session.commit()
+            logger.info(f"Deleted camera: {camera_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting camera {camera_id}: {e}")
+            session.rollback()
+            return False
+        finally:
+            session.close()
+
+# Global service instance
+camera_db_service = CameraDatabaseService()
 ```
 
-### User Service
+### Alert Manager Service
+
+**Source:** `src/services/alert_manager.py`
+
+The Alert Manager handles real-time alert processing, storage, and lifecycle management.
 
 ```python
-class UserService:
-    def __init__(self, db: Session):
-        self.db = db
+class AlertManager:
+    """Manages alert creation, processing, and lifecycle."""
 
-    def create_user(self, user_data: dict) -> User:
-        """Create new user."""
-        # Hash password
-        password_hash = self._hash_password(user_data['password'])
+    def __init__(self):
+        self.active_alerts = {}
+        self.alert_history = deque(maxlen=1000)
 
-        user = User(
-            id=str(uuid.uuid4()),
-            username=user_data['username'],
-            email=user_data['email'],
-            password_hash=password_hash,
-            full_name=user_data.get('full_name'),
-            role=user_data.get('role', 'user')
-        )
+    def process_prediction(self, prediction_data: dict) -> Optional[str]:
+        """Process ML prediction and create alert if necessary."""
+        try:
+            confidence = prediction_data.get("confidence", 0)
+            camera_id = prediction_data.get("camera_id")
 
-        self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
-        return user
+            # Determine if alert should be created based on thresholds
+            if confidence >= 0.8:
+                severity = "critical"
+            elif confidence >= 0.6:
+                severity = "high"
+            elif confidence >= 0.4:
+                severity = "medium"
+            else:
+                return None  # Below threshold
 
-    def authenticate_user(self, username: str, password: str) -> Optional[User]:
-        """Authenticate user credentials."""
-        user = self.db.query(User).filter(
-            User.username == username,
-            User.is_active == True
-        ).first()
+            # Create alert
+            alert_id = str(uuid.uuid4())
+            alert = {
+                "id": alert_id,
+                "camera_id": camera_id,
+                "type": "shoplifting_detection",
+                "severity": severity,
+                "status": "active",
+                "confidence": confidence,
+                "message": f"Shoplifting behavior detected with {confidence:.1%} confidence",
+                "timestamp": datetime.utcnow().isoformat(),
+                "detection_data": prediction_data.get("sequence_stats", {})
+            }
 
-        if not user or not self._verify_password(password, user.password_hash):
-            if user:
-                user.failed_login_attempts += 1
-                if user.failed_login_attempts >= 5:
-                    user.locked_until = datetime.utcnow() + timedelta(minutes=15)
-                self.db.commit()
+            # Store in memory and database
+            self.active_alerts[alert_id] = alert
+            self._save_alert_to_database(alert)
+
+            logger.info(f"Created alert {alert_id} for camera {camera_id}")
+            return alert_id
+
+        except Exception as e:
+            logger.error(f"Error processing prediction: {e}")
             return None
 
-        # Reset failed attempts on successful login
-        user.failed_login_attempts = 0
-        user.last_login = datetime.utcnow()
-        user.login_count += 1
-        self.db.commit()
+    def acknowledge_alert(self, alert_id: str, user_id: str, notes: str = None) -> bool:
+        """Acknowledge an active alert."""
+        try:
+            if alert_id in self.active_alerts:
+                alert = self.active_alerts[alert_id]
+                alert["status"] = "acknowledged"
+                alert["acknowledged_by"] = user_id
+                alert["acknowledged_at"] = datetime.utcnow().isoformat()
+                if notes:
+                    alert["notes"] = notes
 
-        return user
+                self._update_alert_in_database(alert)
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error acknowledging alert {alert_id}: {e}")
+            return False
 
-    def _hash_password(self, password: str) -> str:
-        """Hash password using bcrypt."""
-        import bcrypt
-        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    def resolve_alert(self, alert_id: str, user_id: str, notes: str = None) -> bool:
+        """Resolve an alert and move to history."""
+        try:
+            if alert_id in self.active_alerts:
+                alert = self.active_alerts[alert_id]
+                alert["status"] = "resolved"
+                alert["resolved_by"] = user_id
+                alert["resolved_at"] = datetime.utcnow().isoformat()
+                if notes:
+                    alert["notes"] = notes
 
-    def _verify_password(self, password: str, hash: str) -> bool:
-        """Verify password against hash."""
-        import bcrypt
-        return bcrypt.checkpw(password.encode('utf-8'), hash.encode('utf-8'))
+                # Move to history
+                self.alert_history.append(alert)
+                del self.active_alerts[alert_id]
+
+                self._update_alert_in_database(alert)
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error resolving alert {alert_id}: {e}")
+            return False
+
+# Global alert manager instance
+alert_manager = AlertManager()
+```
+
+### User Management
+
+User management is handled through FastAPI routers with database integration:
+
+**Source:** `src/routers/users.py`
+
+```python
+def get_current_user(token_data: dict = Depends(jwt_auth), db: Session = Depends(get_db)) -> User:
+    """Get current user from JWT token."""
+    username = token_data.get("sub")
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+def hash_password(password: str) -> str:
+    """Hash password using SHA256."""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+@router.post("/users/", response_model=UserResponse)
+async def create_user(user_data: CreateUserRequest, db: Session = Depends(get_db)):
+    """Create a new user."""
+    # Check for existing user
+    existing_user = db.query(User).filter(
+        or_(User.username == user_data.username, User.email == user_data.email)
+    ).first()
+
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    # Create new user
+    new_user = User(
+        username=user_data.username,
+        email=user_data.email,
+        password_hash=hash_password(user_data.password),
+        role=user_data.role,
+        permissions=user_data.permissions or get_default_permissions(user_data.role),
+        is_active=True,
+        is_verified=True
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return user_to_response(new_user)
 ```
 
 ## Database Initialization
