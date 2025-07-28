@@ -44,6 +44,7 @@ Welcome to the Shoplifting Detection System documentation! This guide helps you 
 
 | Document | Description | For Who |
 |----------|-------------|----------|
+| **[Frontend Architecture Guide](15_FRONTEND_ARCHITECTURE_GUIDE.md)** | React/TypeScript frontend architecture | Frontend Developers, Architects |
 | **[Alert Database Setup](ALERT_DATABASE_SETUP.md)** | Alert system database configuration | Database Admins |
 | **[Alert System Guide](ALERT_SYSTEM_GUIDE.md)** | Advanced alert configuration | Security Operators |
 | **[Detection Metrics Guide](DETECTION_METRICS_GUIDE.md)** | Performance metrics and monitoring | Data Analysts, DevOps |
@@ -63,9 +64,10 @@ Welcome to the Shoplifting Detection System documentation! This guide helps you 
 
 ### For **Developers**
 1. [System Overview](01_SYSTEM_OVERVIEW.md) for architecture understanding
-2. [API System](07_API_SYSTEM.md) for API integration
-3. [Authentication & Security](08_AUTHENTICATION_SECURITY.md) for auth implementation
-4. [Database System](06_DATABASE_SYSTEM.md) for data layer
+2. [Frontend Architecture Guide](15_FRONTEND_ARCHITECTURE_GUIDE.md) for React/TypeScript frontend
+3. [API System](07_API_SYSTEM.md) for API integration
+4. [Authentication & Security](08_AUTHENTICATION_SECURITY.md) for auth implementation
+5. [Database System](06_DATABASE_SYSTEM.md) for data layer
 
 ### For **ML Engineers/Data Scientists**
 1. [LRCN Model](03_LRCN_MODEL.md) for model implementation
