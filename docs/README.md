@@ -46,6 +46,7 @@ Welcome to the Shoplifting Detection System documentation! This guide helps you 
 |----------|-------------|----------|
 | **[Frontend Architecture Guide](15_FRONTEND_ARCHITECTURE_GUIDE.md)** | React/TypeScript frontend architecture | Frontend Developers, Architects |
 | **[API Reference](16_API_REFERENCE.md)** | Complete API documentation and examples | Developers, Integrators |
+| **[Development Workflow Guide](17_DEVELOPMENT_WORKFLOW_GUIDE.md)** | Complete development process and best practices | All Developers, DevOps |
 | **[Alert Database Setup](ALERT_DATABASE_SETUP.md)** | Alert system database configuration | Database Admins |
 | **[Alert System Guide](ALERT_SYSTEM_GUIDE.md)** | Advanced alert configuration | Security Operators |
 | **[Detection Metrics Guide](DETECTION_METRICS_GUIDE.md)** | Performance metrics and monitoring | Data Analysts, DevOps |
@@ -64,12 +65,13 @@ Welcome to the Shoplifting Detection System documentation! This guide helps you 
 3. [Monitoring & Analytics](09_MONITORING_ANALYTICS.md) for system monitoring
 
 ### For **Developers**
-1. [System Overview](01_SYSTEM_OVERVIEW.md) for architecture understanding
-2. [Frontend Architecture Guide](15_FRONTEND_ARCHITECTURE_GUIDE.md) for React/TypeScript frontend
-3. [API Reference](16_API_REFERENCE.md) for complete API documentation
-4. [API System](07_API_SYSTEM.md) for API integration details
-5. [Authentication & Security](08_AUTHENTICATION_SECURITY.md) for auth implementation
-6. [Database System](06_DATABASE_SYSTEM.md) for data layer
+1. [Development Workflow Guide](17_DEVELOPMENT_WORKFLOW_GUIDE.md) for complete development process
+2. [System Overview](01_SYSTEM_OVERVIEW.md) for architecture understanding
+3. [Frontend Architecture Guide](15_FRONTEND_ARCHITECTURE_GUIDE.md) for React/TypeScript frontend
+4. [API Reference](16_API_REFERENCE.md) for complete API documentation
+5. [API System](07_API_SYSTEM.md) for API integration details
+6. [Authentication & Security](08_AUTHENTICATION_SECURITY.md) for auth implementation
+7. [Database System](06_DATABASE_SYSTEM.md) for data layer
 
 ### For **ML Engineers/Data Scientists**
 1. [LRCN Model](03_LRCN_MODEL.md) for model implementation
@@ -77,10 +79,11 @@ Welcome to the Shoplifting Detection System documentation! This guide helps you 
 3. [Detection Metrics Guide](DETECTION_METRICS_GUIDE.md) for performance analysis
 
 ### For **DevOps Engineers**
-1. [Installation Guide](10_INSTALLATION_GUIDE.md) for deployment
-2. [Monitoring & Analytics](09_MONITORING_ANALYTICS.md) for observability
-3. [Configuration Guide](11_CONFIGURATION_GUIDE.md) for environment setup
-4. [Troubleshooting Guide](12_TROUBLESHOOTING_GUIDE.md) for operations
+1. [Development Workflow Guide](17_DEVELOPMENT_WORKFLOW_GUIDE.md) for CI/CD and deployment process
+2. [Installation Guide](10_INSTALLATION_GUIDE.md) for deployment
+3. [Monitoring & Analytics](09_MONITORING_ANALYTICS.md) for observability
+4. [Configuration Guide](11_CONFIGURATION_GUIDE.md) for environment setup
+5. [Troubleshooting Guide](12_TROUBLESHOOTING_GUIDE.md) for operations
 
 ## Configuration Quick Reference
 

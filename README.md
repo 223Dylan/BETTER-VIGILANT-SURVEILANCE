@@ -162,6 +162,7 @@ graph TB
 - **[System Overview](docs/01_SYSTEM_OVERVIEW.md)** - Architecture and components
 - **[Frontend Architecture](docs/15_FRONTEND_ARCHITECTURE_GUIDE.md)** - React/TypeScript frontend guide
 - **[API Reference](docs/16_API_REFERENCE.md)** - Complete API documentation
+- **[Development Workflow](docs/17_DEVELOPMENT_WORKFLOW_GUIDE.md)** - Complete development process
 - **[Frame Processing](docs/02_FRAME_PROCESSING.md)** - Video pipeline details
 - **[LRCN Model](docs/03_LRCN_MODEL.md)** - AI model implementation
 - **[Camera Management](docs/04_CAMERA_MANAGEMENT.md)** - Camera setup and configuration
