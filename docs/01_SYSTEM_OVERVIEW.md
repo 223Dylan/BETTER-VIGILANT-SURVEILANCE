@@ -23,31 +23,34 @@ The system follows a microservices architecture with the following components:
 ### Technology Stack
 
 **Backend:**
-- Python 3.11
+- Python 3.8+
 - FastAPI
 - PostgreSQL
-- SQLAlchemy
+- SQLAlchemy & Alembic
 - Celery
-- TensorFlow/Keras
+- TensorFlow 2.16+
 - OpenCV
 
 **Frontend:**
-- React 18
-- TypeScript
-- Tailwind CSS
-- Vite
+- React 18.2.0
+- TypeScript 4.9.5
+- Material-UI 7.1.1
+- Tailwind CSS 3.3.5
+- React Router v6
+- Axios
 
 **Infrastructure:**
 - Docker & Docker Compose
 - Elasticsearch, Logstash, Kibana
-- Redis (Celery broker)
+- Redis (Celery broker & caching)
 - Nginx (reverse proxy)
 
 **Security:**
-- JWT Authentication
-- RSA Encryption
+- JWT Authentication with token blacklisting
+- AES Encryption
 - Request Rate Limiting
 - CORS Protection
+- Security Headers Middleware
 
 ## Data Flow
 

@@ -37,19 +37,18 @@ DB_POOL_RECYCLE=3600
 
 ```bash
 # JWT Authentication (CHANGE THESE!)
-JWT_SECRET_KEY=your-super-secret-jwt-key-at-least-32-characters-long
+JWT_SECRET=your-super-secret-jwt-key-at-least-32-characters-long
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
 JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 JWT_ALGORITHM=HS256
 
 # Data Encryption (CHANGE THESE!)
-ENCRYPTION_PASSWORD=your-encryption-password-change-in-production
-ENCRYPTION_SALT=your-encryption-salt-change-in-production
+ENCRYPTION_KEY=base64-encoded-encryption-key-change-in-production
 
-# API Keys (Legacy - use JWT instead)
-API_KEY_ADMIN=admin123
-API_KEY_USER=user123
-API_KEY_VIEWER=viewer123
+# Additional Security
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+RATE_LIMIT_MAX_REQUESTS=100
+RATE_LIMIT_WINDOW_SECONDS=60
 ```
 
 ### Model Configuration

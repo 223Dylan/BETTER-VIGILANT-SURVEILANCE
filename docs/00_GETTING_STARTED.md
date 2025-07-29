@@ -104,13 +104,26 @@ See [models/README.md](../models/README.md) for detailed instructions on:
 python main.py
 ```
 
+#### Step 6: Frontend Setup
+
+In a new terminal, set up and start the React frontend:
+
+```bash
+# Install Node.js dependencies
+npm install
+
+# Start the React development server
+npm start
+```
+
 The application will be available at:
-- **Web Interface**: http://localhost:8001
+- **Frontend Web Interface**: http://localhost:3000 (Main user interface)
+- **Backend API**: http://localhost:8001
 - **API Documentation**: http://localhost:8001/docs
 
 ## First Login
 
-1. Open http://localhost:8001
+1. Open http://localhost:3000
 2. Login with:
    - **Username**: `admin`
    - **Password**: `admin123`
@@ -120,12 +133,14 @@ The application will be available at:
 
 After setup, verify these components are working:
 
-- [ ] Web interface loads (http://localhost:8001)
+- [ ] Frontend loads (http://localhost:3000)
+- [ ] Backend API responds (http://localhost:8001/api/health)
 - [ ] Can login with admin credentials
 - [ ] Database is connected (no connection errors)
 - [ ] Camera appears in camera list
 - [ ] Docker services are running
 - [ ] Model file exists (if doing detection)
+- [ ] WebSocket connections working (real-time updates)
 
 ## Troubleshooting
 
@@ -249,6 +264,29 @@ If you encounter issues:
 2. Review logs: `docker-compose -f docker-compose.dev.yml logs`
 3. Run diagnostics: `python scripts/init_system.py --force`
 4. Check GitHub issues or create a new one
+
+## Next Steps
+
+Now that you have the basic system running, explore these guides based on your role:
+
+### **For Developers**
+- **[Frontend Architecture Guide](15_FRONTEND_ARCHITECTURE_GUIDE.md)** - Understanding the React/TypeScript frontend
+- **[API Reference](16_API_REFERENCE.md)** - Complete API documentation with examples
+- **[Development Workflow Guide](17_DEVELOPMENT_WORKFLOW_GUIDE.md)** - Development process, testing, and best practices
+
+### **For DevOps/System Administrators**
+- **[Deployment Guide](18_DEPLOYMENT_GUIDE.md)** - Production deployment scenarios and infrastructure
+- **[Configuration Guide](11_CONFIGURATION_GUIDE.md)** - Detailed configuration options
+- **[Monitoring & Analytics](09_MONITORING_ANALYTICS.md)** - Setting up observability
+
+### **For Security Operators**
+- **[Authentication & Security](08_AUTHENTICATION_SECURITY.md)** - Security implementation details
+- **[Alert System](05_ALERT_SYSTEM.md)** - Alert management and configuration
+
+### **For System Understanding**
+- **[System Overview](01_SYSTEM_OVERVIEW.md)** - Architecture and components
+- **[Database System](06_DATABASE_SYSTEM.md)** - Database schema and management
+- **[Troubleshooting Guide](12_TROUBLESHOOTING_GUIDE.md)** - Common issues and solutions
 
 ## Security Notes
 

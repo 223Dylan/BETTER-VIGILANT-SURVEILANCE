@@ -2,11 +2,29 @@
 
 This guide provides detailed installation instructions for different deployment scenarios.
 
+For complete production deployment instructions, see the **[Deployment Guide](18_DEPLOYMENT_GUIDE.md)**.
+
 ## Quick Installation Methods
 
-### Method 1: Development Setup (Recommended)
+### Method 1: Automated Development Setup (Recommended)
 
 **Best for**: Development, testing, and local deployment
+
+Use the automated setup script for quickest installation:
+
+```bash
+# Linux/macOS
+chmod +x scripts/setup_dev.sh && ./scripts/setup_dev.sh
+
+# Windows
+scripts\setup_dev.bat
+```
+
+This script automatically handles all dependencies, configuration, and setup.
+
+### Method 2: Manual Development Setup
+
+**Best for**: Step-by-step understanding and custom configurations
 
 This method runs infrastructure services (database, Redis, etc.) in Docker while running the Python application locally for easy development.
 
@@ -24,17 +42,26 @@ This method runs infrastructure services (database, Redis, etc.) in Docker while
    pip install -r requirements.txt
    ```
 
-3. **Initialize the system:**
+3. **Setup frontend dependencies:**
+   ```bash
+   npm install
+   ```
+
+4. **Initialize the system:**
    ```bash
    python scripts/init_system.py
    ```
 
-4. **Start the application:**
+5. **Start the services:**
    ```bash
+   # Terminal 1: Backend
    python main.py
+
+   # Terminal 2: Frontend (new terminal)
+   npm start
    ```
 
-### Method 2: Full Docker Setup
+### Method 3: Full Docker Setup
 
 **Best for**: Production deployment, isolated environments
 
@@ -50,11 +77,16 @@ This method runs everything in Docker containers.
    docker-compose exec app python scripts/init_system.py
    ```
 
-### Method 3: Manual Local Setup
+**Access Points:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8001
+- API Documentation: http://localhost:8001/docs
+
+### Method 4: Manual Local Setup
 
 **Best for**: Custom configurations, specific requirements
 
-For users who prefer to install all dependencies manually.
+For users who prefer to install all dependencies manually without Docker.
 
 ## Detailed Installation Steps
 

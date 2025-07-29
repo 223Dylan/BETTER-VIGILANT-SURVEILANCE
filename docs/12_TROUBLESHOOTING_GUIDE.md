@@ -8,7 +8,10 @@ Run these commands to check system health:
 
 ```bash
 # Check API health
-curl http://localhost:8001/health
+curl http://localhost:8001/api/health
+
+# Check frontend
+curl http://localhost:3000
 
 # Check database connection
 python -c "from src.database.base import engine; engine.connect(); print('DB OK')"
@@ -21,6 +24,9 @@ curl http://localhost:9200/_health
 
 # Check logs
 tail -f logs/main.log
+
+# Check Docker services
+docker-compose ps
 ```
 
 ## Common Issues
@@ -67,7 +73,79 @@ netstat -tulpn | grep :6379  # Redis
 netstat -tulpn | grep :9200  # Elasticsearch
 ```
 
-### 2. Database Issues
+### 2. Frontend Issues
+
+#### React Development Server Won't Start
+
+**Error:** `npm start` fails or frontend not loading
+
+**Solutions:**
+```bash
+# Check Node.js version (requires 18+)
+node --version
+npm --version
+
+# Clear npm cache and reinstall
+rm -rf node_modules package-lock.json
+npm install
+
+# Check for port conflicts
+netstat -tulpn | grep :3000
+
+# Start with specific port
+PORT=3001 npm start
+
+# Check for TypeScript errors
+npm run build
+```
+
+#### Frontend API Connection Issues
+
+**Error:** Frontend can't connect to backend API
+
+**Check:**
+1. Backend is running on port 8001
+2. CORS configuration allows frontend origin
+3. API endpoints returning expected responses
+
+**Solutions:**
+```bash
+# Verify backend is running
+curl http://localhost:8001/api/health
+
+# Check CORS settings in .env
+grep CORS_ALLOWED_ORIGINS .env
+
+# Test API endpoints manually
+curl http://localhost:8001/api/auth/login -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+
+# Check browser network tab for specific errors
+# Look for 401 (auth), 403 (permissions), 500 (server) errors
+```
+
+#### Build Failures
+
+**Error:** `npm run build` fails with TypeScript or dependency errors
+
+**Solutions:**
+```bash
+# Check TypeScript configuration
+npx tsc --noEmit
+
+# Update dependencies
+npm update
+
+# Clear TypeScript cache
+rm -rf node_modules/.cache
+npm run build
+
+# Check for specific import errors
+npm run lint
+```
+
+### 3. Database Issues
 
 #### Connection Refused
 
