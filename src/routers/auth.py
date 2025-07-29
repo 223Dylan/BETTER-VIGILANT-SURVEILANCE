@@ -2,15 +2,17 @@ import hashlib
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from loguru import logger
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from src.auth.jwt_auth import jwt_auth
+from src.database.models.audit_log import AuditAction, AuditSeverity
 from src.database.models.base import get_db
 from src.database.models.user import User
+from src.services.audit_logger import audit_logger
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
@@ -31,8 +33,12 @@ class RefreshRequest(BaseModel):
 
 
 @router.post("/login", response_model=Token)
-async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+async def login(
+    login_data: LoginRequest, request: Request, db: Session = Depends(get_db)
+):
     """Login endpoint using database authentication."""
+    audit_logger.start_timing()
+
     try:
         # Find user in database
         user = (
@@ -45,6 +51,15 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         password_hash = hashlib.sha256(login_data.password.encode()).hexdigest()
 
         if not user or user.password_hash != password_hash:
+            # Log failed login attempt
+            audit_logger.log_authentication(
+                username=login_data.username,
+                action=AuditAction.LOGIN_FAILED,
+                success=False,
+                request=request,
+                error_message="Invalid credentials",
+            )
+
             raise HTTPException(
                 status_code=401,
                 detail="Incorrect username or password",
@@ -60,6 +75,21 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         access_token = jwt_auth.create_access_token(user.username, user.role)
         refresh_token = jwt_auth.create_refresh_token(user.username, user.role)
 
+        # Log successful login
+        audit_logger.log_authentication(
+            username=user.username,
+            action=AuditAction.LOGIN,
+            success=True,
+            request=request,
+            metadata={
+                "user_id": user.id,
+                "role": user.role,
+                "last_login": (
+                    user.last_login_at.isoformat() if user.last_login_at else None
+                ),
+            },
+        )
+
         logger.info(f"User {user.username} logged in successfully")
 
         return {
@@ -71,6 +101,15 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
+        # Log system error
+        audit_logger.log_security_event(
+            action="login_system_error",
+            severity=AuditSeverity.HIGH,
+            request=request,
+            error_message=str(e),
+            metadata={"username": login_data.username},
+        )
+
         logger.error(f"Login error: {e}")
         raise HTTPException(
             status_code=500, detail="Internal server error during login"

@@ -2,12 +2,13 @@ from enum import Enum
 from functools import wraps
 from typing import Dict, List, Set
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from src.auth.jwt_auth import jwt_auth
 from src.database.models.base import get_db
 from src.database.models.user import User
+from src.services.audit_logger import audit_logger
 
 
 class UserRole(str, Enum):
@@ -139,22 +140,39 @@ class PermissionChecker:
     """Utility class for checking permissions."""
 
     @staticmethod
-    def user_has_permission(user: User, permission: Permission) -> bool:
+    def user_has_permission(
+        user: User,
+        permission: Permission,
+        request: Request = None,
+        resource_type: str = None,
+        resource_id: str = None,
+    ) -> bool:
         """Check if a user has a specific permission."""
         # Admin always has all permissions
         if user.role == UserRole.ADMIN:
-            return True
+            granted = True
+        else:
+            # Check role-based permissions
+            role_permissions = ROLE_PERMISSIONS.get(UserRole(user.role), set())
+            if permission in role_permissions:
+                granted = True
+            # Check custom user permissions
+            elif user.permissions and permission.value in user.permissions:
+                granted = user.permissions[permission.value]
+            else:
+                granted = False
 
-        # Check role-based permissions
-        role_permissions = ROLE_PERMISSIONS.get(UserRole(user.role), set())
-        if permission in role_permissions:
-            return True
+        # Log the permission check
+        audit_logger.log_permission_check(
+            user=user,
+            permission=permission,
+            granted=granted,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            request=request,
+        )
 
-        # Check custom user permissions
-        if user.permissions and permission.value in user.permissions:
-            return user.permissions[permission.value]
-
-        return False
+        return granted
 
     @staticmethod
     def user_has_any_permission(user: User, permissions: List[Permission]) -> bool:
@@ -196,7 +214,7 @@ class PermissionChecker:
 
 
 async def get_current_user(
-    token_data: dict = Depends(jwt_auth.verify_token), db: Session = Depends(get_db)
+    token_data: dict = Depends(jwt_auth), db: Session = Depends(get_db)
 ) -> User:
     """Get current authenticated user from token."""
     username = token_data.get("sub")
@@ -220,17 +238,28 @@ def require_permission(permission: Permission):
         async def wrapper(*args, **kwargs):
             # Extract current_user from kwargs if it exists
             current_user = kwargs.get("current_user")
+            request = kwargs.get("request")
+
             if not current_user:
                 # If not in kwargs, it should be in args (dependency injection)
                 for arg in args:
                     if isinstance(arg, User):
                         current_user = arg
-                        break
+                    elif isinstance(arg, Request):
+                        request = arg
 
             if not current_user:
                 raise HTTPException(status_code=401, detail="Authentication required")
 
-            if not PermissionChecker.user_has_permission(current_user, permission):
+            # Start timing for audit log
+            audit_logger.start_timing()
+
+            if not PermissionChecker.user_has_permission(
+                current_user,
+                permission,
+                request=request,
+                resource_type=func.__name__.replace("_", " ").title(),
+            ):
                 raise HTTPException(
                     status_code=403,
                     detail=f"Permission denied. Required permission: {permission.value}",

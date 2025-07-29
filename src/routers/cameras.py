@@ -29,7 +29,7 @@ def get_controller():
 
 @router.get("/available")
 @require_permission(Permission.CAMERA_VIEW)
-def get_available_cameras(current_user: User = Depends(get_current_user)):
+async def get_available_cameras(current_user: User = Depends(get_current_user)):
     """Get all cameras from database."""
     try:
         cameras = camera_db_service.get_all_cameras()
@@ -41,7 +41,7 @@ def get_available_cameras(current_user: User = Depends(get_current_user)):
 
 @router.get("/status")
 @require_permission(Permission.CAMERA_VIEW)
-def get_cameras_status(current_user: User = Depends(get_current_user)):
+async def get_cameras_status(current_user: User = Depends(get_current_user)):
     """Get runtime status of all cameras."""
     try:
         controller = get_controller()
@@ -53,7 +53,7 @@ def get_cameras_status(current_user: User = Depends(get_current_user)):
 
 @router.post("/{camera_id}/start")
 @require_permission(Permission.CAMERA_CONTROL)
-def start_camera(camera_id: str, current_user: User = Depends(get_current_user)):
+async def start_camera(camera_id: str, current_user: User = Depends(get_current_user)):
     """Start a specific camera."""
     try:
         controller = get_controller()
@@ -71,7 +71,7 @@ def start_camera(camera_id: str, current_user: User = Depends(get_current_user))
 
 @router.post("/{camera_id}/stop")
 @require_permission(Permission.CAMERA_CONTROL)
-def stop_camera(camera_id: str, current_user: User = Depends(get_current_user)):
+async def stop_camera(camera_id: str, current_user: User = Depends(get_current_user)):
     """Stop a specific camera."""
     try:
         controller = get_controller()
@@ -89,7 +89,7 @@ def stop_camera(camera_id: str, current_user: User = Depends(get_current_user)):
 
 @router.post("/")
 @require_permission(Permission.CAMERA_CREATE)
-def create_camera(
+async def create_camera(
     camera_data: Dict[str, Any], current_user: User = Depends(get_current_user)
 ):
     """Create new camera configuration."""
@@ -169,7 +169,7 @@ def create_camera(
 
 @router.put("/{camera_id}")
 @require_permission(Permission.CAMERA_UPDATE)
-def update_camera(
+async def update_camera(
     camera_id: str,
     updates: Dict[str, Any],
     current_user: User = Depends(get_current_user),
@@ -212,7 +212,7 @@ def update_camera(
 
 @router.put("/{camera_id}/brightness")
 @require_permission(Permission.CAMERA_CONFIG)
-def update_camera_brightness(
+async def update_camera_brightness(
     camera_id: str,
     brightness_data: Dict[str, float],
     current_user: User = Depends(get_current_user),
@@ -258,7 +258,7 @@ def update_camera_brightness(
 
 @router.delete("/{camera_id}")
 @require_permission(Permission.CAMERA_DELETE)
-def delete_camera(camera_id: str, current_user: User = Depends(get_current_user)):
+async def delete_camera(camera_id: str, current_user: User = Depends(get_current_user)):
     """Delete camera configuration."""
     try:
         controller = get_controller()

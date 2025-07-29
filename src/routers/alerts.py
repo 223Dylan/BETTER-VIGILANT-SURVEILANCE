@@ -93,11 +93,13 @@ async def get_active_alerts(
 
 
 @router.get("/history", summary="Get alert history")
+@require_permission(Permission.ALERT_VIEW)
 async def get_alert_history(
     limit: Optional[int] = Query(100, description="Maximum number of alerts to return"),
     severity: Optional[str] = Query(None, description="Filter by severity"),
     camera_id: Optional[str] = Query(None, description="Filter by camera ID"),
     alert_service: AlertManager = Depends(get_alert_service),
+    current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
     """Get alert history with optional filtering."""
     try:
@@ -125,11 +127,13 @@ async def get_alert_history(
 
 
 @router.get("/stats", summary="Get alert statistics")
+@require_permission(Permission.ALERT_VIEW)
 async def get_alert_stats(
     days: Optional[int] = Query(
         7, description="Number of days to include in statistics"
     ),
     alert_service: AlertManager = Depends(get_alert_service),
+    current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
     """Get alert statistics for the specified time period."""
     try:
@@ -147,10 +151,12 @@ async def get_alert_stats(
 
 
 @router.post("/search", summary="Search alerts with advanced filters")
+@require_permission(Permission.ALERT_VIEW)
 async def search_alerts(
     filters: AlertFilterRequest,
     limit: Optional[int] = Query(100, description="Maximum number of alerts to return"),
     alert_service: AlertManager = Depends(get_alert_service),
+    current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
     """Search alerts with advanced filtering options."""
     try:
@@ -198,10 +204,12 @@ async def search_alerts(
 
 
 @router.post("/{alert_id}/acknowledge", summary="Acknowledge an alert")
+@require_permission(Permission.ALERT_ACKNOWLEDGE)
 async def acknowledge_alert(
     alert_id: str,
     action: AlertActionRequest,
     alert_service: AlertManager = Depends(get_alert_service),
+    current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
     """Acknowledge an active alert."""
     try:
@@ -227,10 +235,12 @@ async def acknowledge_alert(
 
 
 @router.post("/{alert_id}/resolve", summary="Resolve an alert")
+@require_permission(Permission.ALERT_RESOLVE)
 async def resolve_alert(
     alert_id: str,
     action: AlertActionRequest,
     alert_service: AlertManager = Depends(get_alert_service),
+    current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
     """Resolve an active alert."""
     try:
@@ -256,8 +266,11 @@ async def resolve_alert(
 
 
 @router.get("/{alert_id}", summary="Get specific alert details")
+@require_permission(Permission.ALERT_VIEW)
 async def get_alert_details(
-    alert_id: str, alert_service: AlertManager = Depends(get_alert_service)
+    alert_id: str,
+    alert_service: AlertManager = Depends(get_alert_service),
+    current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
     """Get detailed information about a specific alert."""
     try:
@@ -288,10 +301,12 @@ async def get_alert_details(
 
 
 @router.post("/bulk-acknowledge", summary="Acknowledge multiple alerts")
+@require_permission(Permission.ALERT_ACKNOWLEDGE)
 async def bulk_acknowledge_alerts(
     alert_ids: List[str],
     action: AlertActionRequest,
     alert_service: AlertManager = Depends(get_alert_service),
+    current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
     """Acknowledge multiple alerts at once."""
     try:
@@ -327,10 +342,12 @@ async def bulk_acknowledge_alerts(
 
 
 @router.delete("/{alert_id}", summary="Dismiss an alert")
+@require_permission(Permission.ALERT_DELETE)
 async def dismiss_alert(
     alert_id: str,
     action: AlertActionRequest,
     alert_service: AlertManager = Depends(get_alert_service),
+    current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
     """Dismiss an alert (mark as dismissed without resolving)."""
     try:
@@ -361,8 +378,10 @@ async def dismiss_alert(
 
 
 @router.post("/test/create-sample-alerts", summary="Create sample alerts for testing")
+@require_permission(Permission.SYSTEM_CONFIG)
 async def create_sample_alerts(
     alert_service: AlertManager = Depends(get_alert_service),
+    current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
     """Create sample alerts for testing purposes."""
     try:
@@ -419,9 +438,10 @@ async def create_sample_alerts(
 
 
 @router.post("/auto-clear", summary="Manually trigger auto-clearance of old alerts")
+@require_permission(Permission.SYSTEM_CONFIG)
 async def manual_auto_clear_alerts(
     alert_service: AlertManager = Depends(get_alert_service),
-    current_user=Depends(require_admin),
+    current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
     """Manually trigger the auto-clearance process for old alerts."""
     try:
@@ -451,8 +471,9 @@ async def manual_auto_clear_alerts(
 
 
 @router.get("/auto-clear/config", summary="Get auto-clearance configuration")
+@require_permission(Permission.SYSTEM_CONFIG)
 async def get_auto_clear_config(
-    current_user=Depends(require_admin),
+    current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
     """Get the current auto-clearance configuration."""
     try:
@@ -481,10 +502,11 @@ async def get_auto_clear_config(
 
 
 @router.post("/bulk-action", summary="Perform bulk actions on multiple alerts")
+@require_any_permission([Permission.ALERT_ACKNOWLEDGE, Permission.ALERT_RESOLVE])
 async def bulk_alert_action(
     request: BulkAlertActionRequest,
     alert_service: AlertManager = Depends(get_alert_service),
-    current_user=Depends(require_admin),
+    current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
     """Perform bulk acknowledge or resolve actions on multiple alerts."""
     try:

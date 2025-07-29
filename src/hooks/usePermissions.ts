@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authService } from '../services/auth.service';
+import { frontendAuditService } from '../services/frontend-audit.service';
 import { User } from '../types';
 
 // Permission enumeration matching backend
@@ -83,9 +84,9 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
 };
 
 export interface PermissionHook {
-  hasPermission: (permission: Permission) => boolean;
-  hasAnyPermission: (permissions: Permission[]) => boolean;
-  hasAllPermissions: (permissions: Permission[]) => boolean;
+  hasPermission: (permission: Permission, component?: string) => boolean;
+  hasAnyPermission: (permissions: Permission[], component?: string) => boolean;
+  hasAllPermissions: (permissions: Permission[], component?: string) => boolean;
   userPermissions: Permission[];
   isAdmin: boolean;
   canAccessRoute: (requiredPermissions: Permission[]) => boolean;
@@ -127,19 +128,41 @@ export const usePermissions = (): PermissionHook => {
 
   const userPermissions = getUserPermissions(user);
 
-  const hasPermission = (permission: Permission): boolean => {
-    if (!user) return false;
-    return userPermissions.includes(permission);
+  const hasPermission = (permission: Permission, component?: string): boolean => {
+    if (!user) {
+      // Log permission check for unauthenticated user
+      frontendAuditService.logPermissionCheck(
+        permission,
+        false,
+        component || 'unknown',
+        'check',
+        { reason: 'user_not_authenticated' }
+      );
+      return false;
+    }
+
+    const granted = userPermissions.includes(permission);
+
+    // Log the permission check
+    frontendAuditService.logPermissionCheck(
+      permission,
+      granted,
+      component || 'unknown',
+      'check',
+      { user_role: user.role }
+    );
+
+    return granted;
   };
 
-  const hasAnyPermission = (permissions: Permission[]): boolean => {
+  const hasAnyPermission = (permissions: Permission[], component?: string): boolean => {
     if (!user) return false;
-    return permissions.some(permission => hasPermission(permission));
+    return permissions.some(permission => hasPermission(permission, component));
   };
 
-  const hasAllPermissions = (permissions: Permission[]): boolean => {
+  const hasAllPermissions = (permissions: Permission[], component?: string): boolean => {
     if (!user) return false;
-    return permissions.every(permission => hasPermission(permission));
+    return permissions.every(permission => hasPermission(permission, component));
   };
 
   const isAdmin = user?.role === 'admin';

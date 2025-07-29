@@ -15,7 +15,7 @@ interface NotificationAlert extends Alert {
 }
 
 const AlertNotifications: React.FC<AlertNotificationsProps> = ({
-  websocketUrl = 'ws://localhost:8000/ws/predictions/all',
+  websocketUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//localhost:8001/ws/alerts`,
   maxNotifications = 5,
   autoHideDelay = 8000,
 }) => {

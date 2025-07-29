@@ -33,7 +33,7 @@ from src.middleware.encryption import EncryptionMiddleware, RequestSigningMiddle
 from src.middleware.request_limits import RequestLimitsMiddleware
 from src.middleware.security import SecurityMiddleware
 from src.middleware.security_headers import SecurityHeadersMiddleware
-from src.routers import alerts, auth, cameras, metrics, users, ws
+from src.routers import alerts, audit, auth, cameras, metrics, users, ws
 from src.services.redis_websocket_bridge import redis_websocket_bridge
 from src.utils.logging import setup_logging
 from src.utils.secrets import secrets_manager
@@ -138,6 +138,9 @@ app.include_router(users.router, prefix="/api")
 
 # Include metrics router
 app.include_router(metrics.router)
+
+# Include audit router
+app.include_router(audit.router, prefix="/api")
 
 # These will be injected from main.py
 shared_frames = {}

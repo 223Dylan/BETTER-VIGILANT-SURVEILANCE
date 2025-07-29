@@ -1,5 +1,6 @@
 import React from 'react';
 import { usePermissions, Permission } from '../../hooks/usePermissions';
+import { frontendAuditService } from '../../services/frontend-audit.service';
 
 interface PermissionGateProps {
   permission?: Permission;
@@ -21,9 +22,11 @@ export const PermissionGate: React.FC<PermissionGateProps> = ({
   showFallback = false,
 }) => {
   const { hasPermission, hasAnyPermission, hasAllPermissions, isAdmin } = usePermissions();
+  const componentName = 'PermissionGate';
 
   // Admin bypass
   if (isAdmin) {
+    frontendAuditService.logComponentAccess(componentName, true, ['admin_bypass']);
     return <>{children}</>;
   }
 
@@ -35,17 +38,28 @@ export const PermissionGate: React.FC<PermissionGateProps> = ({
 
   // Permission-based checks
   let hasAccess = false;
+  let checkedPermissions: string[] = [];
 
   if (permission) {
-    hasAccess = hasPermission(permission);
+    hasAccess = hasPermission(permission, componentName);
+    checkedPermissions = [permission];
   } else if (permissions.length > 0) {
     hasAccess = requireAll
-      ? hasAllPermissions(permissions)
-      : hasAnyPermission(permissions);
+      ? hasAllPermissions(permissions, componentName)
+      : hasAnyPermission(permissions, componentName);
+    checkedPermissions = permissions;
   } else {
     // No permissions specified, allow access
     hasAccess = true;
+    checkedPermissions = ['none_required'];
   }
+
+  // Log component access result
+  frontendAuditService.logComponentAccess(
+    componentName,
+    hasAccess,
+    checkedPermissions.map(p => p.toString())
+  );
 
   if (hasAccess) {
     return <>{children}</>;

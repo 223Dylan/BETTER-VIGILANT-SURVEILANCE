@@ -29,7 +29,8 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
     fetchData();
 
     // Set up real-time updates via WebSocket
-    const ws = new WebSocket(`ws://localhost:8000/ws/predictions/all`);
+    const wsUrl = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${wsUrl}//localhost:8001/ws/alerts`);
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
