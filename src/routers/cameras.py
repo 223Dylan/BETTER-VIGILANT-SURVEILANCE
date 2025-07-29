@@ -4,7 +4,14 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from loguru import logger
 
+from src.auth.permissions import (
+    Permission,
+    get_current_user,
+    require_any_permission,
+    require_permission,
+)
 from src.database.models.camera import Camera
+from src.database.models.user import User
 from src.services.camera_db_service import camera_db_service
 
 router = APIRouter(prefix="/cameras", tags=["cameras"])
@@ -21,7 +28,8 @@ def get_controller():
 
 
 @router.get("/available")
-def get_available_cameras():
+@require_permission(Permission.CAMERA_VIEW)
+def get_available_cameras(current_user: User = Depends(get_current_user)):
     """Get all cameras from database."""
     try:
         cameras = camera_db_service.get_all_cameras()
@@ -32,7 +40,8 @@ def get_available_cameras():
 
 
 @router.get("/status")
-def get_cameras_status():
+@require_permission(Permission.CAMERA_VIEW)
+def get_cameras_status(current_user: User = Depends(get_current_user)):
     """Get runtime status of all cameras."""
     try:
         controller = get_controller()
@@ -43,7 +52,8 @@ def get_cameras_status():
 
 
 @router.post("/{camera_id}/start")
-def start_camera(camera_id: str):
+@require_permission(Permission.CAMERA_CONTROL)
+def start_camera(camera_id: str, current_user: User = Depends(get_current_user)):
     """Start a specific camera."""
     try:
         controller = get_controller()
@@ -60,7 +70,8 @@ def start_camera(camera_id: str):
 
 
 @router.post("/{camera_id}/stop")
-def stop_camera(camera_id: str):
+@require_permission(Permission.CAMERA_CONTROL)
+def stop_camera(camera_id: str, current_user: User = Depends(get_current_user)):
     """Stop a specific camera."""
     try:
         controller = get_controller()
@@ -77,7 +88,10 @@ def stop_camera(camera_id: str):
 
 
 @router.post("/")
-def create_camera(camera_data: Dict[str, Any]):
+@require_permission(Permission.CAMERA_CREATE)
+def create_camera(
+    camera_data: Dict[str, Any], current_user: User = Depends(get_current_user)
+):
     """Create new camera configuration."""
     try:
         # Validate required fields
@@ -154,7 +168,12 @@ def create_camera(camera_data: Dict[str, Any]):
 
 
 @router.put("/{camera_id}")
-def update_camera(camera_id: str, updates: Dict[str, Any]):
+@require_permission(Permission.CAMERA_UPDATE)
+def update_camera(
+    camera_id: str,
+    updates: Dict[str, Any],
+    current_user: User = Depends(get_current_user),
+):
     """Update camera configuration in database."""
     try:
         logger.info(f"Updating camera {camera_id} with data: {updates}")
@@ -192,7 +211,12 @@ def update_camera(camera_id: str, updates: Dict[str, Any]):
 
 
 @router.put("/{camera_id}/brightness")
-def update_camera_brightness(camera_id: str, brightness_data: Dict[str, float]):
+@require_permission(Permission.CAMERA_CONFIG)
+def update_camera_brightness(
+    camera_id: str,
+    brightness_data: Dict[str, float],
+    current_user: User = Depends(get_current_user),
+):
     """Update individual camera brightness."""
     try:
         brightness = brightness_data.get("brightness")
@@ -233,7 +257,8 @@ def update_camera_brightness(camera_id: str, brightness_data: Dict[str, float]):
 
 
 @router.delete("/{camera_id}")
-def delete_camera(camera_id: str):
+@require_permission(Permission.CAMERA_DELETE)
+def delete_camera(camera_id: str, current_user: User = Depends(get_current_user)):
     """Delete camera configuration."""
     try:
         controller = get_controller()
@@ -250,7 +275,10 @@ def delete_camera(camera_id: str):
 
 
 @router.post("/upload-video")
-async def upload_video_file(file: UploadFile = File(...)):
+@require_any_permission([Permission.CAMERA_CREATE, Permission.CAMERA_UPDATE])
+async def upload_video_file(
+    file: UploadFile = File(...), current_user: User = Depends(get_current_user)
+):
     """Upload a video file for camera source."""
     try:
         # Validate file type

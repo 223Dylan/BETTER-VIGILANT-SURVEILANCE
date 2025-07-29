@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { LoginForm } from './components/auth/LoginForm';
 import { UserSettings } from './components/user/UserSettings';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
+import { Permission } from './hooks/usePermissions';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard';
 import CamerasPage from './pages/CamerasPage';
@@ -35,11 +36,11 @@ const App: React.FC = () => {
             }
           />
 
-          {/* Cameras route - accessible to all authenticated users */}
+          {/* Cameras route - requires camera view permission */}
           <Route
             path="/cameras"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission={Permission.CAMERA_VIEW}>
                 <CamerasPage />
               </ProtectedRoute>
             }
@@ -59,7 +60,7 @@ const App: React.FC = () => {
           <Route
             path="/alerts"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission={Permission.ALERT_VIEW}>
                 <AlertsPage />
               </ProtectedRoute>
             }
@@ -67,7 +68,7 @@ const App: React.FC = () => {
           <Route
             path="/analytics"
             element={
-              <ProtectedRoute requiredRole="admin">
+              <ProtectedRoute requiredPermission={Permission.ANALYTICS_VIEW}>
                 <AnalyticsPage />
               </ProtectedRoute>
             }
@@ -77,7 +78,7 @@ const App: React.FC = () => {
           <Route
             path="/users"
             element={
-              <ProtectedRoute requiredRole="admin">
+              <ProtectedRoute requiredPermission={Permission.USER_VIEW}>
                 <UsersPage />
               </ProtectedRoute>
             }

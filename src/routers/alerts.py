@@ -6,7 +6,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
 from pydantic import BaseModel
 
-from src.routers.users import require_admin
+from src.auth.permissions import (
+    Permission,
+    get_current_user,
+    require_any_permission,
+    require_permission,
+)
+from src.database.models.user import User
 from src.services.alert_manager import AlertManager, get_alert_manager
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
@@ -47,12 +53,14 @@ def get_alert_service() -> AlertManager:
 
 
 @router.get("/active", summary="Get active alerts")
+@require_permission(Permission.ALERT_VIEW)
 async def get_active_alerts(
     severity: Optional[str] = Query(
         None, description="Filter by severity (critical,high,medium,low)"
     ),
     camera_id: Optional[str] = Query(None, description="Filter by camera ID"),
     limit: Optional[int] = Query(100, description="Maximum number of alerts to return"),
+    current_user: User = Depends(get_current_user),
     alert_service: AlertManager = Depends(get_alert_service),
 ) -> AlertResponse:
     """Get all active alerts with optional filtering."""

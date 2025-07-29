@@ -9,6 +9,14 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from src.auth.jwt_auth import jwt_auth
+from src.auth.permissions import (
+    Permission,
+    PermissionChecker,
+    UserRole,
+    get_current_user,
+    require_any_permission,
+    require_permission,
+)
 from src.database.models.base import get_db
 from src.database.models.user import User
 
@@ -130,21 +138,6 @@ def user_to_response(user: User) -> UserResponse:
     )
 
 
-def get_current_user(
-    token_data: dict = Depends(jwt_auth), db: Session = Depends(get_db)
-) -> User:
-    """Get current user from token."""
-    username = token_data.get("sub")
-    if not username:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    user = db.query(User).filter(User.username == username).first()
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-
-    return user
-
-
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
     """Require admin role."""
     if current_user.role != "admin":
@@ -153,13 +146,14 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
 
 
 @router.get("/users/", response_model=UserListResponse)
+@require_permission(Permission.USER_VIEW)
 async def get_users(
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
     search: Optional[str] = Query(None),
     role: Optional[str] = Query(None),
     is_active: Optional[bool] = Query(None),
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Get paginated list of users (admin only)."""
@@ -198,9 +192,10 @@ async def get_users(
 
 
 @router.post("/users/", response_model=UserResponse)
+@require_permission(Permission.USER_CREATE)
 async def create_user(
     user_data: CreateUserRequest,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Create a new user (admin only)."""
@@ -245,9 +240,10 @@ async def create_user(
 
 
 @router.get("/users/{user_id}", response_model=UserResponse)
+@require_permission(Permission.USER_VIEW)
 async def get_user(
     user_id: str,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Get user by ID (admin only)."""
@@ -259,10 +255,11 @@ async def get_user(
 
 
 @router.patch("/users/{user_id}", response_model=UserResponse)
+@require_permission(Permission.USER_UPDATE)
 async def update_user(
     user_id: str,
     user_data: UpdateUserRequest,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Update user (admin only)."""
@@ -307,9 +304,10 @@ async def update_user(
 
 
 @router.delete("/users/{user_id}")
+@require_permission(Permission.USER_DELETE)
 async def delete_user(
     user_id: str,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Delete user (admin only)."""

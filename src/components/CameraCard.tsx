@@ -3,6 +3,8 @@ import { Camera } from '../types';
 import VideoFeed from './VideoFeed';
 import LoadingOverlay from './LoadingOverlay';
 import { cameraService } from '../services/camera.service';
+import { PermissionGate, CameraControlGate } from './common/PermissionGate';
+import { Permission } from '../hooks/usePermissions';
 
 // Material-UI Icons
 import {
@@ -273,58 +275,68 @@ const CameraCard: React.FC<CameraCardProps> = ({
         </div>
       </div>
 
-      {camera.ptz && (
-        <div className="flex flex-wrap gap-2 mb-3">
-          <div className="text-xs text-gray-500 w-full mb-1">PTZ Controls:</div>
-          <button onClick={() => alert('PTZ: Up')} className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 flex items-center justify-center">
-            <ArrowUpIcon className="w-3 h-3" />
-          </button>
-          <button onClick={() => alert('PTZ: Down')} className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 flex items-center justify-center">
-            <ArrowDownIcon className="w-3 h-3" />
-          </button>
-          <button onClick={() => alert('PTZ: Left')} className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 flex items-center justify-center">
-            <ArrowLeftIcon className="w-3 h-3" />
-          </button>
-          <button onClick={() => alert('PTZ: Right')} className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 flex items-center justify-center">
-            <ArrowRightIcon className="w-3 h-3" />
-          </button>
-          <button onClick={() => alert('PTZ: Zoom In')} className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 flex items-center justify-center">
-            <ZoomInIcon className="w-3 h-3" />
-          </button>
-          <button onClick={() => alert('PTZ: Zoom Out')} className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 flex items-center justify-center">
-            <ZoomOutIcon className="w-3 h-3" />
-          </button>
-        </div>
-      )}
+      <CameraControlGate>
+        {camera.ptz && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            <div className="text-xs text-gray-500 w-full mb-1">PTZ Controls:</div>
+            <button onClick={() => alert('PTZ: Up')} className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 flex items-center justify-center">
+              <ArrowUpIcon className="w-3 h-3" />
+            </button>
+            <button onClick={() => alert('PTZ: Down')} className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 flex items-center justify-center">
+              <ArrowDownIcon className="w-3 h-3" />
+            </button>
+            <button onClick={() => alert('PTZ: Left')} className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 flex items-center justify-center">
+              <ArrowLeftIcon className="w-3 h-3" />
+            </button>
+            <button onClick={() => alert('PTZ: Right')} className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 flex items-center justify-center">
+              <ArrowRightIcon className="w-3 h-3" />
+            </button>
+            <button onClick={() => alert('PTZ: Zoom In')} className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 flex items-center justify-center">
+              <ZoomInIcon className="w-3 h-3" />
+            </button>
+            <button onClick={() => alert('PTZ: Zoom Out')} className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 flex items-center justify-center">
+              <ZoomOutIcon className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+      </CameraControlGate>
 
       <div className="flex gap-2 mt-auto">
-        <button
-          onClick={handleToggle}
-          disabled={isToggling}
-          className={`w-full px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-            isToggling
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : status === 'active'
-              ? 'bg-red-100 text-red-700 hover:bg-red-200 focus:ring-red-500'
-              : 'bg-green-100 text-green-700 hover:bg-green-200 focus:ring-green-500'
-          }`}
+        <CameraControlGate
+          fallback={
+            <div className="w-full px-4 py-2 rounded-md text-sm font-medium bg-gray-100 text-gray-400 text-center">
+              No Control Permission
+            </div>
+          }
         >
-          <div className="flex items-center justify-center space-x-1">
-            {isToggling ? (
-              <span>Processing...</span>
-            ) : status === 'active' ? (
-              <>
-                <StopIcon className="w-4 h-4" />
-                <span>Stop</span>
-              </>
-            ) : (
-              <>
-                <PlayIcon className="w-4 h-4" />
-                <span>Start</span>
-              </>
-            )}
-          </div>
-        </button>
+          <button
+            onClick={handleToggle}
+            disabled={isToggling}
+            className={`w-full px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              isToggling
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : status === 'active'
+                ? 'bg-red-100 text-red-700 hover:bg-red-200 focus:ring-red-500'
+                : 'bg-green-100 text-green-700 hover:bg-green-200 focus:ring-green-500'
+            }`}
+          >
+            <div className="flex items-center justify-center space-x-1">
+              {isToggling ? (
+                <span>Processing...</span>
+              ) : status === 'active' ? (
+                <>
+                  <StopIcon className="w-4 h-4" />
+                  <span>Stop</span>
+                </>
+              ) : (
+                <>
+                  <PlayIcon className="w-4 h-4" />
+                  <span>Start</span>
+                </>
+              )}
+            </div>
+          </button>
+        </CameraControlGate>
       </div>
 
       <div className="text-xs text-gray-400 text-center mt-2">
