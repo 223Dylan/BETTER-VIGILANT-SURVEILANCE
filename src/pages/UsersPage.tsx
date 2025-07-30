@@ -1,256 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { User, CreateUserRequest, UpdateUserRequest } from '../types';
+import { User } from '../types';
 import { userService, UserListParams } from '../services/user.service';
 import { authService } from '../services/auth.service';
-import { SimplePermissionManager } from '../components/user/SimplePermissionManager';
+import { UnifiedUserModal } from '../components/user/UnifiedUserModal';
 import { RolePermissionMatrix } from '../components/user/RolePermissionMatrix';
 
-interface UserModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  user?: User;
-  onUserSaved: () => void;
-}
-
-const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, onUserSaved }) => {
-  const [formData, setFormData] = useState<CreateUserRequest>({
-    username: '',
-    email: '',
-    password: '',
-    first_name: '',
-    last_name: '',
-    role: 'user',
-  });
-  const [customPermissions, setCustomPermissions] = useState(false);
-  const [permissions, setPermissions] = useState(userService.getDefaultPermissionsByRole('user'));
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        username: user.username,
-        email: user.email,
-        password: '',
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        role: user.role,
-      });
-      setPermissions(user.permissions);
-      const defaultPerms = userService.getDefaultPermissionsByRole(user.role);
-      setCustomPermissions(JSON.stringify(user.permissions) !== JSON.stringify(defaultPerms));
-    } else {
-      setFormData({
-        username: '',
-        email: '',
-        password: '',
-        first_name: '',
-        last_name: '',
-        role: 'user',
-      });
-      setPermissions(userService.getDefaultPermissionsByRole('user'));
-      setCustomPermissions(false);
-    }
-    setError(null);
-  }, [user]);
-
-  const handleRoleChange = (role: 'admin' | 'user' | 'viewer') => {
-    setFormData({ ...formData, role });
-    if (!customPermissions) {
-      setPermissions(userService.getDefaultPermissionsByRole(role));
-    }
-  };
-
-  const handlePermissionChange = (key: keyof typeof permissions, value: boolean) => {
-    setPermissions({ ...permissions, [key]: value });
-    setCustomPermissions(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      if (user) {
-        // For updates, exclude password if empty and prepare update data
-        const updateData: UpdateUserRequest = {
-          username: formData.username,
-          email: formData.email,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          role: formData.role,
-          permissions: customPermissions ? permissions : undefined,
-        };
-
-        await userService.updateUser(user.id, updateData);
-
-        // Handle password separately if provided
-        if (formData.password) {
-          await userService.changePassword(user.id, formData.password);
-        }
-      } else {
-        // For creation, include all data including password
-        const createData: CreateUserRequest = {
-          ...formData,
-          permissions: customPermissions ? permissions : undefined,
-        };
-        await userService.createUser(createData);
-      }
-
-      onUserSaved();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
-        <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            {user ? 'Edit User' : 'Create New User'}
-          </h3>
-
-          {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Username</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">First Name</label>
-                <input
-                  type="text"
-                  value={formData.first_name}
-                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                <input
-                  type="text"
-                  value={formData.last_name}
-                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Role</label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => handleRoleChange(e.target.value as 'admin' | 'user' | 'viewer')}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="viewer">Viewer</option>
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Password {user ? '(leave blank to keep current)' : ''}
-                </label>
-                <input
-                  type="password"
-                  required={!user}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center mb-3">
-                <input
-                  type="checkbox"
-                  checked={customPermissions}
-                  onChange={(e) => {
-                    setCustomPermissions(e.target.checked);
-                    if (!e.target.checked) {
-                      setPermissions(userService.getDefaultPermissionsByRole(formData.role));
-                    }
-                  }}
-                  className="mr-2"
-                />
-                <label className="text-sm font-medium text-gray-700">Custom Permissions</label>
-              </div>
-
-              {customPermissions && (
-                <div className="grid grid-cols-2 gap-2 p-4 border rounded-md bg-gray-50">
-                  {Object.entries(permissions).map(([key, value]) => (
-                    <label key={key} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={value}
-                        onChange={(e) => handlePermissionChange(key as keyof typeof permissions, e.target.checked)}
-                        className="mr-2"
-                      />
-                      <span className="text-sm text-gray-700">
-                        {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {loading ? 'Saving...' : (user ? 'Update User' : 'Create User')}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
+// Remove the old UserModal component since we're using UnifiedUserModal now
 
 const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -258,8 +13,6 @@ const UsersPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | undefined>();
   const [showModal, setShowModal] = useState(false);
-  const [showPermissionManager, setShowPermissionManager] = useState(false);
-  const [permissionUser, setPermissionUser] = useState<User | undefined>();
   const [showPermissionMatrix, setShowPermissionMatrix] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
@@ -316,15 +69,6 @@ const UsersPage: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleManagePermissions = (user: User) => {
-    setPermissionUser(user);
-    setShowPermissionManager(true);
-  };
-
-  const handlePermissionUserUpdate = (updatedUser: User) => {
-    setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
-  };
-
   const handleDeleteUser = async (userId: string) => {
     if (userId === currentUser?.id) {
       alert('You cannot delete your own account');
@@ -357,10 +101,14 @@ const UsersPage: React.FC = () => {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800';
-      case 'user': return 'bg-blue-100 text-blue-800';
-      case 'viewer': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'admin':
+        return 'bg-red-100 text-red-800';
+      case 'user':
+        return 'bg-blue-100 text-blue-800';
+      case 'viewer':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -464,7 +212,7 @@ const UsersPage: React.FC = () => {
                           <div className="flex-shrink-0 h-10 w-10">
                             <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
                               <span className="text-sm font-medium text-gray-700">
-                                {user.first_name?.[0] || user.username[0].toUpperCase()}
+                                {user.username.charAt(0).toUpperCase()}
                               </span>
                             </div>
                           </div>
@@ -529,12 +277,6 @@ const UsersPage: React.FC = () => {
                             Edit
                           </button>
                           <button
-                            onClick={() => handleManagePermissions(user)}
-                            className="text-purple-600 hover:text-purple-900 text-sm"
-                          >
-                            Permissions
-                          </button>
-                          <button
                             onClick={() => handleToggleUserStatus(user)}
                             className={`text-sm ${user.is_active ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}
                             disabled={user.id === currentUser?.id && user.is_active}
@@ -585,20 +327,12 @@ const UsersPage: React.FC = () => {
         </div>
       </div>
 
-      <UserModal
+      <UnifiedUserModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         user={selectedUser}
         onUserSaved={handleUserSaved}
       />
-
-      {showPermissionManager && permissionUser && (
-        <SimplePermissionManager
-          user={permissionUser}
-          onUserUpdate={handlePermissionUserUpdate}
-          onClose={() => setShowPermissionManager(false)}
-        />
-      )}
 
       {showPermissionMatrix && (
         <RolePermissionMatrix

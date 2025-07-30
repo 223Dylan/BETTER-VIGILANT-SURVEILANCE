@@ -47,6 +47,7 @@ export interface CreateUserRequest {
 export interface UpdateUserRequest {
   username?: string;
   email?: string;
+  password?: string;
   first_name?: string;
   last_name?: string;
   role?: 'admin' | 'user' | 'viewer';
