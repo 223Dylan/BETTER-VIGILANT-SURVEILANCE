@@ -3,6 +3,14 @@ import { authService } from '../services/auth.service';
 import { frontendAuditService } from '../services/frontend-audit.service';
 import { User } from '../types';
 
+// User roles matching backend
+export enum UserRole {
+  ADMIN = 'admin',
+  OPERATOR = 'operator',
+  USER = 'user',
+  VIEWER = 'viewer'
+}
+
 // Permission enumeration matching backend
 export enum Permission {
   // Camera permissions
@@ -48,9 +56,9 @@ export enum Permission {
 }
 
 // Role-based permission mappings
-export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
-  admin: Object.values(Permission), // Admin has all permissions
-  operator: [
+export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
+  [UserRole.ADMIN]: Object.values(Permission), // Admin has all permissions
+  [UserRole.OPERATOR]: [
     Permission.CAMERA_VIEW,
     Permission.CAMERA_UPDATE,
     Permission.CAMERA_CONTROL,
@@ -65,7 +73,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.ANALYTICS_VIEW,
     Permission.ANALYTICS_EXPORT,
   ],
-  user: [
+  [UserRole.USER]: [
     Permission.CAMERA_VIEW,
     Permission.CAMERA_STREAM,
     Permission.ALERT_VIEW,
@@ -74,7 +82,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.SYSTEM_METRICS,
     Permission.ANALYTICS_VIEW,
   ],
-  viewer: [
+  [UserRole.VIEWER]: [
     Permission.CAMERA_VIEW,
     Permission.CAMERA_STREAM,
     Permission.ALERT_VIEW,

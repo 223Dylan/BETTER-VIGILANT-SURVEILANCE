@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { User, CreateUserRequest, UpdateUserRequest } from '../types';
 import { userService, UserListParams } from '../services/user.service';
 import { authService } from '../services/auth.service';
+import { SimplePermissionManager } from '../components/user/SimplePermissionManager';
+import { RolePermissionMatrix } from '../components/user/RolePermissionMatrix';
 
 interface UserModalProps {
   isOpen: boolean;
@@ -256,6 +258,9 @@ const UsersPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | undefined>();
   const [showModal, setShowModal] = useState(false);
+  const [showPermissionManager, setShowPermissionManager] = useState(false);
+  const [permissionUser, setPermissionUser] = useState<User | undefined>();
+  const [showPermissionMatrix, setShowPermissionMatrix] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [pagination, setPagination] = useState({
@@ -309,6 +314,15 @@ const UsersPage: React.FC = () => {
   const handleCreateUser = () => {
     setSelectedUser(undefined);
     setShowModal(true);
+  };
+
+  const handleManagePermissions = (user: User) => {
+    setPermissionUser(user);
+    setShowPermissionManager(true);
+  };
+
+  const handlePermissionUserUpdate = (updatedUser: User) => {
+    setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
   };
 
   const handleDeleteUser = async (userId: string) => {
@@ -370,10 +384,16 @@ const UsersPage: React.FC = () => {
               User Management
             </h2>
           </div>
-          <div className="mt-4 flex md:mt-0 md:ml-4">
+          <div className="mt-4 flex space-x-3 md:mt-0 md:ml-4">
+            <button
+              onClick={() => setShowPermissionMatrix(true)}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Permission Matrix
+            </button>
             <button
               onClick={handleCreateUser}
-              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Add User
             </button>
@@ -426,6 +446,9 @@ const UsersPage: React.FC = () => {
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Permissions
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Last Login
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -475,26 +498,52 @@ const UsersPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(user.permissions)
+                            .filter(([_, enabled]) => enabled)
+                            .slice(0, 3)
+                            .map(([permission, _]) => (
+                              <span
+                                key={permission}
+                                className="inline-flex px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
+                              >
+                                {permission.replace('can', '').replace(/([A-Z])/g, ' $1').trim()}
+                              </span>
+                            ))}
+                          {Object.values(user.permissions).filter(Boolean).length > 3 && (
+                            <span className="inline-flex px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                              +{Object.values(user.permissions).filter(Boolean).length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {user.last_login_at ? new Date(user.last_login_at).toLocaleDateString() : 'Never'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
+                        <div className="flex flex-wrap gap-2">
                           <button
                             onClick={() => handleEditUser(user)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-blue-600 hover:text-blue-900 text-sm"
                           >
                             Edit
                           </button>
                           <button
+                            onClick={() => handleManagePermissions(user)}
+                            className="text-purple-600 hover:text-purple-900 text-sm"
+                          >
+                            Permissions
+                          </button>
+                          <button
                             onClick={() => handleToggleUserStatus(user)}
-                            className={user.is_active ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}
+                            className={`text-sm ${user.is_active ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}
                             disabled={user.id === currentUser?.id && user.is_active}
                           >
                             {user.is_active ? 'Deactivate' : 'Activate'}
                           </button>
                           <button
                             onClick={() => handleDeleteUser(user.id)}
-                            className="text-red-600 hover:text-red-900"
+                            className="text-red-600 hover:text-red-900 text-sm"
                             disabled={user.id === currentUser?.id}
                           >
                             Delete
@@ -542,6 +591,20 @@ const UsersPage: React.FC = () => {
         user={selectedUser}
         onUserSaved={handleUserSaved}
       />
+
+      {showPermissionManager && permissionUser && (
+        <SimplePermissionManager
+          user={permissionUser}
+          onUserUpdate={handlePermissionUserUpdate}
+          onClose={() => setShowPermissionManager(false)}
+        />
+      )}
+
+      {showPermissionMatrix && (
+        <RolePermissionMatrix
+          onClose={() => setShowPermissionMatrix(false)}
+        />
+      )}
     </div>
   );
 };
