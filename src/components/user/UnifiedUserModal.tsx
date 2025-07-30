@@ -429,15 +429,16 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
 
                     <div className="space-y-2">
                       {settings.map((setting) => {
-                        const isEnabled = effectivePermissions[setting.key];
-                        const isFromRole = useRoleDefaults;
+                        const isEnabledByRole = ROLE_DEFAULTS[formData.role][setting.key];
+                        const isCustomEnabled = permissions[setting.key];
+                        const isEffectivelyEnabled = useRoleDefaults ? isEnabledByRole : isCustomEnabled;
 
                         return (
                           <div
                             key={setting.key}
                             className={`flex items-center justify-between p-3 border rounded-lg ${
-                              isEnabled
-                                ? isFromRole
+                              isEffectivelyEnabled
+                                ? useRoleDefaults && isEnabledByRole
                                   ? 'bg-blue-50 border-blue-200'
                                   : 'bg-green-50 border-green-200'
                                 : 'bg-gray-50 border-gray-200'
@@ -446,14 +447,14 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                             <div className="flex items-center">
                               <input
                                 type="checkbox"
-                                checked={isEnabled}
+                                checked={isEffectivelyEnabled}
                                 onChange={() => handlePermissionToggle(setting.key)}
                                 disabled={useRoleDefaults}
                                 className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                               />
                               <div className="ml-3">
                                 <div className={`text-sm font-medium ${
-                                  isEnabled ? 'text-gray-900' : 'text-gray-500'
+                                  isEffectivelyEnabled ? 'text-gray-900' : 'text-gray-500'
                                 }`}>
                                   {setting.label}
                                 </div>
@@ -464,14 +465,19 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                             </div>
 
                             <div className="flex items-center space-x-2">
-                              {isFromRole && (
+                              {useRoleDefaults && isEnabledByRole && (
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                   Role Default
                                 </span>
                               )}
-                              {!isFromRole && isEnabled && (
+                              {!useRoleDefaults && isCustomEnabled && (
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                   Custom
+                                </span>
+                              )}
+                              {!useRoleDefaults && !isCustomEnabled && isEnabledByRole && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                  Available
                                 </span>
                               )}
                             </div>
