@@ -55,6 +55,18 @@ export enum Permission {
   SECURITY_CONFIG = 'security:config',
 }
 
+// Mapping from simplified User permissions to granular Permission enum
+const USER_PERMISSION_MAPPING: Record<keyof User['permissions'], Permission[]> = {
+  canViewCameras: [Permission.CAMERA_VIEW, Permission.CAMERA_STREAM],
+  canControlCameras: [Permission.CAMERA_CONTROL, Permission.CAMERA_CREATE, Permission.CAMERA_UPDATE, Permission.CAMERA_DELETE, Permission.CAMERA_CONFIG],
+  canViewAlerts: [Permission.ALERT_VIEW],
+  canManageAlerts: [Permission.ALERT_ACKNOWLEDGE, Permission.ALERT_RESOLVE, Permission.ALERT_DELETE, Permission.ALERT_CREATE],
+  canViewAnalytics: [Permission.ANALYTICS_VIEW],
+  canManageUsers: [Permission.USER_VIEW, Permission.USER_CREATE, Permission.USER_UPDATE, Permission.USER_DELETE, Permission.USER_MANAGE_ROLES, Permission.USER_MANAGE_PERMISSIONS],
+  canManageSystem: [Permission.SYSTEM_CONFIG, Permission.SYSTEM_LOGS, Permission.SYSTEM_METRICS, Permission.SYSTEM_BACKUP, Permission.SYSTEM_MAINTENANCE, Permission.SECURITY_CONFIG],
+  canExportData: [Permission.ALERT_EXPORT, Permission.ANALYTICS_EXPORT, Permission.ANALYTICS_REPORTS]
+};
+
 // Role-based permission mappings
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   [UserRole.ADMIN]: Object.values(Permission), // Admin has all permissions
@@ -119,18 +131,19 @@ export const usePermissions = (): PermissionHook => {
     // Get role-based permissions
     const rolePermissions = ROLE_PERMISSIONS[user.role] || [];
 
-    // Merge with custom user permissions
-    const customPermissions: Permission[] = [];
+    // Convert simplified user permissions to granular permissions
+    const userPermissionsFromProfile: Permission[] = [];
     if (user.permissions) {
-      Object.entries(user.permissions).forEach(([key, value]) => {
-        if (value && Object.values(Permission).includes(key as Permission)) {
-          customPermissions.push(key as Permission);
+      Object.entries(user.permissions).forEach(([key, enabled]) => {
+        if (enabled && key in USER_PERMISSION_MAPPING) {
+          const mappedPermissions = USER_PERMISSION_MAPPING[key as keyof User['permissions']];
+          userPermissionsFromProfile.push(...mappedPermissions);
         }
       });
     }
 
-    // Combine role and custom permissions (remove duplicates)
-    const allPermissions = [...rolePermissions, ...customPermissions];
+    // Combine role and user permissions (remove duplicates)
+    const allPermissions = [...rolePermissions, ...userPermissionsFromProfile];
     return Array.from(new Set(allPermissions));
   };
 

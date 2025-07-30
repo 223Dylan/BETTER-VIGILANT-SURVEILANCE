@@ -5,6 +5,8 @@ import CameraDetailPanel from './CameraDetailPanel';
 import AddCameraModal from './AddCameraModal';
 // import QuickSettingsPanel from './QuickSettingsPanel';
 import { cameraService } from '../services/camera.service';
+import { usePermissions, Permission } from '../hooks/usePermissions';
+import { PermissionGate } from './common/PermissionGate';
 
 // Material-UI Icons
 import {
@@ -144,13 +146,15 @@ const CameraGrid: React.FC = () => {
             <VideocamIcon className="w-6 h-6" />
             <span>Camera System (0 cameras)</span>
           </h1>
-          <button
-            onClick={handleOpenAddCameraModal}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center space-x-2"
-          >
-            <AddIcon className="w-4 h-4" />
-            <span>Add Camera</span>
-          </button>
+          <PermissionGate permission={Permission.CAMERA_CREATE}>
+            <button
+              onClick={handleOpenAddCameraModal}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center space-x-2"
+            >
+              <AddIcon className="w-4 h-4" />
+              <span>Add Camera</span>
+            </button>
+          </PermissionGate>
         </div>
 
         <div className="text-center p-8">
@@ -159,13 +163,22 @@ const CameraGrid: React.FC = () => {
             <span>No cameras configured</span>
           </div>
           <p className="text-gray-400 mb-4">Add your first camera to get started</p>
-          <button
-            onClick={handleOpenAddCameraModal}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center space-x-2 mx-auto"
+          <PermissionGate
+            permission={Permission.CAMERA_CREATE}
+            fallback={
+              <div className="text-gray-500 text-sm">
+                Contact an administrator to add cameras
+              </div>
+            }
           >
-            <AddIcon className="w-5 h-5" />
-            <span>Add Your First Camera</span>
-          </button>
+            <button
+              onClick={handleOpenAddCameraModal}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center space-x-2 mx-auto"
+            >
+              <AddIcon className="w-5 h-5" />
+              <span>Add Your First Camera</span>
+            </button>
+          </PermissionGate>
         </div>
 
         <AddCameraModal
@@ -187,13 +200,15 @@ const CameraGrid: React.FC = () => {
           <span>Camera System ({cameraList.length} cameras)</span>
         </h1>
         <div className="flex items-center space-x-3">
-          <button
-            onClick={handleOpenAddCameraModal}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center space-x-2"
-          >
-            <AddIcon className="w-4 h-4" />
-            <span>Add Camera</span>
-          </button>
+          <PermissionGate permission={Permission.CAMERA_CREATE}>
+            <button
+              onClick={handleOpenAddCameraModal}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center space-x-2"
+            >
+              <AddIcon className="w-4 h-4" />
+              <span>Add Camera</span>
+            </button>
+          </PermissionGate>
           <button
             onClick={refreshCameras}
             disabled={refreshing}
