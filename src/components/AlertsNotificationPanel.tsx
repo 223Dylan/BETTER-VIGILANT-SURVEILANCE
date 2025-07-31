@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { metricsService, Alert } from '../services/metrics.service';
+import { useThemeClasses } from '../contexts/ThemeContext';
 
 interface AlertsNotificationPanelProps {
   limit?: number;
@@ -18,6 +19,7 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const lastAlertTime = useRef<number>(0);
+  const themeClasses = useThemeClasses();
 
   useEffect(() => {
     loadAlerts();
@@ -180,12 +182,12 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className={`${themeClasses.bg.primary} rounded-lg shadow ${themeClasses.border.primary} border p-6`}>
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className={`h-4 ${themeClasses.bg.tertiary} rounded w-1/3 mb-4`}></div>
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              <div key={i} className={`h-16 ${themeClasses.bg.tertiary} rounded`}></div>
             ))}
           </div>
         </div>
@@ -194,14 +196,14 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className={`${themeClasses.bg.primary} rounded-lg shadow ${themeClasses.border.primary} border`}>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className={`px-6 py-4 border-b ${themeClasses.border.primary}`}>
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className={`text-lg font-medium ${themeClasses.text.primary}`}>
             Recent Alerts
             {newAlertsCount > 0 && (
-              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 animate-pulse">
+              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400 animate-pulse">
                 {newAlertsCount} new
               </span>
             )}
@@ -216,7 +218,7 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
             {newAlertsCount > 0 && (
               <button
                 onClick={clearNewAlertsCount}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className={`text-sm ${themeClasses.text.secondary} hover:text-gray-700 dark:hover:text-gray-300`}
               >
                 Clear
               </button>
@@ -235,11 +237,11 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
       {/* Alerts List */}
       <div className="max-h-96 overflow-y-auto">
         {error && (
-          <div className="p-4 bg-red-50 border-l-4 border-red-400">
-            <p className="text-red-700 text-sm">{error}</p>
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400">
+            <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
             <button
               onClick={loadAlerts}
-              className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
+              className="mt-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm underline"
             >
               Retry
             </button>
@@ -247,7 +249,7 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
         )}
 
         {alerts.length === 0 && !loading && !error && (
-          <div className="p-6 text-center text-gray-500">
+          <div className={`p-6 text-center ${themeClasses.text.secondary}`}>
             <div className="text-4xl mb-2 text-green-600">OK</div>
             <p>No recent alerts</p>
             <p className="text-sm mt-1">System is running smoothly</p>
@@ -257,8 +259,8 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
         {alerts.map((alert, index) => (
           <div
             key={`${alert.timestamp}-${index}`}
-            className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
-              index < newAlertsCount ? 'bg-red-50 border-l-4 border-l-red-400' : ''
+            className={`p-4 border-b ${themeClasses.border.primary} ${themeClasses.hover.bg} cursor-pointer transition-colors ${
+              index < newAlertsCount ? 'bg-red-50 dark:bg-red-900/20 border-l-4 border-l-red-400' : ''
             }`}
             onClick={() => onAlertClick?.(alert)}
           >
@@ -270,28 +272,28 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className={`text-sm font-medium ${themeClasses.text.primary} truncate`}>
                     {alert.label}
                   </p>
                   <div className="flex items-center space-x-2">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(alert.level)}`}>
                       {alert.level}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className={`text-xs ${themeClasses.text.secondary}`}>
                       {formatTimeAgo(alert.timestamp)}
                     </span>
                   </div>
                 </div>
                 <div className="mt-1 flex items-center justify-between">
-                  <p className="text-sm text-gray-600">
+                  <p className={`text-sm ${themeClasses.text.secondary}`}>
                     Camera: <span className="font-medium">{alert.camera_id}</span>
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className={`text-sm ${themeClasses.text.secondary}`}>
                     Confidence: {metricsService.formatPercentage(alert.confidence * 100)}
                   </p>
                 </div>
                 {alert.type !== 'detection' && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className={`text-xs ${themeClasses.text.tertiary} mt-1`}>
                     Type: {alert.type}
                   </p>
                 )}
@@ -303,8 +305,8 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
 
       {/* Footer */}
       {alerts.length > 0 && (
-        <div className="px-6 py-3 bg-gray-50 text-center">
-          <p className="text-xs text-gray-500">
+        <div className={`px-6 py-3 ${themeClasses.bg.secondary} text-center`}>
+          <p className={`text-xs ${themeClasses.text.tertiary}`}>
             Showing last {Math.min(alerts.length, limit)} alerts
           </p>
         </div>

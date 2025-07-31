@@ -3,6 +3,7 @@ module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
+  darkMode: 'class', // Enable dark mode with class strategy
   theme: {
     extend: {
       colors: {
@@ -30,6 +31,20 @@ module.exports = {
           800: '#1e293b',
           900: '#0f172a',
         },
+        // Dark mode specific colors
+        dark: {
+          50: '#fafafa',
+          100: '#f5f5f5',
+          200: '#e5e5e5',
+          300: '#d4d4d4',
+          400: '#a3a3a3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#262626',
+          900: '#171717',
+          950: '#0a0a0a',
+        },
       },
       spacing: {
         '72': '18rem',
@@ -42,6 +57,21 @@ module.exports = {
       },
       borderRadius: {
         '4xl': '2rem',
+      },
+      // Dark mode specific styling
+      backgroundColor: {
+        'dark-primary': '#111827',
+        'dark-secondary': '#1f2937',
+        'dark-tertiary': '#374151',
+      },
+      textColor: {
+        'dark-primary': '#f9fafb',
+        'dark-secondary': '#d1d5db',
+        'dark-tertiary': '#9ca3af',
+      },
+      borderColor: {
+        'dark-primary': '#374151',
+        'dark-secondary': '#4b5563',
       },
     },
   },

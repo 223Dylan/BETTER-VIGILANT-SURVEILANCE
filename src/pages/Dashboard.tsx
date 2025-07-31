@@ -7,13 +7,10 @@ import CameraPerformancePanel from '../components/CameraPerformancePanel';
 import AlertsNotificationPanel from '../components/AlertsNotificationPanel';
 import { cameraService } from '../services/camera.service';
 import { metricsService } from '../services/metrics.service';
+import { useThemeClasses } from '../contexts/ThemeContext';
 
-// Material-UI Icons
-import {
-  Videocam as VideocamIcon,
-  Security as SecurityIcon,
-  DoNotDisturb as OfflineIcon
-} from '@mui/icons-material';
+// Material-UI Icons for additional UI elements
+import { Videocam as VideocamIcon } from '@mui/icons-material';
 
 const Dashboard: React.FC = () => {
   const [cameraStats, setCameraStats] = useState({
@@ -24,16 +21,17 @@ const Dashboard: React.FC = () => {
   });
   const [selectedCamera, setSelectedCamera] = useState<string | null>(null);
   const [healthStatus, setHealthStatus] = useState<any>(null);
+  const themeClasses = useThemeClasses();
 
   useEffect(() => {
     loadCameraStats();
     loadHealthStatus();
 
-    // Update stats every 30 seconds
+    // Set up periodic refresh
     const interval = setInterval(() => {
       loadCameraStats();
       loadHealthStatus();
-    }, 30000);
+    }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
   }, []);
@@ -95,48 +93,49 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Better Vigilant Surveilance</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className={`text-3xl font-bold ${themeClasses.text.primary}`}>
+            Better Vigilant Surveillance
+          </h1>
+          <p className={`mt-1 text-sm ${themeClasses.text.secondary}`}>
             Real-time monitoring and system overview
           </p>
         </div>
         <div className="flex space-x-3">
           <Link
             to="/cameras"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors space-x-2"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors space-x-2"
           >
             <VideocamIcon className="w-4 h-4" />
             <span>Manage Cameras</span>
           </Link>
           <Link
             to="/alerts"
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors space-x-2"
+            className={`inline-flex items-center px-4 py-2 ${themeClasses.border.primary} border text-sm font-medium rounded-md ${themeClasses.text.primary} ${themeClasses.bg.primary} ${themeClasses.hover.bg} transition-colors space-x-2`}
           >
-            <SecurityIcon className="w-4 h-4" />
+            <BellIcon className="w-4 h-4" />
             <span>View Alerts</span>
           </Link>
         </div>
       </div>
-
-
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map(stat => (
           <div
             key={stat.name}
-            className="relative overflow-hidden rounded-lg bg-white px-4 pt-5 pb-12 shadow-md border border-gray-200 hover:shadow-lg transition-shadow"
+            className={`relative overflow-hidden rounded-lg ${themeClasses.bg.primary} px-4 pt-5 pb-12 shadow-md ${themeClasses.border.primary} border hover:shadow-lg transition-shadow`}
           >
             <dt>
               <div className={`absolute rounded-md ${stat.color} p-3`}>
                 <stat.icon className="h-6 w-6 text-white" aria-hidden="true" />
               </div>
-              <p className="ml-16 truncate text-sm font-medium text-gray-500">{stat.name}</p>
+              <p className={`ml-16 truncate text-sm font-medium ${themeClasses.text.secondary}`}>{stat.name}</p>
             </dt>
             <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-              <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+              <p className={`text-2xl font-semibold ${themeClasses.text.primary}`}>{stat.value}</p>
             </dd>
           </div>
         ))}
@@ -144,19 +143,19 @@ const Dashboard: React.FC = () => {
 
       {/* System Status Banner */}
       {cameraStats.error > 0 && (
-        <div className="rounded-md bg-red-50 p-4 border border-red-200">
+        <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4 border border-red-200 dark:border-red-800">
           <div className="flex">
             <div className="flex-shrink-0">
               <ExclamationTriangleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-400">
                 System Alert
               </h3>
-              <div className="mt-2 text-sm text-red-700">
+              <div className="mt-2 text-sm text-red-700 dark:text-red-300">
                 <p>
                   {cameraStats.error} camera{cameraStats.error > 1 ? 's' : ''} {cameraStats.error > 1 ? 'are' : 'is'} experiencing issues.
-                  <Link to="/cameras" className="font-medium underline text-red-800 hover:text-red-900 ml-1">
+                  <Link to="/cameras" className="font-medium underline text-red-800 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 ml-1">
                     Check camera status →
                   </Link>
                 </p>
@@ -168,26 +167,49 @@ const Dashboard: React.FC = () => {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Main Content */}
+        {/* Left Column - Camera Grid */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Active Cameras */}
-          <ActiveCameraGrid />
-
-          {/* Detections by Hour */}
-          <DetectionsByHourDashboard />
-
-          {/* Camera Performance Detail */}
-          {selectedCamera && (
-            <div>
+          {/* Active Cameras Section */}
+          <div className={`${themeClasses.bg.primary} rounded-lg shadow ${themeClasses.border.primary} border`}>
+            <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Camera Performance Detail</h3>
+                <h3 className={`text-lg font-medium ${themeClasses.text.primary}`}>Live Camera Feeds</h3>
+                <span className={`text-sm ${themeClasses.text.secondary}`}>
+                  {cameraStats.active} active
+                </span>
+              </div>
+
+              {cameraStats.active > 0 ? (
+                <ActiveCameraGrid limit={4} />
+              ) : (
+                <div className={`text-center py-8 ${themeClasses.text.secondary}`}>
+                  <div className="flex justify-center mb-2">
+                    <VideoCameraIcon className="w-12 h-12" />
+                  </div>
+                  <p className="text-lg font-medium mb-2">No Active Cameras</p>
+                  <p className="mb-4">No cameras are currently running. Start some cameras to see live feeds here.</p>
+                  <Link
+                    to="/cameras"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors space-x-2"
+                  >
+                    <VideocamIcon className="w-4 h-4" />
+                    <span>Manage Cameras</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Performance Panel */}
+          {selectedCamera && (
+            <div className={`${themeClasses.bg.primary} rounded-lg shadow ${themeClasses.border.primary} border p-6`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`text-lg font-medium ${themeClasses.text.primary}`}>Camera Performance</h3>
                 <select
                   value={selectedCamera}
                   onChange={(e) => setSelectedCamera(e.target.value)}
-                  className="block w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={`px-3 py-1 ${themeClasses.bg.secondary} ${themeClasses.border.primary} border rounded-md text-sm ${themeClasses.text.primary} focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 >
-                  <option value="">Select camera...</option>
-                  {/* This would be populated with actual camera IDs */}
                   <option value="camera-1">Camera 1</option>
                   <option value="camera-2">Camera 2</option>
                   <option value="testing-camera">Testing Camera</option>
@@ -215,26 +237,26 @@ const Dashboard: React.FC = () => {
           />
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+          <div className={`${themeClasses.bg.primary} rounded-lg shadow ${themeClasses.border.primary} border p-6`}>
+            <h3 className={`text-lg font-medium ${themeClasses.text.primary} mb-4`}>Quick Actions</h3>
             <div className="space-y-3">
               <Link
                 to="/cameras"
-                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className={`w-full flex items-center justify-center px-4 py-2 ${themeClasses.border.primary} border rounded-md text-sm font-medium ${themeClasses.text.primary} ${themeClasses.bg.primary} ${themeClasses.hover.bg}`}
               >
                 <VideocamIcon className="w-4 h-4 mr-2" />
                 Camera Management
               </Link>
               <Link
                 to="/alerts"
-                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className={`w-full flex items-center justify-center px-4 py-2 ${themeClasses.border.primary} border rounded-md text-sm font-medium ${themeClasses.text.primary} ${themeClasses.bg.primary} ${themeClasses.hover.bg}`}
               >
                 <BellIcon className="w-4 h-4 mr-2" />
                 Alert History
               </Link>
               <button
                 onClick={() => window.open('/api/metrics/health', '_blank')}
-                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className={`w-full flex items-center justify-center px-4 py-2 ${themeClasses.border.primary} border rounded-md text-sm font-medium ${themeClasses.text.primary} ${themeClasses.bg.primary} ${themeClasses.hover.bg}`}
               >
                 <ChartBarIcon className="w-4 h-4 mr-2" />
                 System Health
@@ -244,69 +266,34 @@ const Dashboard: React.FC = () => {
 
           {/* System Status */}
           {healthStatus && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Infrastructure Status</h3>
+            <div className={`${themeClasses.bg.primary} rounded-lg shadow ${themeClasses.border.primary} border p-6`}>
+              <h3 className={`text-lg font-medium ${themeClasses.text.primary} mb-4`}>Infrastructure Status</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Elasticsearch</span>
+                  <span className={`text-sm ${themeClasses.text.secondary}`}>Elasticsearch</span>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    healthStatus.elasticsearch ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    healthStatus.elasticsearch ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400'
                   }`}>
                     {healthStatus.elasticsearch ? '● Online' : '● Offline'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Prometheus</span>
+                  <span className={`text-sm ${themeClasses.text.secondary}`}>Prometheus</span>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    healthStatus.prometheus ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    healthStatus.prometheus ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400'
                   }`}>
                     {healthStatus.prometheus ? '● Online' : '● Offline'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">System Monitor</span>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    healthStatus.system_monitor ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {healthStatus.system_monitor ? '● Online' : '● Offline'}
+                  <span className={`text-sm ${themeClasses.text.secondary}`}>System Monitor</span>
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400">
+                    ● Running
                   </span>
                 </div>
               </div>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Recent Activity Footer */}
-      <div className="bg-white shadow-md rounded-lg border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Recent System Activity</h3>
-        </div>
-        <div className="p-6">
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3 text-sm">
-              <span className="flex-shrink-0 w-2 h-2 bg-green-400 rounded-full"></span>
-              <span className="text-gray-500">
-                {new Date().toLocaleTimeString()} - Enhanced metrics system initialized
-              </span>
-            </div>
-            {cameraStats.active > 0 && (
-              <div className="flex items-center space-x-3 text-sm">
-                <span className="flex-shrink-0 w-2 h-2 bg-blue-400 rounded-full"></span>
-                <span className="text-gray-500">
-                  {new Date().toLocaleTimeString()} - {cameraStats.active} camera{cameraStats.active > 1 ? 's' : ''} streaming
-                </span>
-              </div>
-            )}
-            {cameraStats.active === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <div className="flex justify-center mb-2">
-                  <OfflineIcon className="w-12 h-12" />
-                </div>
-                <p>No recent activity - all cameras are offline</p>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

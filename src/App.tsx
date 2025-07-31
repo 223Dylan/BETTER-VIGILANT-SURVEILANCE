@@ -4,6 +4,7 @@ import { LoginForm } from './components/auth/LoginForm';
 import { UserSettings } from './components/user/UserSettings';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { Permission } from './hooks/usePermissions';
+import { ThemeProvider } from './contexts/ThemeContext';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard';
 import CamerasPage from './pages/CamerasPage';
@@ -13,85 +14,87 @@ import AnalyticsPage from './pages/AnalyticsPage';
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<LoginForm />} />
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<LoginForm />} />
 
-        {/* Protected routes */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }
-        >
-          {/* Dashboard route */}
+          {/* Protected routes */}
           <Route
-            path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <MainLayout />
               </ProtectedRoute>
             }
-          />
+          >
+            {/* Dashboard route */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Cameras route - requires camera view permission */}
-          <Route
-            path="/cameras"
-            element={
-              <ProtectedRoute requiredPermission={Permission.CAMERA_VIEW}>
-                <CamerasPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Cameras route - requires camera view permission */}
+            <Route
+              path="/cameras"
+              element={
+                <ProtectedRoute requiredPermission={Permission.CAMERA_VIEW}>
+                  <CamerasPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* User routes */}
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <UserSettings />
-              </ProtectedRoute>
-            }
-          />
+            {/* User routes */}
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <UserSettings />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Security routes */}
-          <Route
-            path="/alerts"
-            element={
-              <ProtectedRoute requiredPermission={Permission.ALERT_VIEW}>
-                <AlertsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/analytics"
-            element={
-              <ProtectedRoute requiredPermission={Permission.ANALYTICS_VIEW}>
-                <AnalyticsPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Security routes */}
+            <Route
+              path="/alerts"
+              element={
+                <ProtectedRoute requiredPermission={Permission.ALERT_VIEW}>
+                  <AlertsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute requiredPermission={Permission.ANALYTICS_VIEW}>
+                  <AnalyticsPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Admin routes */}
-          <Route
-            path="/users"
-            element={
-              <ProtectedRoute requiredPermission={Permission.USER_VIEW}>
-                <UsersPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Admin routes */}
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute requiredPermission={Permission.USER_VIEW}>
+                  <UsersPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Default route */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        </Route>
+            {/* Default route */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          </Route>
 
-        {/* Catch all route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+          {/* Catch all route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 };
 

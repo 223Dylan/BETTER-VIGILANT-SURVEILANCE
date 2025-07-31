@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import { User } from '../../types';
+import { useTheme, useThemeClasses } from '../../contexts/ThemeContext';
+import { ThemeToggle } from '../common/ThemeToggle';
 
 // Material-UI Icons
 import {
@@ -32,6 +34,7 @@ const UserProfileDropdown: React.FC<{
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const themeClasses = useThemeClasses();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -75,75 +78,60 @@ const UserProfileDropdown: React.FC<{
       {/* User Avatar Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+        className={`flex items-center space-x-2 p-2 rounded-lg ${themeClasses.hover.bg} transition-colors`}
       >
         <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
           <span className="text-white text-sm font-medium">
-            {user.username?.charAt(0).toUpperCase() || 'U'}
+            {user.username.charAt(0).toUpperCase()}
           </span>
         </div>
-        <span className="text-sm text-gray-700 hidden sm:block">{user.username}</span>
-        <svg
-          className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        <span className={`hidden sm:block text-sm font-medium ${themeClasses.text.primary}`}>
+          {user.first_name && user.last_name
+            ? `${user.first_name} ${user.last_name}`
+            : user.username}
+        </span>
+        <svg className={`w-4 h-4 ${themeClasses.text.secondary}`} fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
         </svg>
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-w-[calc(100vw-2rem)] sm:max-w-none">
+        <div className={`absolute right-0 mt-2 w-80 ${themeClasses.bg.primary} rounded-lg shadow-lg ${themeClasses.border.primary} border z-50`}>
           <div className="p-4">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-lg font-medium">
-                  {user.username?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-gray-900 truncate">{user.first_name || user.username}</h3>
-                <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1 ${
-                  user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {user.role}
-                </span>
-              </div>
-            </div>
-
             {!isEditing ? (
-              // Profile Display Mode
+              // Profile Display
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <label className="text-gray-500">First Name</label>
-                    <p className="font-medium">{user.first_name || 'Not set'}</p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white font-medium">
+                      {user.username.charAt(0).toUpperCase()}
+                    </span>
                   </div>
                   <div>
-                    <label className="text-gray-500">Last Name</label>
-                    <p className="font-medium">{user.last_name || 'Not set'}</p>
+                    <div className={`font-medium ${themeClasses.text.primary}`}>
+                      {user.first_name && user.last_name
+                        ? `${user.first_name} ${user.last_name}`
+                        : user.username}
+                    </div>
+                    <div className={`text-sm ${themeClasses.text.secondary}`}>{user.email}</div>
+                    <div className={`text-xs ${themeClasses.text.tertiary} capitalize`}>
+                      {user.role}
+                    </div>
                   </div>
                 </div>
 
-                <div className="text-sm">
-                  <label className="text-gray-500">Member Since</label>
-                  <p className="font-medium">{new Date(user.created_at).toLocaleDateString()}</p>
-                </div>
-
-                <div className="flex space-x-2 pt-3 border-t">
+                <div className="flex space-x-2">
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1"
+                    className="flex items-center space-x-1 flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors justify-center"
                   >
                     <EditIcon className="w-4 h-4" />
                     <span>Edit Profile</span>
                   </button>
                   <button
                     onClick={onLogout}
-                    className="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded-md text-sm hover:bg-gray-200 transition-colors flex items-center justify-center space-x-1"
+                    className={`flex items-center space-x-1 flex-1 ${themeClasses.bg.tertiary} ${themeClasses.text.primary} px-3 py-2 rounded-md text-sm ${themeClasses.hover.bg} transition-colors justify-center`}
                   >
                     <LogoutIcon className="w-4 h-4" />
                     <span>Logout</span>
@@ -151,59 +139,70 @@ const UserProfileDropdown: React.FC<{
                 </div>
               </div>
             ) : (
-              // Profile Edit Mode
+              // Profile Edit Form
               <form onSubmit={handleSubmit} className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+                <h3 className={`text-lg font-medium ${themeClasses.text.primary} mb-3`}>Edit Profile</h3>
+
+                <div className="space-y-2">
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">First Name</label>
+                    <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-1`}>
+                      First Name
+                    </label>
                     <input
                       type="text"
                       name="first_name"
                       value={formData.first_name}
                       onChange={handleChange}
-                      className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 ${themeClasses.bg.secondary} ${themeClasses.border.primary} border rounded-md text-sm ${themeClasses.text.primary} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Last Name</label>
+                    <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-1`}>
+                      Last Name
+                    </label>
                     <input
                       type="text"
                       name="last_name"
                       value={formData.last_name}
                       onChange={handleChange}
-                      className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 ${themeClasses.bg.secondary} ${themeClasses.border.primary} border rounded-md text-sm ${themeClasses.text.primary} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     />
-                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Username</label>
+                    <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-1`}>
+                      Username
+                    </label>
                   <input
                     type="text"
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
-                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 ${themeClasses.bg.secondary} ${themeClasses.border.primary} border rounded-md text-sm ${themeClasses.text.primary} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                    <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-1`}>
+                      Email
+                    </label>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 ${themeClasses.bg.secondary} ${themeClasses.border.primary} border rounded-md text-sm ${themeClasses.text.primary} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   />
+                  </div>
                 </div>
 
                 {error && (
-                  <div className="p-2 bg-red-50 text-red-700 text-sm rounded-md">{error}</div>
+                  <div className="p-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm rounded-md">{error}</div>
                 )}
 
                 {success && (
-                  <div className="p-2 bg-green-50 text-green-700 text-sm rounded-md">{success}</div>
+                  <div className="p-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-sm rounded-md">{success}</div>
                 )}
 
                 <div className="flex space-x-2 pt-2">
@@ -214,7 +213,7 @@ const UserProfileDropdown: React.FC<{
                       setError(null);
                       setSuccess(null);
                     }}
-                    className="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded-md text-sm hover:bg-gray-200 transition-colors"
+                    className={`flex-1 ${themeClasses.bg.tertiary} ${themeClasses.text.primary} px-3 py-2 rounded-md text-sm ${themeClasses.hover.bg} transition-colors`}
                   >
                     Cancel
                   </button>
@@ -239,6 +238,8 @@ const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentUser = authService.getCurrentUser();
+  const { actualTheme } = useTheme();
+  const themeClasses = useThemeClasses();
 
   const handleLogout = () => {
     authService.logout();
@@ -250,11 +251,11 @@ const MainLayout: React.FC = () => {
     return location.pathname === path;
   };
 
-  // Navigation link styling
+  // Navigation link styling with dark mode support
   const getLinkClassName = (path: string) => {
     const baseClasses = "inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors";
-    const activeClasses = "border-blue-500 text-blue-600";
-    const inactiveClasses = "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700";
+    const activeClasses = "border-blue-500 text-blue-600 dark:text-blue-400";
+    const inactiveClasses = `border-transparent ${themeClasses.text.secondary} hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300`;
 
     return `${baseClasses} ${isActiveLink(path) ? activeClasses : inactiveClasses}`;
   };
@@ -264,13 +265,13 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+    <div className={`min-h-screen ${themeClasses.bg.secondary}`}>
+      <nav className={`${themeClasses.bg.primary} shadow-sm ${themeClasses.border.primary} border-b`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <span className="text-xl font-bold text-blue-600 flex items-center space-x-2">
+                <span className="text-xl font-bold text-blue-600 dark:text-blue-400 flex items-center space-x-2">
                   <SecurityIcon className="w-6 h-6" />
                   <span>Better Vigilant Surveilance</span>
                 </span>
@@ -322,7 +323,8 @@ const MainLayout: React.FC = () => {
                 </Link>
               </div>
             </div>
-            <div className="flex sm:ml-6 sm:items-center">
+            <div className="flex sm:ml-6 sm:items-center space-x-4">
+              <ThemeToggle size="md" />
               <UserProfileDropdown user={currentUser} onLogout={handleLogout} />
             </div>
           </div>
