@@ -11,7 +11,6 @@ import {
   Videocam as VideocamIcon,
   Warning as WarningIcon,
   Refresh as RefreshIcon,
-  Analytics as AnalyticsIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
 
@@ -78,7 +77,11 @@ const ActiveCameraCard: React.FC<ActiveCameraCardProps> = ({ camera }) => {
   );
 };
 
-const ActiveCameraGrid: React.FC = () => {
+interface ActiveCameraGridProps {
+  limit?: number;
+}
+
+const ActiveCameraGrid: React.FC<ActiveCameraGridProps> = ({ limit }) => {
   const [activeCameras, setActiveCameras] = useState<Camera[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -172,9 +175,11 @@ const ActiveCameraGrid: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {activeCameras.map(camera => (
-          <ActiveCameraCard key={camera.id} camera={camera} />
-        ))}
+        {activeCameras
+          .slice(0, limit)
+          .map(camera => (
+            <ActiveCameraCard key={camera.id} camera={camera} />
+          ))}
       </div>
 
       {/* Real-time status indicator */}
