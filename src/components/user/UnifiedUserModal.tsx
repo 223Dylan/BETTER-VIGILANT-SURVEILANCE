@@ -377,9 +377,9 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                 </div>
 
                 {/* Role Description */}
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Role Description</h4>
-                  <p className="text-sm text-gray-600">
+                <div className={`p-4 ${themeClasses.bg.secondary} rounded-lg`}>
+                  <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2`}>Role Description</h4>
+                  <p className={`text-sm ${themeClasses.text.secondary}`}>
                     {formData.role === 'admin' && 'Full system access including user management and system configuration.'}
                     {formData.role === 'user' && 'Standard user with camera viewing, alert management, and analytics access.'}
                     {formData.role === 'viewer' && 'Read-only access to cameras and alerts. Limited system visibility.'}
@@ -392,8 +392,8 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
             {activeTab === 'permissions' && (
               <div className="space-y-6">
                 {/* Permission Configuration Options */}
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Permission Configuration</h3>
+                <div className={`p-4 ${themeClasses.bg.secondary} rounded-lg`}>
+                  <h3 className={`text-lg font-medium ${themeClasses.text.primary} mb-3`}>Permission Configuration</h3>
 
                   <div className="space-y-3">
                     <label className="flex items-center">
@@ -404,7 +404,7 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                         onChange={() => handleUseDefaultsToggle(true)}
                         className="text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700">
+                      <span className={`ml-2 text-sm ${themeClasses.text.primary}`}>
                         Use role defaults ({Object.values(ROLE_DEFAULTS[formData.role]).filter(Boolean).length} permissions)
                       </span>
                     </label>
@@ -417,7 +417,7 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                         onChange={() => handleUseDefaultsToggle(false)}
                         className="text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700">
+                      <span className={`ml-2 text-sm ${themeClasses.text.primary}`}>
                         Custom permissions ({activePermissions} of {totalPermissions} enabled)
                       </span>
                     </label>
@@ -427,7 +427,7 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                 {/* Permission Categories */}
                 {Object.entries(permissionsByCategory).map(([category, settings]) => (
                   <div key={category} className="mb-6">
-                    <h4 className="text-md font-medium text-gray-900 mb-3">{category}</h4>
+                    <h4 className={`text-md font-medium ${themeClasses.text.primary} mb-3`}>{category}</h4>
 
                     <div className="space-y-2">
                       {settings.map((setting) => {
@@ -441,9 +441,9 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                             className={`flex items-center justify-between p-3 border rounded-lg ${
                               isEffectivelyEnabled
                                 ? useRoleDefaults && isEnabledByRole
-                                  ? 'bg-blue-50 border-blue-200'
-                                  : 'bg-green-50 border-green-200'
-                                : 'bg-gray-50 border-gray-200'
+                                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                                  : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                                : `${themeClasses.bg.secondary} ${themeClasses.border.primary}`
                             }`}
                           >
                             <div className="flex items-center">
@@ -452,15 +452,15 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                                 checked={isEffectivelyEnabled}
                                 onChange={() => handlePermissionToggle(setting.key)}
                                 disabled={useRoleDefaults}
-                                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                className="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                               />
                               <div className="ml-3">
                                 <div className={`text-sm font-medium ${
-                                  isEffectivelyEnabled ? 'text-gray-900' : 'text-gray-500'
+                                  isEffectivelyEnabled ? themeClasses.text.primary : themeClasses.text.secondary
                                 }`}>
                                   {setting.label}
                                 </div>
-                                <div className="text-xs text-gray-500 mt-1">
+                                <div className={`text-xs ${themeClasses.text.secondary} mt-1`}>
                                   {setting.description}
                                 </div>
                               </div>
@@ -468,17 +468,17 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
 
                             <div className="flex items-center space-x-2">
                               {useRoleDefaults && isEnabledByRole && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300">
                                   Role Default
                                 </span>
                               )}
                               {!useRoleDefaults && isCustomEnabled && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300">
                                   Custom
                                 </span>
                               )}
                               {!useRoleDefaults && !isCustomEnabled && isEnabledByRole && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
                                   Available
                                 </span>
                               )}

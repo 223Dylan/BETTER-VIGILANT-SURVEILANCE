@@ -80,7 +80,7 @@ const AccordionSection: React.FC<AccordionSectionProps> = ({
         className={`w-full px-4 py-3 ${themeClasses.bg.secondary} hover:${themeClasses.bg.tertiary} flex items-center justify-between transition-colors`}
       >
         <div className="flex items-center space-x-2">
-          <div className="text-lg">{icon}</div>
+          <div className="text-lg text-gray-300 dark:text-gray-400">{icon}</div>
           <span className={`font-medium ${themeClasses.text.primary}`}>{title}</span>
           {badge !== undefined && (
             <span className="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-xs rounded-full font-medium">
@@ -512,10 +512,10 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     onChange: (value: number) => void;
     disabled?: boolean;
   }> = ({ label, value, min, max, step = 1, unit = '', onChange, disabled = false }) => (
-    <div className="p-3 bg-gray-50 rounded-lg">
+    <div className={`p-3 ${themeClasses.bg.secondary} rounded-lg`}>
       <div className="flex justify-between items-center mb-2">
-        <label className="text-sm font-medium text-gray-900">{label}</label>
-        <span className="text-sm text-gray-600">{value}{unit}</span>
+        <label className={`text-sm font-medium ${themeClasses.text.primary}`}>{label}</label>
+        <span className={`text-sm ${themeClasses.text.secondary}`}>{value}{unit}</span>
       </div>
       <input
         type="range"
@@ -525,7 +525,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
         value={value}
         onChange={(e) => !disabled && onChange(Number(e.target.value))}
         disabled={disabled || isUpdatingSettings}
-        className={`w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer ${
+        className={`w-full h-2 ${themeClasses.bg.tertiary} rounded-lg appearance-none cursor-pointer ${
           disabled || isUpdatingSettings ? 'opacity-50' : ''
         }`}
       />
@@ -944,22 +944,14 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                         />
                       </div>
 
-                      <div className="pt-2 border-t border-gray-200 space-y-2">
+                      <div className={`pt-2 border-t ${themeClasses.border.primary} space-y-2`}>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Resolution:</span>
-                          <span className="font-medium">{editableCamera?.resolutionWidth || camera.resolutionWidth}x{editableCamera?.resolutionHeight || camera.resolutionHeight}</span>
+                          <span className={themeClasses.text.secondary}>Source Type:</span>
+                          <span className={`font-medium ${themeClasses.text.primary} capitalize`}>{editableCamera?.source_type || camera.source_type || 'Unknown'}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Target FPS:</span>
-                          <span className="font-medium">{editableCamera?.fps || camera.fps}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Source Type:</span>
-                          <span className="font-medium capitalize">{editableCamera?.source_type || camera.source_type || 'Unknown'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Source:</span>
-                          <span className="font-medium text-xs break-all">{editableCamera?.source || camera.source || 'Unknown'}</span>
+                          <span className={themeClasses.text.secondary}>Source:</span>
+                          <span className={`font-medium text-xs break-all ${themeClasses.text.primary}`}>{editableCamera?.source || camera.source || 'Unknown'}</span>
                         </div>
                       </div>
                     </div>
@@ -975,7 +967,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                   >
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-gray-700">Live Detection Feed</span>
+                        <span className={`text-sm font-medium ${themeClasses.text.primary}`}>Live Detection Feed</span>
                         {alerts.length > 0 && (
                           <button
                             onClick={clearAlerts}
@@ -987,7 +979,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                       </div>
 
                       {/* Connection Status Debug Info */}
-                      <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                      <div className={`text-xs ${themeClasses.text.secondary} ${themeClasses.bg.secondary} p-2 rounded`}>
                         <div>Status: <span className={connectionStatus === 'connected' ? 'text-green-600' : 'text-red-600'}>{connectionStatus}</span></div>
                         <div>Alerts Received: {alertsReceived}</div>
                         <div>WebSocket URL: ws://localhost:8001/ws/cameras/{camera.id}/prediction</div>
@@ -995,9 +987,9 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
                       <div className="max-h-64 overflow-y-auto space-y-2">
                         {alerts.length === 0 ? (
-                          <div className="text-center py-4 text-gray-500">
+                          <div className={`text-center py-4 ${themeClasses.text.secondary}`}>
                             <div className="flex justify-center mb-2">
-                              <VisibilityIcon className="w-8 h-8" />
+                              <VisibilityIcon className="w-8 h-8 text-gray-300 dark:text-gray-400" />
                             </div>
                             <p className="text-sm">No alerts detected</p>
                             <p className="text-xs">ML predictions will appear here</p>
@@ -1052,34 +1044,34 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                       <div className="space-y-3">
                         <div className="grid grid-cols-3 gap-2">
                           <div></div>
-                          <button className="p-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center flex items-center justify-center">
+                          <button className="p-3 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors text-center flex items-center justify-center">
                             <ArrowUpIcon className="w-4 h-4" />
                           </button>
                           <div></div>
 
-                          <button className="p-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center flex items-center justify-center">
+                          <button className="p-3 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors text-center flex items-center justify-center">
                             <ArrowLeftIcon className="w-4 h-4" />
                           </button>
-                          <button className="p-3 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-center flex items-center justify-center">
+                          <button className="p-3 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-center flex items-center justify-center">
                             <HomeIcon className="w-4 h-4" />
                           </button>
-                          <button className="p-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center flex items-center justify-center">
+                          <button className="p-3 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors text-center flex items-center justify-center">
                             <ArrowRightIcon className="w-4 h-4" />
                           </button>
 
                           <div></div>
-                          <button className="p-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center flex items-center justify-center">
+                          <button className="p-3 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors text-center flex items-center justify-center">
                             <ArrowDownIcon className="w-4 h-4" />
                           </button>
                           <div></div>
                         </div>
 
                         <div className="flex space-x-2">
-                          <button className="flex-1 p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm flex items-center justify-center space-x-1">
+                          <button className="flex-1 p-2 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors text-sm flex items-center justify-center space-x-1">
                             <ZoomInIcon className="w-4 h-4" />
                             <span>Zoom In</span>
                           </button>
-                          <button className="flex-1 p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm flex items-center justify-center space-x-1">
+                          <button className="flex-1 p-2 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors text-sm flex items-center justify-center space-x-1">
                             <ZoomOutIcon className="w-4 h-4" />
                             <span>Zoom Out</span>
                           </button>
@@ -1099,7 +1091,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                       {/* Technical Settings */}
                       <div className="space-y-2">
                         <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1">Resolution</label>
+                          <label className={`block text-xs font-medium ${themeClasses.text.secondary} mb-1`}>Resolution</label>
                           <select
                             value={`${editableCamera?.resolutionWidth || 640}x${editableCamera?.resolutionHeight || 480}`}
                             onChange={(e) => {
@@ -1110,7 +1102,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                               updateCameraProperty('resolution_height', height);
                             }}
                             disabled={isUpdatingSettings}
-                            className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className={`w-full p-2 text-sm border ${themeClasses.border.primary} rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
                           >
                             <option value="320x240">320x240 (QVGA)</option>
                             <option value="640x480">640x480 (VGA)</option>
@@ -1126,7 +1118,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1">Frame Rate</label>
+                          <label className={`block text-xs font-medium ${themeClasses.text.secondary} mb-1`}>Frame Rate</label>
                           <select
                             value={editableCamera?.fps || 30}
                             onChange={(e) => {
@@ -1135,7 +1127,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                               updateCameraProperty('fps', fps);
                             }}
                             disabled={isUpdatingSettings}
-                            className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className={`w-full p-2 text-sm border ${themeClasses.border.primary} rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
                           >
                             <option value={5}>5 FPS</option>
                             <option value={10}>10 FPS</option>
@@ -1169,10 +1161,10 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
                       {/* Detection Settings */}
                       <div className="mt-3 space-y-2">
-                        <h4 className="text-sm font-medium text-gray-700">Detection Settings</h4>
+                        <h4 className={`text-sm font-medium ${themeClasses.text.primary}`}>Detection Settings</h4>
 
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                          <label className="text-xs font-medium text-gray-500">Detection Enabled</label>
+                        <div className={`flex items-center justify-between p-2 ${themeClasses.bg.secondary} rounded-md`}>
+                          <label className={`text-xs font-medium ${themeClasses.text.secondary}`}>Detection Enabled</label>
                           <button
                             onClick={() => {
                               const newValue = !editableCamera?.detection_enabled;
@@ -1212,9 +1204,9 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
                       {/* Save/Update Status */}
                       {isUpdatingSettings && (
-                        <div className="flex items-center justify-center p-2 bg-yellow-50 rounded-lg border border-yellow-200">
-                          <div className="flex items-center space-x-2 text-yellow-700">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-700"></div>
+                        <div className="flex items-center justify-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                          <div className="flex items-center space-x-2 text-yellow-700 dark:text-yellow-300">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-700 dark:border-yellow-300"></div>
                             <span className="text-sm">Saving changes...</span>
                           </div>
                         </div>
@@ -1233,25 +1225,25 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
         <div className="fixed inset-0 z-60 overflow-y-auto">
           <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
             <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowDeleteConfirm(false)} />
-            <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-              <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+            <div className={`relative transform overflow-hidden rounded-lg ${themeClasses.bg.primary} text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg`}>
+              <div className={`px-4 pb-4 pt-5 sm:p-6 sm:pb-4`}>
                 <div className="sm:flex sm:items-start">
-                  <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                  <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20 sm:mx-0 sm:h-10 sm:w-10">
                     <DeleteIcon className="h-6 w-6 text-red-600" />
                   </div>
                   <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                    <h3 className="text-base font-semibold leading-6 text-gray-900">
+                    <h3 className={`text-base font-semibold leading-6 ${themeClasses.text.primary}`}>
                       Delete Camera
                     </h3>
                     <div className="mt-2">
-                      <p className="text-sm text-gray-500">
+                      <p className={`text-sm ${themeClasses.text.secondary}`}>
                         Are you sure you want to delete "{editableCamera?.name || camera.name}"? This action cannot be undone and will permanently remove the camera configuration.
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+              <div className={`${themeClasses.bg.secondary} px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6`}>
                 <button
                   type="button"
                   onClick={handleDeleteCamera}
@@ -1264,7 +1256,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                   type="button"
                   onClick={() => setShowDeleteConfirm(false)}
                   disabled={isDeleting}
-                  className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                  className={`mt-3 inline-flex w-full justify-center rounded-md ${themeClasses.bg.primary} px-3 py-2 text-sm font-semibold ${themeClasses.text.primary} shadow-sm ring-1 ring-inset ${themeClasses.border.primary} hover:${themeClasses.bg.tertiary} sm:mt-0 sm:w-auto`}
                 >
                   Cancel
                 </button>
