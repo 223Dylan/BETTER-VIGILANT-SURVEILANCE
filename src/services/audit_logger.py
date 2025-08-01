@@ -6,7 +6,7 @@ from fastapi import Request
 from loguru import logger
 from sqlalchemy.orm import Session
 
-from src.auth.permissions import Permission
+from src.auth.permission_types import Permission
 from src.database.models.audit_log import AuditAction, AuditLog, AuditSeverity
 from src.database.models.base import get_db
 from src.database.models.user import User
