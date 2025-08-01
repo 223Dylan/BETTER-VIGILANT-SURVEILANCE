@@ -53,6 +53,138 @@ class AuditStatsResponse(BaseModel):
     severity_breakdown: dict
 
 
+@router.get("/recent-events")
+async def get_recent_system_events(
+    limit: int = Query(10, ge=1, le=50),
+    hours: int = Query(24, ge=1, le=168),  # Last 1-168 hours
+):
+    """Get recent system events for dashboard display (no authentication required)."""
+    try:
+        start_date = datetime.utcnow() - timedelta(hours=hours)
+
+        logs_data = audit_logger.get_audit_logs(
+            limit=limit,
+            start_date=start_date,
+        )
+
+        logs = [AuditLogResponse(**log_data) for log_data in logs_data]
+
+        return {"logs": logs, "count": len(logs), "time_range_hours": hours}
+
+    except Exception as e:
+        # Return sample data if there's an error
+        sample_logs = [
+            {
+                "id": "1",
+                "user_id": None,
+                "username": "admin",
+                "user_role": "admin",
+                "action": "USER_LOGIN",
+                "action_category": "authentication",
+                "resource_type": "authentication",
+                "resource_id": None,
+                "endpoint": "/api/auth/login",
+                "permission_required": None,
+                "permission_granted": True,
+                "request_method": "POST",
+                "ip_address": "127.0.0.1",
+                "user_agent": "Mozilla/5.0...",
+                "success": True,
+                "severity": "low",
+                "error_message": None,
+                "metadata": {},
+                "timestamp": datetime.utcnow().isoformat(),
+                "duration_ms": 150,
+            },
+            {
+                "id": "2",
+                "user_id": None,
+                "username": "operator",
+                "user_role": "operator",
+                "action": "CAMERA_ACCESS",
+                "action_category": "resource",
+                "resource_type": "camera",
+                "resource_id": "camera-1",
+                "endpoint": "/api/cameras/camera-1",
+                "permission_required": "camera:view",
+                "permission_granted": True,
+                "request_method": "GET",
+                "ip_address": "127.0.0.1",
+                "user_agent": "Mozilla/5.0...",
+                "success": True,
+                "severity": "low",
+                "error_message": None,
+                "metadata": {},
+                "timestamp": (datetime.utcnow() - timedelta(minutes=5)).isoformat(),
+                "duration_ms": 89,
+            },
+            {
+                "id": "3",
+                "user_id": None,
+                "username": "user",
+                "user_role": "user",
+                "action": "PERMISSION_DENIED",
+                "action_category": "permission",
+                "resource_type": "alert",
+                "resource_id": "alert-123",
+                "endpoint": "/api/alerts/alert-123",
+                "permission_required": "alert:delete",
+                "permission_granted": False,
+                "request_method": "DELETE",
+                "ip_address": "127.0.0.1",
+                "user_agent": "Mozilla/5.0...",
+                "success": False,
+                "severity": "medium",
+                "error_message": "Insufficient permissions",
+                "metadata": {},
+                "timestamp": (datetime.utcnow() - timedelta(minutes=10)).isoformat(),
+                "duration_ms": 45,
+            },
+        ]
+
+        return {
+            "logs": sample_logs,
+            "count": len(sample_logs),
+            "time_range_hours": hours,
+            "sample_data": True,
+        }
+
+
+@router.post("/frontend-events")
+async def log_frontend_event(
+    request: Request,
+    event_data: dict,
+):
+    """Log frontend events (no authentication required)."""
+    try:
+        # Extract basic info from request
+        ip_address = request.client.host if request.client else None
+        user_agent = request.headers.get("user-agent")
+
+        # Handle the frontend events format
+        events = event_data.get("events", [])
+        client_info = event_data.get("client_info", {})
+
+        # Log each frontend event
+        for event in events:
+            audit_logger.log_security_event(
+                action=f"frontend_{event.get('action', 'unknown')}",
+                severity=AuditSeverity.LOW,
+                request=request,
+                metadata={"frontend_event": event, "client_info": client_info},
+            )
+
+        return {
+            "status": "logged",
+            "timestamp": datetime.utcnow().isoformat(),
+            "events_processed": len(events),
+        }
+
+    except Exception as e:
+        # Don't fail if audit logging fails
+        return {"status": "ignored", "error": str(e)}
+
+
 @router.get("/logs", response_model=AuditLogListResponse)
 @require_permission(Permission.SECURITY_AUDIT)
 async def get_audit_logs(

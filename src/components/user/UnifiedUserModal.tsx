@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, CreateUserRequest, UpdateUserRequest } from '../../types/user';
 import { userService } from '../../services/user.service';
+import { useThemeClasses } from '../../contexts/ThemeContext';
 
 interface UnifiedUserModalProps {
   isOpen: boolean;
@@ -106,6 +107,7 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
   user,
   onUserSaved
 }) => {
+  const themeClasses = useThemeClasses();
   const [activeTab, setActiveTab] = useState<'details' | 'permissions'>('details');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -243,21 +245,21 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
+      <div className={`${themeClasses.bg.primary} rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden`}>
+        <div className={`px-6 py-4 border-b ${themeClasses.border.primary}`}>
+          <h2 className={`text-xl font-semibold ${themeClasses.text.primary}`}>
             {user ? `Edit User - ${user.username}` : 'Create New User'}
           </h2>
 
           {/* Tab Navigation */}
-          <div className="mt-4 border-b border-gray-200">
+          <div className={`mt-4 border-b ${themeClasses.border.primary}`}>
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab('details')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'details'
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : `border-transparent ${themeClasses.text.secondary} hover:${themeClasses.text.primary} hover:${themeClasses.border.secondary}`
                 }`}
               >
                 User Details
@@ -267,7 +269,7 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'permissions'
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : `border-transparent ${themeClasses.text.secondary} hover:${themeClasses.text.primary} hover:${themeClasses.border.secondary}`
                 }`}
               >
                 Permissions ({activePermissions}/{totalPermissions})
@@ -279,7 +281,7 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
         <form onSubmit={handleSubmit}>
           <div className="p-6 overflow-y-auto max-h-[calc(90vh-240px)]">
             {error && (
-              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded">
                 {error}
               </div>
             )}
@@ -289,7 +291,7 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-2`}>
                       Username *
                     </label>
                     <input
@@ -298,12 +300,12 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                       value={formData.username}
                       onChange={handleInputChange}
                       required
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 border ${themeClasses.border.primary} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-2`}>
                       Email *
                     </label>
                     <input
@@ -312,12 +314,12 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 border ${themeClasses.border.primary} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-2`}>
                       First Name
                     </label>
                     <input
@@ -325,12 +327,12 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                       name="first_name"
                       value={formData.first_name}
                       onChange={handleInputChange}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 border ${themeClasses.border.primary} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-2`}>
                       Last Name
                     </label>
                     <input
@@ -338,12 +340,12 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                       name="last_name"
                       value={formData.last_name}
                       onChange={handleInputChange}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 border ${themeClasses.border.primary} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-2`}>
                       Role *
                     </label>
                     <select
@@ -351,16 +353,16 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                       value={formData.role}
                       onChange={handleInputChange}
                       required
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 border ${themeClasses.border.primary} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
                     >
-                      <option value="viewer">Viewer - Read-only access</option>
-                      <option value="user">User - Standard access</option>
-                      <option value="admin">Admin - Full access</option>
+                      <option value="viewer">Viewer</option>
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-2`}>
                       {user ? 'New Password (leave blank to keep current)' : 'Password *'}
                     </label>
                     <input
@@ -369,7 +371,7 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
                       value={formData.password}
                       onChange={handleInputChange}
                       required={!user}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 border ${themeClasses.border.primary} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
                     />
                   </div>
                 </div>
@@ -492,11 +494,11 @@ export const UnifiedUserModal: React.FC<UnifiedUserModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+          <div className={`px-6 py-4 border-t ${themeClasses.border.primary} flex justify-end space-x-3`}>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className={`px-4 py-2 border ${themeClasses.border.primary} rounded-md text-sm font-medium ${themeClasses.text.secondary} ${themeClasses.bg.primary} hover:${themeClasses.bg.secondary} focus:outline-none focus:ring-2 focus:ring-blue-500`}
             >
               Cancel
             </button>

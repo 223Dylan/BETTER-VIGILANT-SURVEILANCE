@@ -5,6 +5,7 @@ import ActiveCameraGrid from '../components/ActiveCameraGrid';
 import DetectionsByHourDashboard from '../components/DetectionsByHourDashboard';
 import CameraPerformancePanel from '../components/CameraPerformancePanel';
 import AlertsNotificationPanel from '../components/AlertsNotificationPanel';
+import RecentSystemEventsPanel from '../components/RecentSystemEventsPanel';
 import { cameraService } from '../services/camera.service';
 import { metricsService } from '../services/metrics.service';
 import { useThemeClasses } from '../contexts/ThemeContext';
@@ -167,7 +168,7 @@ const Dashboard: React.FC = () => {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Camera Grid */}
+        {/* Left Column - Camera Grid & Analytics */}
         <div className="lg:col-span-2 space-y-6">
           {/* Active Cameras Section */}
           <div className={`${themeClasses.bg.primary} rounded-lg shadow ${themeClasses.border.primary} border`}>
@@ -200,6 +201,9 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* Analytics Section - Detections by Hour */}
+          <DetectionsByHourDashboard />
+
           {/* Performance Panel */}
           {selectedCamera && (
             <div className={`${themeClasses.bg.primary} rounded-lg shadow ${themeClasses.border.primary} border p-6`}>
@@ -222,6 +226,9 @@ const Dashboard: React.FC = () => {
               />
             </div>
           )}
+
+          {/* Recent System Events Panel */}
+          <RecentSystemEventsPanel limit={8} refreshInterval={30000} />
         </div>
 
         {/* Right Column - Alerts & Quick Stats */}

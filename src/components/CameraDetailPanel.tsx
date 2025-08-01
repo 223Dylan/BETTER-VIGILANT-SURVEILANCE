@@ -3,6 +3,7 @@ import VideoPlayer from './VideoPlayer';
 import { Camera } from '../types';
 import { Alert } from '../types/alert';
 import { cameraService } from '../services/camera.service';
+import { useThemeClasses } from '../contexts/ThemeContext';
 
 // Material-UI Icons
 import {
@@ -62,8 +63,6 @@ interface AccordionSectionProps {
   badge?: string | number;
 }
 
-
-
 const AccordionSection: React.FC<AccordionSectionProps> = ({
   title,
   icon,
@@ -72,23 +71,25 @@ const AccordionSection: React.FC<AccordionSectionProps> = ({
   children,
   badge
 }) => {
+  const themeClasses = useThemeClasses();
+
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className={`border ${themeClasses.border.primary} rounded-lg overflow-hidden`}>
       <button
         onClick={onToggle}
-        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+        className={`w-full px-4 py-3 ${themeClasses.bg.secondary} hover:${themeClasses.bg.tertiary} flex items-center justify-between transition-colors`}
       >
         <div className="flex items-center space-x-2">
           <div className="text-lg">{icon}</div>
-          <span className="font-medium text-gray-900">{title}</span>
+          <span className={`font-medium ${themeClasses.text.primary}`}>{title}</span>
           {badge !== undefined && (
-            <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+            <span className="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-xs rounded-full font-medium">
               {badge}
             </span>
           )}
         </div>
         <svg
-          className={`w-5 h-5 text-gray-500 transform transition-transform ${
+          className={`w-5 h-5 ${themeClasses.text.secondary} transform transition-transform ${
             isExpanded ? 'rotate-180' : 'rotate-0'
           }`}
           fill="none"
@@ -98,12 +99,11 @@ const AccordionSection: React.FC<AccordionSectionProps> = ({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-
-      <div className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'max-h-screen' : 'max-h-0'}`}>
-        <div className="p-4 bg-white border-t border-gray-200">
+      {isExpanded && (
+        <div className={`px-4 py-4 ${themeClasses.bg.primary}`}>
           {children}
         </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -115,6 +115,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
   onCameraUpdated,
   streamType = 'mjpeg'
 }) => {
+  const themeClasses = useThemeClasses();
   const [status, setStatus] = useState<string>('stopped');
   const [isToggling, setIsToggling] = useState(false);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -731,11 +732,11 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
       {/* Panel */}
       <div className="fixed inset-y-0 right-0 flex max-w-full pl-10">
         <div className="w-screen max-w-6xl">
-          <div className="flex h-full flex-col bg-white shadow-xl">
+          <div className={`flex h-full flex-col ${themeClasses.bg.primary} shadow-xl`}>
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div className={`flex items-center justify-between px-6 py-4 border-b ${themeClasses.border.primary}`}>
               <div className="flex items-center space-x-3">
-                <h2 className="text-2xl font-bold text-gray-900">{editableCamera?.name || camera.name}</h2>
+                <h2 className={`text-2xl font-bold ${themeClasses.text.primary}`}>{editableCamera?.name || camera.name}</h2>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 ${getStatusColor()}`}>
                   {status === 'active' ? (
                     <>
@@ -769,14 +770,14 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={isDeleting}
-                  className="rounded-md bg-red-50 p-2 text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-md bg-red-50 dark:bg-red-900/20 p-2 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Delete Camera"
                 >
                   <DeleteIcon className="h-5 w-5" />
                 </button>
                 <button
                   onClick={onClose}
-                  className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`rounded-md ${themeClasses.bg.primary} ${themeClasses.text.secondary} hover:${themeClasses.text.primary} focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 >
                   <span className="sr-only">Close panel</span>
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

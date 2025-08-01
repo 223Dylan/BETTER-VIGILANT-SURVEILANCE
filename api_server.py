@@ -139,8 +139,8 @@ app.include_router(users.router, prefix="/api")
 # Include metrics router
 app.include_router(metrics.router)
 
-# Include audit router
-app.include_router(audit.router, prefix="/api")
+# Include audit router (already has /api/audit prefix)
+app.include_router(audit.router)
 
 # Include permissions router
 app.include_router(permissions.router, prefix="/api/permissions")

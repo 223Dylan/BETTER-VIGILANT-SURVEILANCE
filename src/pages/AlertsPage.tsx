@@ -9,6 +9,7 @@ import {
 import { apiService } from '../services/api.service';
 import { authService } from '../services/auth.service';
 import { alertService } from '../services/alert.service';
+import { useThemeClasses } from '../contexts/ThemeContext';
 
 interface AlertsPageProps {}
 
@@ -20,6 +21,7 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'active' | 'all' | 'stats'>('active');
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
+  const themeClasses = useThemeClasses();
 
   // Filters
   const [severityFilter, setSeverityFilter] = useState<string[]>([]);
@@ -170,12 +172,12 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Security Alerts</h1>
-        <p className="text-gray-600">Monitor and manage security alerts from your camera system</p>
+        <h1 className={`text-3xl font-bold ${themeClasses.text.primary} mb-2`}>Security Alerts</h1>
+        <p className={themeClasses.text.secondary}>Monitor and manage security alerts from your camera system</p>
       </div>
 
       {error && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded">
           Error: {error}
         </div>
       )}

@@ -240,8 +240,11 @@ class FrontendAuditService {
         }
       });
 
-    } catch (error) {
-      console.warn('Failed to send audit events:', error);
+    } catch (error: any) {
+      // Only log if it's not a 404 (endpoint not found) or network error
+      if (error?.response?.status !== 404 && error?.code !== 'ERR_NETWORK') {
+        console.warn('Failed to send audit events:', error);
+      }
       // Re-queue events if they failed to send (up to a limit)
       if (events.length < this.MAX_QUEUE_SIZE) {
         this.eventQueue.unshift(...events);

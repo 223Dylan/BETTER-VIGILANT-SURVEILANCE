@@ -7,6 +7,7 @@ import AddCameraModal from './AddCameraModal';
 import { cameraService } from '../services/camera.service';
 import { usePermissions, Permission } from '../hooks/usePermissions';
 import { PermissionGate } from './common/PermissionGate';
+import { useThemeClasses } from '../contexts/ThemeContext';
 
 // Material-UI Icons
 import {
@@ -23,6 +24,7 @@ const CameraGrid: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [addCameraModalOpen, setAddCameraModalOpen] = useState(false);
+  const themeClasses = useThemeClasses();
 
   // Track stream types for each camera
   const [cameraStreamTypes, setCameraStreamTypes] = useState<{ [cameraId: string]: 'mjpeg' | 'mjpeg-ws' | 'hls' | 'webrtc' }>({});
@@ -113,7 +115,7 @@ const CameraGrid: React.FC = () => {
     return (
       <div className="flex flex-col justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-        <p className="text-gray-600">Loading cameras...</p>
+        <p className={themeClasses.text.secondary}>Loading cameras...</p>
       </div>
     );
   }
@@ -142,7 +144,7 @@ const CameraGrid: React.FC = () => {
     return (
       <>
         <div className="mb-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
+          <h1 className={`text-2xl font-bold ${themeClasses.text.primary} flex items-center space-x-2`}>
             <VideocamIcon className="w-6 h-6" />
             <span>Camera System (0 cameras)</span>
           </h1>
@@ -158,15 +160,15 @@ const CameraGrid: React.FC = () => {
         </div>
 
         <div className="text-center p-8">
-          <div className="text-gray-500 mb-4 text-lg flex items-center justify-center space-x-2">
+          <div className={`${themeClasses.text.secondary} mb-4 text-lg flex items-center justify-center space-x-2`}>
             <VideocamIcon className="w-6 h-6" />
             <span>No cameras configured</span>
           </div>
-          <p className="text-gray-400 mb-4">Add your first camera to get started</p>
+          <p className={`${themeClasses.text.tertiary} mb-4`}>Add your first camera to get started</p>
           <PermissionGate
             permission={Permission.CAMERA_CREATE}
             fallback={
-              <div className="text-gray-500 text-sm">
+              <div className={`${themeClasses.text.secondary} text-sm`}>
                 Contact an administrator to add cameras
               </div>
             }
@@ -190,12 +192,10 @@ const CameraGrid: React.FC = () => {
     );
   }
 
-
-
   return (
     <>
       <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
+        <h1 className={`text-2xl font-bold ${themeClasses.text.primary} flex items-center space-x-2`}>
           <VideocamIcon className="w-6 h-6" />
           <span>Camera System ({cameraList.length} cameras)</span>
         </h1>
@@ -214,8 +214,8 @@ const CameraGrid: React.FC = () => {
             disabled={refreshing}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               refreshing
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                ? `${themeClasses.bg.secondary} ${themeClasses.text.tertiary} cursor-not-allowed`
+                : `${themeClasses.bg.secondary} text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/20`
             }`}
           >
             <div className="flex items-center space-x-1">

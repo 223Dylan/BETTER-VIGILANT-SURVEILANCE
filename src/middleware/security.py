@@ -63,6 +63,9 @@ PUBLIC_ENDPOINTS = [
     "/api/metrics/cameras",
     "/api/metrics/detections",
     "/api/metrics/alerts/recent",
+    # Dashboard endpoints (public for dashboard display)
+    "/api/audit/recent-events",
+    "/api/audit/frontend-events",
 ]
 
 # Video streaming endpoints that should be public

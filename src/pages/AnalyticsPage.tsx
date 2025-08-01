@@ -28,6 +28,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { metricsService } from '../services/metrics.service';
 import { alertService } from '../services/alert.service';
+import { useThemeClasses, useTheme } from '../contexts/ThemeContext';
 
 interface AnalyticsData {
   systemMetrics: any[];
@@ -73,6 +74,8 @@ const AnalyticsPage: React.FC = () => {
   // Separate time ranges for each panel
   const [systemTimeRange, setSystemTimeRange] = useState<TimeRange>(TIME_RANGES[0]);
   const [detectionTimeRange, setDetectionTimeRange] = useState<TimeRange>(TIME_RANGES[0]);
+  const themeClasses = useThemeClasses();
+  const { actualTheme } = useTheme();
 
   const [systemCustomDateRange, setSystemCustomDateRange] = useState({
     start: '',
@@ -337,41 +340,41 @@ const AnalyticsPage: React.FC = () => {
   const detectionsByHour = getDetectionsByHour();
 
   return (
-        <div className="p-6 max-w-7xl mx-auto space-y-8">
+    <div className="p-6 max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-        <p className="text-gray-600 mt-1">Comprehensive system and detection analytics</p>
+        <h1 className={`text-3xl font-bold ${themeClasses.text.primary}`}>Analytics Dashboard</h1>
+        <p className={`${themeClasses.text.secondary} mt-1`}>Comprehensive system and detection analytics</p>
       </div>
 
-            {/* Error Display */}
+      {/* Error Display */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded">
           Error: {error}
         </div>
       )}
 
       {/* System Metrics Panel */}
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200">
+      <div className={`${themeClasses.card} rounded-lg shadow-lg border`}>
         {/* System Panel Header */}
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className={`px-6 py-4 border-b ${themeClasses.border.primary} ${themeClasses.bg.secondary}`}>
           <div className="flex justify-between items-center">
             <div className="flex items-center">
               <ServerIcon className="h-6 w-6 mr-2 text-blue-600" />
-              <h2 className="text-xl font-bold text-gray-900">System Metrics</h2>
+              <h2 className={`text-xl font-bold ${themeClasses.text.primary}`}>System Metrics</h2>
             </div>
 
             {/* System Time Range Selector */}
             <div className="flex items-center space-x-4">
-              <div className="flex bg-gray-100 rounded-lg p-1">
+              <div className={`flex ${themeClasses.bg.tertiary} rounded-lg p-1`}>
                 {TIME_RANGES.map((range) => (
                   <button
                     key={range.value}
                     onClick={() => handleSystemTimeRangeChange(range)}
                     className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                       systemTimeRange.value === range.value && !isSystemCustomRange
-                        ? 'bg-white shadow text-blue-600'
-                        : 'text-gray-600 hover:text-gray-900'
+                        ? `${themeClasses.bg.primary} shadow text-blue-600`
+                        : `${themeClasses.text.secondary} hover:${themeClasses.text.primary}`
                     }`}
                   >
                     {range.label}
@@ -385,14 +388,14 @@ const AnalyticsPage: React.FC = () => {
                   type="date"
                   value={systemCustomDateRange.start}
                   onChange={(e) => setSystemCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
-                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                  className={`border ${themeClasses.border.primary} rounded px-2 py-1 text-sm ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
                 />
-                <span className="text-gray-500">-</span>
+                <span className={themeClasses.text.secondary}>-</span>
                 <input
                   type="date"
                   value={systemCustomDateRange.end}
                   onChange={(e) => setSystemCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
-                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                  className={`border ${themeClasses.border.primary} rounded px-2 py-1 text-sm ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
                 />
                 <button
                   onClick={handleSystemCustomDateRange}
@@ -409,60 +412,42 @@ const AnalyticsPage: React.FC = () => {
         <div className="p-6 space-y-6">
 
           {/* System Performance Chart */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">System Performance Over Time</h3>
+          <div className={`${themeClasses.card} rounded-lg shadow p-6`}>
+            <h3 className={`text-lg font-medium ${themeClasses.text.primary} mb-4`}>System Performance Over Time</h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={processedSystemMetrics}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} />
                   <XAxis
                     dataKey="displayTime"
-                    tick={{ fontSize: 12 }}
+                    tick={{ fill: actualTheme === 'dark' ? '#d1d5db' : '#374151' }}
                   />
-                  <YAxis domain={[0, 100]} />
+                  <YAxis tick={{ fill: actualTheme === 'dark' ? '#d1d5db' : '#374151' }} />
                   <Tooltip
-                    labelFormatter={(value) => `Time: ${value}`}
-                    formatter={(value, name) => [`${Number(value).toFixed(1)}%`, name]}
+                    contentStyle={{
+                      backgroundColor: actualTheme === 'dark' ? '#1f2937' : '#ffffff',
+                      border: `1px solid ${actualTheme === 'dark' ? '#4b5563' : '#d1d5db'}`,
+                      color: actualTheme === 'dark' ? '#f9fafb' : '#111827'
+                    }}
                   />
                   <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="cpu_usage"
-                    stroke={COLORS.danger}
-                    strokeWidth={2}
-                    name="CPU Usage"
-                    dot={{ r: 3 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="memory_usage"
-                    stroke={COLORS.primary}
-                    strokeWidth={2}
-                    name="Memory Usage"
-                    dot={{ r: 3 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="disk_usage"
-                    stroke={COLORS.success}
-                    strokeWidth={2}
-                    name="Disk Usage"
-                    dot={{ r: 3 }}
-                  />
+                  <Line type="monotone" dataKey="cpu" stroke="#3B82F6" strokeWidth={2} />
+                  <Line type="monotone" dataKey="memory" stroke="#8B5CF6" strokeWidth={2} />
+                  <Line type="monotone" dataKey="disk" stroke="#10B981" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           {/* System Health Status */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">System Health Status</h3>
+          <div className={`${themeClasses.card} rounded-lg shadow p-6`}>
+            <h3 className={`text-lg font-medium ${themeClasses.text.primary} mb-4`}>System Health Status</h3>
             <div className="space-y-3">
               {data.healthStatus && Object.entries(data.healthStatus).map(([key, value]) => {
                 if (key === 'timestamp') return null;
                 return (
                   <div key={key} className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700 capitalize">
+                    <span className={`text-sm font-medium ${themeClasses.text.secondary} capitalize`}>
                       {key.replace('_', ' ')}
                     </span>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -477,8 +462,8 @@ const AnalyticsPage: React.FC = () => {
           </div>
 
           {/* Active Cameras */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Active Cameras</h3>
+          <div className={`${themeClasses.card} rounded-lg shadow p-6`}>
+            <h3 className={`text-lg font-medium ${themeClasses.text.primary} mb-4`}>Active Cameras</h3>
             <div className="h-64">
                             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={processedSystemMetrics}>
@@ -508,26 +493,26 @@ const AnalyticsPage: React.FC = () => {
       </div>
 
       {/* Detection Analytics Panel */}
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200">
+      <div className={`${themeClasses.card} rounded-lg shadow-lg border`}>
         {/* Detection Panel Header */}
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className={`px-6 py-4 border-b ${themeClasses.border.primary} ${themeClasses.bg.secondary}`}>
           <div className="flex justify-between items-center">
             <div className="flex items-center">
               <EyeIcon className="h-6 w-6 mr-2 text-green-600" />
-              <h2 className="text-xl font-bold text-gray-900">Detection System Analytics</h2>
+              <h2 className={`text-xl font-bold ${themeClasses.text.primary}`}>Detection System Analytics</h2>
             </div>
 
             {/* Detection Time Range Selector */}
             <div className="flex items-center space-x-4">
-              <div className="flex bg-gray-100 rounded-lg p-1">
+              <div className={`flex ${themeClasses.bg.tertiary} rounded-lg p-1`}>
                 {TIME_RANGES.map((range) => (
                   <button
                     key={range.value}
                     onClick={() => handleDetectionTimeRangeChange(range)}
                     className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                       detectionTimeRange.value === range.value && !isDetectionCustomRange
-                        ? 'bg-white shadow text-blue-600'
-                        : 'text-gray-600 hover:text-gray-900'
+                        ? `${themeClasses.bg.primary} shadow text-blue-600`
+                        : `${themeClasses.text.secondary} hover:${themeClasses.text.primary}`
                     }`}
                   >
                     {range.label}
@@ -541,14 +526,14 @@ const AnalyticsPage: React.FC = () => {
                   type="date"
                   value={detectionCustomDateRange.start}
                   onChange={(e) => setDetectionCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
-                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                  className={`border ${themeClasses.border.primary} rounded px-2 py-1 text-sm ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
                 />
-                <span className="text-gray-500">-</span>
+                <span className={themeClasses.text.secondary}>-</span>
                 <input
                   type="date"
                   value={detectionCustomDateRange.end}
                   onChange={(e) => setDetectionCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
-                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                  className={`border ${themeClasses.border.primary} rounded px-2 py-1 text-sm ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
                 />
                 <button
                   onClick={handleDetectionCustomDateRange}
@@ -565,50 +550,50 @@ const AnalyticsPage: React.FC = () => {
         <div className="p-6">
           {/* Key Detection Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
+            <div className={`${themeClasses.card} rounded-lg shadow p-6 border`}>
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <ChartBarIcon className="h-8 w-8 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Total Detections</p>
-                  <p className="text-2xl font-semibold text-gray-900">{detectionStats.totalDetections.toLocaleString()}</p>
+                  <p className={`text-sm font-medium ${themeClasses.text.secondary}`}>Total Detections</p>
+                  <p className={`text-2xl font-semibold ${themeClasses.text.primary}`}>{detectionStats.totalDetections.toLocaleString()}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
+            <div className={`${themeClasses.card} rounded-lg shadow p-6 border`}>
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <EyeIcon className="h-8 w-8 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Avg Confidence</p>
-                  <p className="text-2xl font-semibold text-gray-900">{detectionStats.avgConfidence}%</p>
+                  <p className={`text-sm font-medium ${themeClasses.text.secondary}`}>Avg Confidence</p>
+                  <p className={`text-2xl font-semibold ${themeClasses.text.primary}`}>{detectionStats.avgConfidence}%</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
+            <div className={`${themeClasses.card} rounded-lg shadow p-6 border`}>
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <ExclamationTriangleIcon className="h-8 w-8 text-orange-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Shoplifting Events</p>
-                  <p className="text-2xl font-semibold text-gray-900">{detectionStats.shoplifting}</p>
+                  <p className={`text-sm font-medium ${themeClasses.text.secondary}`}>Shoplifting Events</p>
+                  <p className={`text-2xl font-semibold ${themeClasses.text.primary}`}>{detectionStats.shoplifting}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
+            <div className={`${themeClasses.card} rounded-lg shadow p-6 border`}>
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <BellIcon className="h-8 w-8 text-red-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Total Alerts</p>
-                  <p className="text-2xl font-semibold text-gray-900">
+                  <p className={`text-sm font-medium ${themeClasses.text.secondary}`}>Total Alerts</p>
+                  <p className={`text-2xl font-semibold ${themeClasses.text.primary}`}>
                     {data.alertMetrics.reduce((sum, d) => sum + d.alerts, 0)}
                   </p>
                 </div>
@@ -620,8 +605,8 @@ const AnalyticsPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Alert Trends */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Alert Trends</h3>
+          <div className={`${themeClasses.card} rounded-lg shadow p-6`}>
+            <h3 className={`text-lg font-medium ${themeClasses.text.primary} mb-4`}>Alert Trends</h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.alertMetrics}>
@@ -643,9 +628,9 @@ const AnalyticsPage: React.FC = () => {
           </div>
 
           {/* Confidence Score Distribution */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className={`${themeClasses.card} rounded-lg shadow p-6`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Confidence Score Distribution</h3>
+              <h3 className={`text-lg font-medium ${themeClasses.text.primary}`}>Confidence Score Distribution</h3>
               {!data.detectionMetrics.length && (
                 <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Sample Data</span>
               )}
@@ -673,9 +658,9 @@ const AnalyticsPage: React.FC = () => {
           </div>
 
           {/* Detections by Hour */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className={`${themeClasses.card} rounded-lg shadow p-6`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Detections by Hour</h3>
+              <h3 className={`text-lg font-medium ${themeClasses.text.primary}`}>Detections by Hour</h3>
               {!data.detectionMetrics.length && (
                 <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Sample Data</span>
               )}
@@ -704,9 +689,9 @@ const AnalyticsPage: React.FC = () => {
           </div>
 
           {/* Camera Performance */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className={`${themeClasses.card} rounded-lg shadow p-6`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Camera Performance</h3>
+              <h3 className={`text-lg font-medium ${themeClasses.text.primary}`}>Camera Performance</h3>
               {(!data.summary?.cameras || data.summary.cameras.length === 0) && (
                 <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Sample Data</span>
               )}

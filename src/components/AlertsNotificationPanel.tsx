@@ -109,12 +109,18 @@ const AlertsNotificationPanel: React.FC<AlertsNotificationPanelProps> = ({
       };
 
       wsRef.current.onerror = (error) => {
-        console.error('Alerts WebSocket error:', error);
-        setError('WebSocket connection error');
+        // Only log error if WebSocket is not in a closing state
+        if (wsRef.current?.readyState !== WebSocket.CLOSING && wsRef.current?.readyState !== WebSocket.CLOSED) {
+          console.error('Alerts WebSocket error:', error);
+          setError('WebSocket connection error');
+        }
       };
 
-      wsRef.current.onclose = () => {
-        console.log('Alerts WebSocket disconnected');
+      wsRef.current.onclose = (event) => {
+        // Only log if it's not a normal closure
+        if (event.code !== 1000) {
+          console.log('Alerts WebSocket disconnected');
+        }
         if (realTime) {
           setTimeout(() => setupWebSocket(), 5000);
         }
