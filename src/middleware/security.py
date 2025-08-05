@@ -147,7 +147,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                     status_code=401,
                     media_type="application/json",
                 )
-            except jwt.JWTError as e:
+            except jwt.PyJWTError as e:
                 logger.debug(f"JWT token validation failed: {e}")
                 # Token is invalid, try API key authentication
                 pass

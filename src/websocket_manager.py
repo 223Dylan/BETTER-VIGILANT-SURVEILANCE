@@ -134,6 +134,51 @@ class WebSocketManager:
 
         logger.info(f"[SENT] Alert broadcasted for {camera_id}")
 
+    async def send_to_user(self, user_id: str, message: dict):
+        """Send a notification message to a specific user."""
+        logger.info(f"[WEBSOCKET] Attempting to send notification to user {user_id}")
+
+        # For now, we'll broadcast to all connections since we don't have user-specific connections
+        # In a real implementation, you'd store user-specific WebSocket connections
+        sent_count = 0
+
+        # Broadcast to all camera connections
+        for camera_id, connections in self.camera_connections.items():
+            for websocket in connections.copy():
+                try:
+                    await websocket.send_json(
+                        {
+                            "type": "user_notification",
+                            "user_id": user_id,
+                            "message": message,
+                            "timestamp": time.time(),
+                        }
+                    )
+                    sent_count += 1
+                except Exception as e:
+                    logger.error(f"[WEBSOCKET] Error sending to user {user_id}: {e}")
+
+        # Broadcast to all prediction connections
+        for camera_id, connections in self.prediction_connections.items():
+            for websocket in connections.copy():
+                try:
+                    await websocket.send_json(
+                        {
+                            "type": "user_notification",
+                            "user_id": user_id,
+                            "message": message,
+                            "timestamp": time.time(),
+                        }
+                    )
+                    sent_count += 1
+                except Exception as e:
+                    logger.error(f"[WEBSOCKET] Error sending to user {user_id}: {e}")
+
+        logger.info(
+            f"[WEBSOCKET] Sent notification to {sent_count} connections for user {user_id}"
+        )
+        return sent_count > 0
+
     def get_connection_count(self, camera_id: str) -> dict:
         """Get connection counts for a camera."""
         return {
