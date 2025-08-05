@@ -145,6 +145,11 @@ app.include_router(audit.router)
 # Include permissions router
 app.include_router(permissions.router, prefix="/api/permissions")
 
+# Include user notifications router
+from src.routers import user_notifications
+
+app.include_router(user_notifications.router, prefix="/api")
+
 # These will be injected from main.py
 shared_frames = {}
 shared_predictions = {}

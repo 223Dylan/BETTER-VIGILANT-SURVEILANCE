@@ -476,7 +476,7 @@ class AlertManager:
             return f"[MOTION] Motion detected on {camera_id} ({confidence_pct}%)"
 
     async def _broadcast_alert(self, alert: AlertRecord):
-        """Broadcast alert to connected WebSocket clients."""
+        """Broadcast alert to connected WebSocket clients and send user notifications."""
         try:
             alert_data = {
                 "id": alert.id,
@@ -489,6 +489,31 @@ class AlertManager:
             logger.info(
                 f"[BROADCAST] Broadcasted alert {alert.id} for camera {alert.camera_id}"
             )
+
+            # Send user-specific notifications
+            try:
+                from src.database.models.base import get_db
+                from src.services.user_notification_service import (
+                    user_notification_service,
+                )
+
+                # Get database session
+                db = next(get_db())
+                try:
+                    # Prepare alert data for notification service
+                    notification_alert_data = asdict(alert)
+                    notifications_sent = (
+                        await user_notification_service.send_alert_to_users(
+                            notification_alert_data, db
+                        )
+                    )
+                    logger.info(
+                        f"[NOTIFICATIONS] Sent {notifications_sent} user notifications for alert {alert.id}"
+                    )
+                finally:
+                    db.close()
+            except Exception as e:
+                logger.error(f"[NOTIFICATIONS] Error sending user notifications: {e}")
 
         except Exception as e:
             logger.error(f"[ERROR] Error broadcasting alert: {e}")
