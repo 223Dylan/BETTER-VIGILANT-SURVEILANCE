@@ -6,6 +6,7 @@ import DetectionsByHourDashboard from '../components/DetectionsByHourDashboard';
 import CameraPerformancePanel from '../components/CameraPerformancePanel';
 import AlertsNotificationPanel from '../components/AlertsNotificationPanel';
 import RecentSystemEventsPanel from '../components/RecentSystemEventsPanel';
+import RealTimeNotificationDisplay from '../components/RealTimeNotificationDisplay';
 import { cameraService } from '../services/camera.service';
 import { metricsService } from '../services/metrics.service';
 import { useThemeClasses } from '../contexts/ThemeContext';
@@ -94,6 +95,14 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Real-time Notifications */}
+      <RealTimeNotificationDisplay
+        maxNotifications={3}
+        autoDismiss={true}
+        dismissDelay={8000}
+        position="top-right"
+      />
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>

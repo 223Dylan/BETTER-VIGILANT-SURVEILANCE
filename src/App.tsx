@@ -5,18 +5,21 @@ import { UserSettings } from './components/user/UserSettings';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { Permission } from './hooks/usePermissions';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard';
 import CamerasPage from './pages/CamerasPage';
 import AlertsPage from './pages/AlertsPage';
 import UsersPage from './pages/UsersPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 const App: React.FC = () => {
   return (
     <ThemeProvider>
-      <Router>
-        <Routes>
+      <NotificationProvider>
+        <Router>
+          <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginForm />} />
 
@@ -57,6 +60,14 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Security routes */}
             <Route
@@ -93,7 +104,8 @@ const App: React.FC = () => {
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Router>
+        </Router>
+      </NotificationProvider>
     </ThemeProvider>
   );
 };

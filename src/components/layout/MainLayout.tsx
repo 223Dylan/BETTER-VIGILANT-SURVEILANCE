@@ -3,6 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import { User } from '../../types';
 import { useTheme, useThemeClasses } from '../../contexts/ThemeContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { ThemeToggle } from '../common/ThemeToggle';
 
 // Material-UI Icons
@@ -15,7 +16,8 @@ import {
   People as PeopleIcon,
   Settings as SettingsIcon,
   Edit as EditIcon,
-  ExitToApp as LogoutIcon
+  ExitToApp as LogoutIcon,
+  Notifications as BellIcon
 } from '@mui/icons-material';
 
 const UserProfileDropdown: React.FC<{
@@ -239,6 +241,7 @@ const MainLayout: React.FC = () => {
   const location = useLocation();
   const currentUser = authService.getCurrentUser();
   const { actualTheme } = useTheme();
+  const { unreadCount } = useNotifications();
   const themeClasses = useThemeClasses();
 
   const handleLogout = () => {
@@ -324,6 +327,18 @@ const MainLayout: React.FC = () => {
               </div>
             </div>
             <div className="flex sm:ml-6 sm:items-center space-x-4">
+              <Link
+                to="/notifications"
+                className={`p-2 rounded-md ${themeClasses.text.secondary} hover:${themeClasses.text.primary} hover:${themeClasses.bg.secondary} transition-colors relative`}
+              >
+                <BellIcon className="w-5 h-5" />
+                {/* Notification badge */}
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
               <ThemeToggle size="md" />
               <UserProfileDropdown user={currentUser} onLogout={handleLogout} />
             </div>
