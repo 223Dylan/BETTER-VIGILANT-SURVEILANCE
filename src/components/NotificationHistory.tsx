@@ -9,6 +9,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { notificationService } from '../services/notification.service';
+import { useThemeClasses } from '../contexts/ThemeContext';
 
 interface NotificationHistoryItem {
   id: string;
@@ -31,6 +32,7 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
   limit = 50,
   showFilters = true
 }) => {
+  const themeClasses = useThemeClasses();
   const [notifications, setNotifications] = useState<NotificationHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -145,16 +147,16 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${themeClasses.bg.primary}`}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <BellIcon className="h-6 w-6 text-blue-600 mr-3" />
-          <h2 className="text-xl font-semibold text-gray-900">Notification History</h2>
+          <BellIcon className="h-6 w-6 text-blue-600 dark:text-blue-400 mr-3" />
+          <h2 className={`text-xl font-semibold ${themeClasses.text.primary}`}>Notification History</h2>
         </div>
         <button
           onClick={loadNotificationHistory}
-          className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className={`inline-flex items-center px-3 py-2 border ${themeClasses.border.primary} rounded-md shadow-sm text-sm font-medium ${themeClasses.text.primary} ${themeClasses.bg.primary} ${themeClasses.hover.bg} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
         >
           Refresh
         </button>
@@ -162,11 +164,11 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
 
       {/* Error Message */}
       {error && (
-        <div className="rounded-md bg-red-50 p-4">
+        <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
           <div className="flex">
             <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
             <div className="ml-3">
-              <p className="text-sm font-medium text-red-800">{error}</p>
+              <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
             </div>
           </div>
         </div>
@@ -174,14 +176,14 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-white shadow rounded-lg p-4">
+        <div className={`${themeClasses.bg.primary} shadow rounded-lg p-4 ${themeClasses.border.primary} border`}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-1`}>Type</label>
               <select
                 value={filters.type}
                 onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className={`block w-full px-3 py-2 border ${themeClasses.border.primary} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
               >
                 <option value="all">All Types</option>
                 <option value="email">Email</option>
@@ -191,11 +193,11 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-1`}>Status</label>
               <select
                 value={filters.status}
                 onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className={`block w-full px-3 py-2 border ${themeClasses.border.primary} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
               >
                 <option value="all">All Status</option>
                 <option value="sent">Sent</option>
@@ -205,11 +207,11 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
+              <label className={`block text-sm font-medium ${themeClasses.text.primary} mb-1`}>Time Range</label>
               <select
                 value={filters.dateRange}
                 onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className={`block w-full px-3 py-2 border ${themeClasses.border.primary} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${themeClasses.bg.primary} ${themeClasses.text.primary}`}
               >
                 <option value="1d">Last 24 hours</option>
                 <option value="7d">Last 7 days</option>
@@ -222,19 +224,19 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
       )}
 
       {/* Notifications List */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className={`${themeClasses.bg.primary} shadow rounded-lg overflow-hidden ${themeClasses.border.primary} border`}>
         {filteredNotifications.length === 0 ? (
           <div className="text-center py-12">
-            <BellIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No notifications</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <BellIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+            <h3 className={`mt-2 text-sm font-medium ${themeClasses.text.primary}`}>No notifications</h3>
+            <p className={`mt-1 text-sm ${themeClasses.text.secondary}`}>
               No notifications found for the selected filters.
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className={`divide-y ${themeClasses.border.primary}`}>
             {filteredNotifications.slice(0, limit).map((notification) => (
-              <div key={notification.id} className="p-4 hover:bg-gray-50">
+              <div key={notification.id} className={`p-4 ${themeClasses.hover.bg}`}>
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0">
                     {getTypeIcon(notification.type)}
@@ -242,7 +244,7 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <p className="text-sm font-medium text-gray-900">{notification.title}</p>
+                        <p className={`text-sm font-medium ${themeClasses.text.primary}`}>{notification.title}</p>
                         {notification.severity && (
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(notification.severity)}`}>
                             {notification.severity}
@@ -251,12 +253,12 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
                       </div>
                       <div className="flex items-center space-x-2">
                         {getStatusIcon(notification.status)}
-                        <span className="text-xs text-gray-500">{formatTimeAgo(notification.timestamp)}</span>
+                        <span className={`text-xs ${themeClasses.text.secondary}`}>{formatTimeAgo(notification.timestamp)}</span>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                    <p className={`text-sm ${themeClasses.text.secondary} mt-1`}>{notification.message}</p>
                     {notification.camera_id && (
-                      <p className="text-xs text-gray-500 mt-1">Camera: {notification.camera_id}</p>
+                      <p className={`text-xs ${themeClasses.text.secondary} mt-1`}>Camera: {notification.camera_id}</p>
                     )}
                   </div>
                 </div>
@@ -269,7 +271,7 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
       {/* Load More */}
       {filteredNotifications.length > limit && (
         <div className="text-center">
-          <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          <button className={`inline-flex items-center px-4 py-2 border ${themeClasses.border.primary} rounded-md shadow-sm text-sm font-medium ${themeClasses.text.primary} ${themeClasses.bg.primary} ${themeClasses.hover.bg} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}>
             Load More
           </button>
         </div>

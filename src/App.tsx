@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginForm } from './components/auth/LoginForm';
-import { UserSettings } from './components/user/UserSettings';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { Permission } from './hooks/usePermissions';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -52,14 +51,6 @@ const App: React.FC = () => {
             />
 
             {/* User routes */}
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <UserSettings />
-                </ProtectedRoute>
-              }
-            />
             <Route
               path="/notifications"
               element={

@@ -317,13 +317,7 @@ const MainLayout: React.FC = () => {
                     <span>Users</span>
                   </Link>
                 )}
-                <Link
-                  to="/settings"
-                  className={`${getLinkClassName("/settings")} space-x-1`}
-                >
-                  <SettingsIcon className="w-4 h-4" />
-                  <span>Settings</span>
-                </Link>
+
               </div>
             </div>
             <div className="flex sm:ml-6 sm:items-center space-x-4">
