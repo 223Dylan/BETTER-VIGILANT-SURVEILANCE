@@ -43,7 +43,7 @@ const NotificationsPage: React.FC = () => {
               {tabs.map((tab, index) => (
                 <Tab
                   key={tab.name}
-                  className={({ selected }) =>
+                  className={({ selected }: { selected: boolean }) =>
                     `flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                       selected
                         ? 'border-blue-500 text-blue-600'

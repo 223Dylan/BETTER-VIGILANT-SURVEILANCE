@@ -5,9 +5,8 @@ from typing import Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from src.auth.jwt_auth import get_current_user
 from src.auth.permission_types import Permission
-from src.auth.permissions import require_permission
+from src.auth.permissions import get_current_user, require_permission
 from src.database.models.user import User
 from src.services.notification_analytics_service import notification_analytics_service
 from src.services.notification_scheduler_service import notification_scheduler_service

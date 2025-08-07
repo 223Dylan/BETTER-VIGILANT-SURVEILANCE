@@ -15,7 +15,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from src.database.base import Base
+from src.database.models.base import Base
 
 
 class NotificationWebhook(Base):
@@ -68,6 +68,12 @@ class NotificationWebhook(Base):
 
     # Relationships
     user = relationship("User", back_populates="notification_webhooks")
+    delivery_logs = relationship(
+        "WebhookDeliveryLog",
+        back_populates="webhook",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
 
     def __repr__(self):
         return f"<NotificationWebhook(name='{self.name}', url='{self.url}')>"

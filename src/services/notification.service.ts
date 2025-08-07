@@ -48,7 +48,7 @@ class NotificationService {
       const response = await fetch(`${this.baseUrl}/users/me/notification-preferences`, {
         credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${authService.getToken()}`
+          'Authorization': `Bearer ${authService.getAuthToken()}`
         }
       });
 
@@ -83,7 +83,7 @@ class NotificationService {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authService.getToken()}`
+          'Authorization': `Bearer ${authService.getAuthToken()}`
         },
         body: JSON.stringify(preferences)
       });
@@ -106,7 +106,7 @@ class NotificationService {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authService.getToken()}`
+          'Authorization': `Bearer ${authService.getAuthToken()}`
         }
       });
 
@@ -137,7 +137,7 @@ class NotificationService {
       const response = await fetch(`${this.baseUrl}/users/me/notification-history?${params}`, {
         credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${authService.getToken()}`
+          'Authorization': `Bearer ${authService.getAuthToken()}`
         }
       });
 
@@ -158,7 +158,7 @@ class NotificationService {
       const response = await fetch(`${this.baseUrl}/users/me/notification-stats`, {
         credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${authService.getToken()}`
+          'Authorization': `Bearer ${authService.getAuthToken()}`
         }
       });
 

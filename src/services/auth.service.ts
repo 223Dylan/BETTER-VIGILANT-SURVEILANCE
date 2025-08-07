@@ -214,6 +214,10 @@ class AuthService {
     return !!token && !!expiryTime && expiryTime > Date.now();
   }
 
+  public getAuthToken(): string | null {
+    return this.getToken();
+  }
+
   private getToken(): string | null {
     return localStorage.getItem(TOKEN_KEY);
   }

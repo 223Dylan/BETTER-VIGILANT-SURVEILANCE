@@ -8,7 +8,7 @@ import aiohttp
 from loguru import logger
 from sqlalchemy.orm import Session
 
-from src.database.base import get_db
+from src.database.models.base import get_db
 from src.database.models.notification_webhook import (
     NotificationWebhook,
     WebhookDeliveryLog,

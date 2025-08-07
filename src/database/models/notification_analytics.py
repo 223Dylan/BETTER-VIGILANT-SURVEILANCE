@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from src.database.base import Base
+from src.database.models.base import Base
 
 
 class NotificationAnalytics(Base):
@@ -54,7 +54,7 @@ class NotificationAnalytics(Base):
     day_of_week = Column(Integer)  # Day of week (0-6, Monday=0)
 
     # Additional data
-    metadata = Column(JSON)  # Additional analytics data
+    analytics_data = Column(JSON)  # Additional analytics data
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -76,15 +76,15 @@ class NotificationAnalytics(Base):
             self.click_rate = 0.0
             self.bounce_rate = 0.0
 
-    def get_metadata(self) -> dict:
+    def get_analytics_data(self) -> dict:
         """Get additional analytics data."""
-        return self.metadata or {}
+        return self.analytics_data or {}
 
-    def update_metadata(self, data: dict):
-        """Update metadata with new data."""
-        current_metadata = self.get_metadata()
-        current_metadata.update(data)
-        self.metadata = current_metadata
+    def update_analytics_data(self, data: dict):
+        """Update analytics data with new data."""
+        current_data = self.get_analytics_data()
+        current_data.update(data)
+        self.analytics_data = current_data
 
 
 class NotificationEvent(Base):

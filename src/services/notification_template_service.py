@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from loguru import logger
 from sqlalchemy.orm import Session
 
-from src.database.base import get_db
+from src.database.models.base import get_db
 from src.database.models.notification_template import NotificationTemplate
 
 

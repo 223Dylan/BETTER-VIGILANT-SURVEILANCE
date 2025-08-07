@@ -4,7 +4,7 @@ from sqlalchemy import JSON, Boolean, Column, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
-from src.database.base import Base
+from src.database.models.base import Base
 
 
 class NotificationTemplate(Base):

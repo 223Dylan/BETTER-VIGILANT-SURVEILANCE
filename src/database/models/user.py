@@ -1,6 +1,7 @@
 import uuid
 
 from sqlalchemy import JSON, Boolean, Column, DateTime, String
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from .base import Base
@@ -21,6 +22,20 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     last_login_at = Column(DateTime(timezone=True))
     last_activity_at = Column(DateTime(timezone=True))
+
+    # Relationships
+    notification_analytics = relationship(
+        "NotificationAnalytics", back_populates="user", lazy="dynamic"
+    )
+    notification_events = relationship(
+        "NotificationEvent", back_populates="user", lazy="dynamic"
+    )
+    notification_schedules = relationship(
+        "NotificationSchedule", back_populates="user", lazy="dynamic"
+    )
+    notification_webhooks = relationship(
+        "NotificationWebhook", back_populates="user", lazy="dynamic"
+    )
 
     def to_dict(self):
         return {

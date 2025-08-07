@@ -5,7 +5,7 @@ from loguru import logger
 from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
-from src.database.base import get_db
+from src.database.models.base import get_db
 from src.database.models.notification_analytics import (
     NotificationAnalytics,
     NotificationEvent,
