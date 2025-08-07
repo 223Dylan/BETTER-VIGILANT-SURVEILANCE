@@ -6,6 +6,7 @@ import {
   CheckCircleIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { notificationService } from '../services/notification.service';
 
 interface NotificationPreferences {
   id?: string;
@@ -69,16 +70,8 @@ const UserNotificationSettings: React.FC<UserNotificationSettingsProps> = ({ onS
   const loadPreferences = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/users/me/notification-preferences', {
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setPreferences(data);
-      } else {
-        console.error('Failed to load preferences:', response.statusText);
-      }
+      const data = await notificationService.getNotificationPreferences();
+      setPreferences(data);
     } catch (error) {
       console.error('Failed to load preferences:', error);
       setMessage({ type: 'error', text: 'Failed to load notification preferences' });
@@ -90,22 +83,10 @@ const UserNotificationSettings: React.FC<UserNotificationSettingsProps> = ({ onS
   const savePreferences = async () => {
     setSaving(true);
     try {
-      const response = await fetch('/api/users/me/notification-preferences', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(preferences)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setPreferences(data);
-        setMessage({ type: 'success', text: 'Notification preferences saved successfully!' });
-        onSave?.(data);
-      } else {
-        const errorData = await response.json();
-        setMessage({ type: 'error', text: errorData.detail || 'Failed to save preferences' });
-      }
+      const data = await notificationService.updateNotificationPreferences(preferences);
+      setPreferences(data);
+      setMessage({ type: 'success', text: 'Notification preferences saved successfully!' });
+      onSave?.(data);
     } catch (error) {
       console.error('Failed to save preferences:', error);
       setMessage({ type: 'error', text: 'Failed to save preferences' });
@@ -116,16 +97,11 @@ const UserNotificationSettings: React.FC<UserNotificationSettingsProps> = ({ onS
 
   const testNotification = async () => {
     try {
-      const response = await fetch('/api/users/me/test-notification', {
-        method: 'POST',
-        credentials: 'include'
-      });
-
-      if (response.ok) {
+      const data = await notificationService.sendTestNotification();
+      if (data.success) {
         setMessage({ type: 'success', text: 'Test notification sent! Check your email and browser notifications.' });
       } else {
-        const errorData = await response.json();
-        setMessage({ type: 'error', text: errorData.detail || 'Failed to send test notification' });
+        setMessage({ type: 'error', text: data.message || 'Failed to send test notification' });
       }
     } catch (error) {
       console.error('Failed to send test notification:', error);

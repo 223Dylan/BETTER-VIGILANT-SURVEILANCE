@@ -8,6 +8,7 @@ import {
   ExclamationTriangleIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { notificationService } from '../services/notification.service';
 
 interface NotificationHistoryItem {
   id: string;
@@ -46,20 +47,9 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
   const loadNotificationHistory = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/users/me/notification-history', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data.notifications || []);
-        setError(null);
-      } else {
-        throw new Error('Failed to load notification history');
-      }
+      const data = await notificationService.getNotificationHistory(limit, filters);
+      setNotifications(data.notifications || []);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load notification history');
       // For demo purposes, create mock data

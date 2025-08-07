@@ -254,6 +254,34 @@ async def send_test_notification(
         raise HTTPException(status_code=500, detail="Failed to send test notification")
 
 
+@router.get("/users/me/notification-history")
+async def get_my_notification_history(
+    limit: int = 50,
+    type: Optional[str] = None,
+    status: Optional[str] = None,
+    date_range: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get current user's notification history."""
+    try:
+        # For now, return empty history since we don't have a notification history table yet
+        # In a real implementation, you would query from a notification_history table
+        logger.info(
+            f"[HISTORY] Getting notification history for user {current_user.id}"
+        )
+
+        # Mock response for now
+        notifications = []
+
+        return {"notifications": notifications}
+    except Exception as e:
+        logger.error(
+            f"[HISTORY] Error getting notification history for user {current_user.id}: {e}"
+        )
+        return {"notifications": []}
+
+
 @router.get("/users/me/notification-stats")
 async def get_my_notification_stats(
     days: int = 7, current_user: User = Depends(get_current_user)
