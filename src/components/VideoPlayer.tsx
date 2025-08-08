@@ -32,6 +32,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [frameCount, setFrameCount] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastEvent, setLastEvent] = useState<string | null>(null);
 
   // Initialize HLS if available
   const initializeHLS = async () => {
@@ -162,6 +164,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           setIsLoading(false);
           setError(null);
           setIsPlaying(true);
+          setLastEvent('Frame loaded');
         };
 
         imgRef.current.onerror = () => {
@@ -169,6 +172,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           setError('Failed to load MJPEG stream');
           setIsLoading(false);
           setIsPlaying(false);
+          setRetryCount((c) => c + 1);
+          setLastEvent('HTTP image error');
           // Clear the image source to remove any lingering frame
           if (imgRef.current) {
             imgRef.current.src = '';
@@ -198,6 +203,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         console.log(`Video WebSocket connected for camera ${cameraId}`);
         setError(null);
         setIsLoading(false);
+        setRetryCount(0);
+        setLastEvent('WebSocket connected');
       };
 
       ws.onmessage = (event) => {
@@ -218,6 +225,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               setError(null);
               setFrameCount(prev => prev + 1);
               setIsPlaying(true);
+              setLastEvent('Frame received');
             }
 
             // Method 2: Use canvas for more control (alternative approach)
@@ -245,8 +253,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   wsRef.current?.close();
                   return;
                 }
+                // For "No frame available", keep loading overlay with details instead of showing placeholder
                 if (data.error !== "No frame available") {
                   setError(data.error);
+                  setLastEvent(`Error: ${data.error}`);
+                } else {
+                  setLastEvent('Waiting for frames...');
+                  setIsLoading(true);
                 }
               }
             } catch (e) {
@@ -262,6 +275,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         console.error(`Video WebSocket error for camera ${cameraId}:`, error);
         setError('Failed to connect to video stream');
         setIsLoading(false);
+        setRetryCount((c) => c + 1);
+        setLastEvent('WebSocket error');
       };
 
       ws.onclose = (event) => {
@@ -269,6 +284,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         setError('Video stream disconnected');
         setIsLoading(false);
         setIsPlaying(false);
+        setRetryCount((c) => c + 1);
+        setLastEvent('WebSocket closed');
 
         // Only attempt to reconnect if we should stay connected
         if (shouldStayConnected.current && camera.enabled) {
@@ -434,8 +451,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Loading Overlay */}
       <LoadingOverlay
         isVisible={isLoading}
-        message={`Loading ${streamType.toUpperCase()} Stream...`}
-        subMessage={`Connecting to camera ${camera.name || cameraId}`}
+        message={`Connecting to ${streamType.toUpperCase()} stream`}
+        subMessage={`Camera ${camera.name || cameraId}`}
+        attemptText={retryCount > 0 ? `Retry attempts: ${retryCount}` : undefined}
+        details={[
+          lastEvent ? `Last event: ${lastEvent}` : undefined,
+          error ? `Last error: ${error}` : undefined,
+        ].filter(Boolean) as string[]}
       />
 
       {/* Error Display */}
@@ -456,6 +478,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           <Typography variant="body2" color="error">
             {error}
           </Typography>
+          {retryCount > 0 && (
+            <Typography variant="caption" color="inherit">
+              Retry attempts: {retryCount}
+            </Typography>
+          )}
         </Box>
       )}
 

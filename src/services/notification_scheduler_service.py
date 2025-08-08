@@ -298,8 +298,13 @@ class NotificationSchedulerService:
             # Find next scheduled run
             active_schedules = [s for s in schedules if s.is_active and s.next_run]
             if active_schedules:
-                next_run = min(s.next_run for s in active_schedules)
-                stats["next_run"] = next_run.isoformat()
+                # Ensure next_run values are datetime objects
+                next_run_times = [
+                    s.next_run for s in active_schedules if s.next_run is not None
+                ]
+                if next_run_times:
+                    next_run = min(next_run_times)
+                    stats["next_run"] = next_run.isoformat()
 
             return stats
 

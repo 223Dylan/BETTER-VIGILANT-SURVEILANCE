@@ -7,6 +7,8 @@ interface LoadingOverlayProps {
   subMessage?: string;
   size?: number;
   className?: string;
+  details?: string[];
+  attemptText?: string;
 }
 
 const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
@@ -15,12 +17,14 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   subMessage,
   size = 40,
   className = '',
+  details,
+  attemptText,
 }) => {
   if (!isVisible) return null;
 
   return (
     <div className={`absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm ${className}`}>
-      <Box className="text-center text-white animate-pulse">
+      <Box className="text-center text-white">
         <div className="relative mb-3">
           <CircularProgress
             size={size}
@@ -31,10 +35,22 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
         <Typography variant="body2" className="font-medium mb-1 text-white">
           {message}
         </Typography>
+        {attemptText && (
+          <Typography variant="caption" className="opacity-80 text-white block">
+            {attemptText}
+          </Typography>
+        )}
         {subMessage && (
           <Typography variant="caption" className="opacity-75 text-white">
             {subMessage}
           </Typography>
+        )}
+        {details && details.length > 0 && (
+          <ul className="mt-2 text-left mx-auto inline-block">
+            {details.map((d, idx) => (
+              <li key={idx} className="text-xs opacity-80">• {d}</li>
+            ))}
+          </ul>
         )}
       </Box>
     </div>

@@ -1,3 +1,4 @@
+import sys
 import time
 from collections import deque
 from typing import Optional, Tuple
@@ -50,12 +51,8 @@ class FrameCapture(BaseComponent):
 
             # Initialize camera based on type
             if self.camera_type == "usb":
-                try:
-                    # Try numeric source first
-                    self.camera = cv2.VideoCapture(int(self.source))
-                except (ValueError, TypeError):
-                    # If numeric fails, use string source
-                    self.camera = cv2.VideoCapture(str(self.source))
+                # Prefer Windows-friendly backends with graceful fallback
+                self.camera = self._open_usb_camera(self.source)
             elif self.camera_type == "ip":
                 self.camera = cv2.VideoCapture(str(self.source))
             elif self.camera_type == "file":
@@ -78,13 +75,12 @@ class FrameCapture(BaseComponent):
                 logger.error(f"Failed to open camera source: {self.source}")
                 return False
 
-            # Set only essential camera properties
-            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-            self.camera.set(cv2.CAP_PROP_FPS, self.fps)
-
-            # Set buffer size to minimum to reduce latency
-            self.camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            # Set only essential camera properties, safely (some backends ignore/err)
+            self._safe_set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            self._safe_set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+            # Setting FPS and BUFFERSIZE can be flaky on Windows backends; do it best-effort
+            self._safe_set(cv2.CAP_PROP_FPS, self.fps)
+            self._safe_set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
             # Verify camera settings
             actual_width = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
@@ -95,7 +91,8 @@ class FrameCapture(BaseComponent):
                 f"Camera initialized: {int(actual_width)}x{int(actual_height)} @ {actual_fps:.1f}fps (type: {self.camera_type}, source: {self.source})"
             )
 
-            # Read a test frame to ensure camera is working
+            # Warm up the camera and read a test frame to ensure camera is working
+            self._warmup_camera(num_frames=5, delay_seconds=0.05)
             ret, frame = self.camera.read()
             if not ret or frame is None:
                 logger.error("Failed to read test frame from camera")
@@ -109,6 +106,74 @@ class FrameCapture(BaseComponent):
             logger.error(f"Error initializing camera: {e}")
             self._initialized = False  # Ensure initialized flag is False on error
             return False
+
+    def _open_usb_camera(self, source) -> Optional[cv2.VideoCapture]:
+        """Open a USB camera with backend fallbacks that work better on Windows.
+
+        Order: DirectShow -> MSMF -> ANY
+        """
+        backends_to_try = (
+            [
+                cv2.CAP_DSHOW,
+                cv2.CAP_MSMF,
+                cv2.CAP_ANY,
+            ]
+            if sys.platform == "win32"
+            else [cv2.CAP_ANY]
+        )
+
+        # Normalize source to int index if possible
+        index_or_path = None
+        try:
+            index_or_path = int(source)
+        except (ValueError, TypeError):
+            index_or_path = str(source)
+
+        for backend in backends_to_try:
+            try:
+                cap = (
+                    cv2.VideoCapture(index_or_path, backend)
+                    if isinstance(index_or_path, int)
+                    else cv2.VideoCapture(index_or_path, backend)
+                )
+                if cap.isOpened():
+                    logger.info(f"Opened USB camera using backend={backend}")
+                    return cap
+                cap.release()
+            except Exception as backend_err:
+                logger.debug(f"Backend {backend} failed to open camera: {backend_err}")
+
+        # Last resort: try default constructor once more
+        cap = (
+            cv2.VideoCapture(index_or_path)
+            if isinstance(index_or_path, int)
+            else cv2.VideoCapture(index_or_path)
+        )
+        return cap
+
+    def _warmup_camera(self, num_frames: int = 3, delay_seconds: float = 0.03) -> None:
+        """Read and discard a few frames to allow auto-exposure/focus to settle."""
+        try:
+            for _ in range(max(0, num_frames)):
+                _ = self.camera.read()
+                if delay_seconds > 0:
+                    time.sleep(delay_seconds)
+        except Exception:
+            # Non-fatal; simply proceed
+            pass
+
+    def _safe_set(self, prop: int, value: float) -> None:
+        """Attempt to set a camera property; ignore failures but log at debug."""
+        try:
+            ok = self.camera.set(prop, value)
+            if not ok:
+                logger.debug(
+                    f"Camera property set ignored/failed: prop={prop}, value={value}"
+                )
+        except Exception as set_err:
+            logger.debug(
+                f"Camera property set error: prop={prop}, value={value}, err={set_err}"
+            )
 
     def start(self) -> bool:
         """Start frame capture."""
