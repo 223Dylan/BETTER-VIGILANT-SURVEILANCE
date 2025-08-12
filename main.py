@@ -414,17 +414,38 @@ def draw_rois_on_frame(frame, rois):
 def start_server(host: str, port: int, shared_data: Dict, controller: CameraController):
     """Start the FastAPI server."""
     try:
+        logger.info(f"Starting FastAPI server on {host}:{port}")
+
         # Import here to avoid circular imports
         import api_server
 
         # Inject shared data and controller
+        logger.info("Initializing API server with shared data...")
         api_server.initialize_shared_data(
             shared_data["frames"],
             shared_data.get("predictions", {}),
             shared_data.get("stats", {}),
             [],  # camera configs - can be fetched from controller if needed
         )
+        logger.info("Shared data injected into API server")
+
+        logger.info("Initializing camera controller in API server...")
         api_server.initialize_controller(controller)
+        logger.info("Camera controller initialized in API server")
+
+        # Log available routes
+        logger.info("Available API routes:")
+        for route in api_server.app.routes:
+            if hasattr(route, "path"):
+                methods = [
+                    method
+                    for method in ["GET", "POST", "PUT", "DELETE", "PATCH"]
+                    if hasattr(route, method.lower())
+                ]
+                if methods:
+                    logger.info(f"  {', '.join(methods)} {route.path}")
+
+        logger.info("Starting uvicorn server...")
 
         # Start server
         import uvicorn
@@ -433,10 +454,11 @@ def start_server(host: str, port: int, shared_data: Dict, controller: CameraCont
             api_server.app,  # Use the FastAPI instance directly
             host=host,
             port=port,
-            log_level="warning",
+            log_level="info",  # Changed from warning to info for more visibility
         )
     except Exception as e:
         logger.error(f"Error starting server: {e}")
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         raise
 
 
@@ -484,10 +506,26 @@ def initialize_alert_system(config: Config) -> AlertSystem:
 def main():
     """Main entry point."""
     try:
+        logger.info("=" * 80)
+        logger.info("STARTING BETTER VIGILANT SURVEILLANCE SYSTEM")
+        logger.info("=" * 80)
+
         # Load configuration
+        logger.info("Loading system configuration...")
         config = load_config()
+        logger.info(f"Configuration loaded successfully from {config.config_path}")
+        logger.info(
+            f"Server will run on {config.config['server']['host']}:{config.config['server']['port']}"
+        )
+
+        # Log system information
+        logger.info(f"Python version: {sys.version}")
+        logger.info(f"System platform: {sys.platform}")
+        logger.info(f"CPU cores: {multiprocessing.cpu_count()}")
+        logger.info(f"Working directory: {os.getcwd()}")
 
         # Initialize shared data structures
+        logger.info("Initializing shared data structures...")
         with Manager() as manager:
             shared_data = {
                 "stats": manager.dict(),
@@ -495,14 +533,47 @@ def main():
                 "alerts": manager.dict(),
                 "prediction_tasks": manager.dict(),
             }
+            logger.info("Shared data structures initialized successfully")
 
             # Initialize Camera Controller (database-backed)
+            logger.info("Initializing camera controller...")
             camera_controller = CameraController(shared_data)
+            logger.info("Camera controller initialized successfully")
 
             # Initialize other components (Alerts)
+            logger.info("Initializing alert system...")
             alert_system = initialize_alert_system(config)
+            logger.info("Alert system initialized successfully")
+
+            # Log available endpoints
+            logger.info("Available API endpoints:")
+            logger.info(
+                f"  - Main API: http://{config.config['server']['host']}:{config.config['server']['port']}"
+            )
+            logger.info(
+                f"  - Health check: http://{config.config['server']['host']}:{config.config['server']['port']}/api/health"
+            )
+            logger.info(f"  - WebSocket endpoints:")
+            logger.info(f"    * /ws/audit - Real-time system activity stream (NEW)")
+            logger.info(f"    * /ws/metrics - Real-time system metrics")
+            logger.info(f"    * /ws/alerts - Real-time alert notifications")
+            logger.info(f"    * /ws/camera/{{camera_id}} - Camera status updates")
+            logger.info(f"  - Metrics: http://{config.config['server']['host']}:8002")
+
+            # Log system features
+            logger.info("System features:")
+            logger.info(f"  - Real-time monitoring: {'✓' if monitor else '✗'}")
+            logger.info(f"  - Alert system: {'✓' if alert_manager else '✗'}")
+            logger.info(f"  - Log aggregation: {'✓' if elasticsearch_handler else '✗'}")
+            logger.info(
+                f"  - Redis WebSocket bridge: {'✓' if 'redis' in str(shared_data) else '✗'}"
+            )
+            logger.info(
+                f"  - Audit logging: {'✓' if 'audit' in str(shared_data) else '✗'}"
+            )
 
             # Start server process with controller
+            logger.info("Starting FastAPI server process...")
             server_process = Process(
                 target=start_server,
                 args=(
@@ -513,27 +584,67 @@ def main():
                 ),
             )
             server_process.start()
+            logger.info(f"Server process started with PID: {server_process.pid}")
+            logger.info("System is ready - cameras are available but not started")
             logger.info(
-                "Started server process. Cameras are available but not started."
+                "Use the web interface or API to start cameras and begin monitoring"
             )
+            logger.info("=" * 80)
 
             try:
                 # Keep main process running, waiting for shutdown signal
+                start_time = time.time()
+                last_status_log = start_time
                 while True:
                     time.sleep(1)
+
+                    # Log system status every 5 minutes
+                    current_time = time.time()
+                    if current_time - last_status_log > 300:  # 5 minutes
+                        uptime = int(current_time - start_time)
+                        logger.info("=" * 60)
+                        logger.info("SYSTEM STATUS CHECK")
+                        logger.info("=" * 60)
+                        logger.info(
+                            f"Server process alive: {server_process.is_alive()}"
+                        )
+                        logger.info(f"Server process PID: {server_process.pid}")
+                        logger.info(f"Shared data keys: {list(shared_data.keys())}")
+                        logger.info(f"Uptime: {uptime} seconds ({uptime//60} minutes)")
+                        logger.info("=" * 60)
+                        last_status_log = current_time
+
             except KeyboardInterrupt:
-                logger.info("Shutting down...")
+                logger.info("Received shutdown signal...")
             finally:
                 # Cleanup
+                logger.info("=" * 80)
+                logger.info("SHUTTING DOWN SYSTEM")
+                logger.info("=" * 80)
+
                 logger.info("Stopping camera controller...")
                 camera_controller.stop_all_cameras()
+                logger.info("Camera controller stopped")
 
                 logger.info("Terminating server process...")
                 server_process.terminate()
-                server_process.join()
+                server_process.join(timeout=10)
+                if server_process.is_alive():
+                    logger.warning(
+                        "Server process did not terminate gracefully, forcing..."
+                    )
+                    server_process.kill()
+                logger.info("Server process terminated")
+
+                logger.info("System shutdown complete")
+                logger.info("=" * 80)
 
     except Exception as e:
-        logger.error(f"Error in main: {e}")
+        logger.error("=" * 80)
+        logger.error("FATAL ERROR DURING SYSTEM STARTUP")
+        logger.error("=" * 80)
+        logger.error(f"Error: {e}")
+        logger.error("Full traceback:")
         logger.error(traceback.format_exc())
         raise
 

@@ -49,22 +49,44 @@ app = FastAPI(title="Video Streaming API")
 @app.on_event("startup")
 async def startup_event():
     """Initialize Redis WebSocket bridge on startup."""
+    logger.info("=" * 60)
+    logger.info("FASTAPI SERVER STARTING UP")
+    logger.info("=" * 60)
+
     try:
         await redis_websocket_bridge.start_subscriber(websocket_manager)
         logger.info("[STARTUP] Redis WebSocket bridge initialized")
     except Exception as e:
         logger.error(f"[STARTUP] Failed to initialize Redis WebSocket bridge: {e}")
 
+    # Log available WebSocket endpoints
+    logger.info("[STARTUP] Available WebSocket endpoints:")
+    logger.info("  - /ws/audit - Real-time system activity stream")
+    logger.info("  - /ws/metrics - Real-time system metrics")
+    logger.info("  - /ws/alerts - Real-time alert notifications")
+    logger.info("  - /ws/camera/{camera_id} - Camera status updates")
+    logger.info("  - /ws/cameras/{camera_id}/prediction - Camera predictions")
+
+    logger.info("[STARTUP] FastAPI server startup complete")
+    logger.info("=" * 60)
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup Redis WebSocket bridge on shutdown."""
+    logger.info("=" * 60)
+    logger.info("FASTAPI SERVER SHUTTING DOWN")
+    logger.info("=" * 60)
+
     try:
         await redis_websocket_bridge.stop_subscriber()
         redis_websocket_bridge.close()
         logger.info("[SHUTDOWN] Redis WebSocket bridge stopped")
     except Exception as e:
         logger.error(f"[SHUTDOWN] Error stopping Redis WebSocket bridge: {e}")
+
+    logger.info("[SHUTDOWN] FastAPI server shutdown complete")
+    logger.info("=" * 60)
 
 
 # IMPORTANT: CORS must be the FIRST middleware to handle preflight requests
