@@ -166,24 +166,30 @@ class MetricsService {
    * Create WebSocket connection for real-time metrics updates
    */
   createMetricsWebSocket(): WebSocket {
-    const wsUrl = 'ws://localhost:8001/ws/metrics';
-    return new WebSocket(wsUrl);
+    const { protocol, hostname, port } = window.location;
+    const wsProtocol = protocol === 'https:' ? 'wss' : 'ws';
+    const wsPort = port || '8001';
+    return new WebSocket(`${wsProtocol}://${hostname}:${wsPort}/ws/metrics`);
   }
 
   /**
    * Create WebSocket connection for camera-specific metrics
    */
   createCameraMetricsWebSocket(cameraId: string): WebSocket {
-    const wsUrl = `ws://localhost:8001/ws/metrics/camera/${cameraId}`;
-    return new WebSocket(wsUrl);
+    const { protocol, hostname, port } = window.location;
+    const wsProtocol = protocol === 'https:' ? 'wss' : 'ws';
+    const wsPort = port || '8001';
+    return new WebSocket(`${wsProtocol}://${hostname}:${wsPort}/ws/metrics/camera/${cameraId}`);
   }
 
   /**
    * Create WebSocket connection for real-time alerts
    */
   createAlertsWebSocket(): WebSocket {
-    const wsUrl = 'ws://localhost:8001/ws/alerts';
-    return new WebSocket(wsUrl);
+    const { protocol, hostname, port } = window.location;
+    const wsProtocol = protocol === 'https:' ? 'wss' : 'ws';
+    const wsPort = port || '8001';
+    return new WebSocket(`${wsProtocol}://${hostname}:${wsPort}/ws/alerts`);
   }
 
   /**

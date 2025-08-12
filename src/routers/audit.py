@@ -58,7 +58,11 @@ async def get_recent_system_events(
     limit: int = Query(10, ge=1, le=50),
     hours: int = Query(24, ge=1, le=168),  # Last 1-168 hours
 ):
-    """Get recent system events for dashboard display (no authentication required)."""
+    """Get recent system events for dashboard display.
+
+    Note: This endpoint returns a minimal, non-sensitive subset of audit data. For
+    full audit logs, use `/api/audit/logs` which requires `SECURITY_AUDIT` permission.
+    """
     try:
         start_date = datetime.utcnow() - timedelta(hours=hours)
 

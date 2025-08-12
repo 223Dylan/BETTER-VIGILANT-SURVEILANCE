@@ -350,7 +350,22 @@ class AuditLogger:
                 .all()
             )
 
-            return [log.to_dict() for log in logs]
+            # Ensure only minimal, non-sensitive subset is returned by default
+            def to_safe_dict(log: AuditLog) -> Dict[str, Any]:
+                data = log.to_dict()
+                return {
+                    "id": data.get("id"),
+                    "timestamp": data.get("timestamp"),
+                    "action": data.get("action"),
+                    "username": data.get("username"),
+                    "user_role": data.get("user_role"),
+                    "success": data.get("success"),
+                    "severity": data.get("severity"),
+                    "resource_type": data.get("resource_type"),
+                    "error_message": data.get("error_message"),
+                }
+
+            return [to_safe_dict(log) for log in logs]
 
         except Exception as e:
             logger.error(f"Failed to retrieve audit logs: {e}")

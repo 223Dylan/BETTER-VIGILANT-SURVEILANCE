@@ -1,7 +1,7 @@
 import asyncio
 import json
 import time
-from typing import Dict
+from typing import Dict, Set
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from loguru import logger
@@ -25,6 +25,8 @@ shared_stats = None
 
 # Initialize metrics service for real-time updates
 metrics_service = MetricsService()
+# Track audit WebSocket connections for visibility
+_audit_connections: Set[WebSocket] = set()
 
 
 def initialize_shared_data(stats):
@@ -372,7 +374,10 @@ async def alerts_ws(websocket: WebSocket):
 async def audit_ws(websocket: WebSocket):
     """WebSocket endpoint for streaming recent audit events in real-time."""
     await websocket.accept()
-    logger.info("[WEBSOCKET] Audit WebSocket connected")
+    _audit_connections.add(websocket)
+    logger.info(
+        f"[WEBSOCKET] Audit WebSocket connected (total: {len(_audit_connections)})"
+    )
 
     # Keep track of last seen IDs to reduce duplicate rendering on the client
     last_sent_ids = set()
@@ -415,6 +420,10 @@ async def audit_ws(websocket: WebSocket):
                 await asyncio.sleep(10)
 
     except WebSocketDisconnect:
-        logger.info("[WEBSOCKET] Audit WebSocket disconnected")
+        _audit_connections.discard(websocket)
+        logger.info(
+            f"[WEBSOCKET] Audit WebSocket disconnected (total: {len(_audit_connections)})"
+        )
     except Exception as e:
         logger.error(f"Audit WebSocket error: {str(e)}")
+        _audit_connections.discard(websocket)

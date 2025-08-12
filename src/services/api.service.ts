@@ -6,7 +6,9 @@ class ApiService {
   private API_BASE_URL: string;
 
   private constructor() {
-    this.API_BASE_URL = 'http://localhost:8001';
+    const { protocol, hostname, port } = window.location;
+    const defaultPort = protocol === 'https:' ? '443' : '8001';
+    this.API_BASE_URL = `${protocol}//${hostname}:${port || defaultPort}`;
     this.api = axios.create({
       baseURL: this.API_BASE_URL,
       headers: {

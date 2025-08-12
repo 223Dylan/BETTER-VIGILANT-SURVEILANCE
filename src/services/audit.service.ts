@@ -23,8 +23,10 @@ class AuditService {
   }
 
   createAuditWebSocket(): WebSocket {
-    // Note: In production, derive host from window.location
-    const wsUrl = 'ws://localhost:8001/ws/audit';
+    const { protocol, hostname, port } = window.location;
+    const wsProtocol = protocol === 'https:' ? 'wss' : 'ws';
+    const wsPort = port || '8001';
+    const wsUrl = `${wsProtocol}://${hostname}:${wsPort}/ws/audit`;
     return new WebSocket(wsUrl);
   }
 
