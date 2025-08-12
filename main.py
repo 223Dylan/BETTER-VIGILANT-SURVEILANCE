@@ -87,6 +87,48 @@ monitor = init_monitoring(port=8002)
 
 # Initialize alerting only if credentials are provided
 alert_manager = None
+
+
+def is_redis_available() -> bool:
+    """Check Redis connectivity based on REDIS_URL env var."""
+    try:
+        import os
+        from urllib.parse import urlparse
+
+        import redis  # type: ignore
+
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        parsed = urlparse(redis_url)
+        client = redis.Redis(
+            host=parsed.hostname or "localhost",
+            port=parsed.port or 6379,
+            db=int(parsed.path[1:]) if parsed.path else 0,
+            socket_timeout=2,
+            socket_connect_timeout=2,
+        )
+        client.ping()
+        return True
+    except Exception:
+        return False
+
+
+def is_database_available() -> bool:
+    """Check database connectivity for audit logging using a lightweight query."""
+    try:
+        from sqlalchemy import text  # type: ignore
+
+        from src.database.models.base import get_db  # lazy import
+
+        db = next(get_db())
+        try:
+            db.execute(text("SELECT 1"))
+            return True
+        finally:
+            db.close()
+    except Exception:
+        return False
+
+
 try:
     # Check if we have valid alert configuration
     smtp_config = None
@@ -562,14 +604,16 @@ def main():
 
             # Log system features
             logger.info("System features:")
-            logger.info(f"  - Real-time monitoring: {'✓' if monitor else '✗'}")
-            logger.info(f"  - Alert system: {'✓' if alert_manager else '✗'}")
-            logger.info(f"  - Log aggregation: {'✓' if elasticsearch_handler else '✗'}")
+            logger.info(f"  - Real-time monitoring: {'OK' if monitor else 'FAIL'}")
+            logger.info(f"  - Alert system: {'OK' if alert_manager else 'FAIL'}")
             logger.info(
-                f"  - Redis WebSocket bridge: {'✓' if 'redis' in str(shared_data) else '✗'}"
+                f"  - Log aggregation (Elasticsearch): {'OK' if elasticsearch_handler else 'FAIL'}"
             )
             logger.info(
-                f"  - Audit logging: {'✓' if 'audit' in str(shared_data) else '✗'}"
+                f"  - Redis connectivity: {'OK' if is_redis_available() else 'FAIL'}"
+            )
+            logger.info(
+                f"  - Audit logging (DB): {'OK' if is_database_available() else 'FAIL'}"
             )
 
             # Start server process with controller
