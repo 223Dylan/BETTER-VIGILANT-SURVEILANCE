@@ -24,7 +24,8 @@ class NotificationWebhook(Base):
     __tablename__ = "notification_webhooks"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    # Match users.id which is a String/VARCHAR
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
 
     # Webhook configuration
     name = Column(String(255), nullable=False)

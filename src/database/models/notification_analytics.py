@@ -14,7 +14,8 @@ class NotificationAnalytics(Base):
     __tablename__ = "notification_analytics"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    # Match users.id which is a String/VARCHAR
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
 
     # Metrics
     total_sent = Column(Integer, default=0)
@@ -93,7 +94,8 @@ class NotificationEvent(Base):
     __tablename__ = "notification_events"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    # Match users.id which is a String/VARCHAR
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
     notification_id = Column(String(255))  # Reference to actual notification
 
     # Event details

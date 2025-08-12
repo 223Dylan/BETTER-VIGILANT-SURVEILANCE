@@ -5,18 +5,30 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-# Add the parent directory to the Python path
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Ensure project root is on sys.path
+PROJECT_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "..")
+)
+if PROJECT_ROOT not in sys.path:
+    sys.path.append(PROJECT_ROOT)
+
+from src.database.models import (
+    Alert,
+    AuditLog,
+    Camera,
+    Frame,
+    NotificationAnalytics,
+    NotificationEvent,
+    NotificationSchedule,
+    NotificationTemplate,
+    NotificationWebhook,
+    User,
+    UserNotificationPreferences,
+    WebhookDeliveryLog,
 )
 
-from database.models.alert import Alert
-
 # Import ALL models for proper migration generation
-from database.models.base import Base
-from database.models.camera import Camera
-from database.models.frame import Frame
-from database.models.user import User
+from src.database.models.base import Base
 
 # this is the Alembic Config object
 config = context.config
