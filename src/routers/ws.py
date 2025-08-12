@@ -6,6 +6,7 @@ from typing import Dict
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from loguru import logger
 
+from src.services.audit_logger import audit_logger
 from src.websocket_manager import websocket_manager
 
 # Import metrics service with fallback handling
@@ -365,3 +366,55 @@ async def alerts_ws(websocket: WebSocket):
         logger.info("[WEBSOCKET] Alerts WebSocket disconnected")
     except Exception as e:
         logger.error(f"Alerts WebSocket error: {str(e)}")
+
+
+@router.websocket("/ws/audit")
+async def audit_ws(websocket: WebSocket):
+    """WebSocket endpoint for streaming recent audit events in real-time."""
+    await websocket.accept()
+    logger.info("[WEBSOCKET] Audit WebSocket connected")
+
+    # Keep track of last seen IDs to reduce duplicate rendering on the client
+    last_sent_ids = set()
+
+    try:
+        while True:
+            try:
+                # Fetch the most recent audit logs
+                logs = audit_logger.get_audit_logs(limit=25)
+
+                # Prepare a lightweight payload (already dicts via to_dict())
+                payload = {
+                    "type": "audit_update",
+                    "timestamp": time.time(),
+                    "logs": logs,
+                }
+
+                try:
+                    await websocket.send_json(payload)
+                except Exception:
+                    logger.info("WebSocket closed during audit update, exiting loop")
+                    break
+
+                # Sleep between updates
+                await asyncio.sleep(5)
+
+            except Exception as e:
+                logger.error(f"Error fetching audit logs for WebSocket: {e}")
+                # Try to send error once if possible
+                try:
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "timestamp": time.time(),
+                            "message": "Failed to fetch audit logs",
+                        }
+                    )
+                except Exception:
+                    break
+                await asyncio.sleep(10)
+
+    except WebSocketDisconnect:
+        logger.info("[WEBSOCKET] Audit WebSocket disconnected")
+    except Exception as e:
+        logger.error(f"Audit WebSocket error: {str(e)}")

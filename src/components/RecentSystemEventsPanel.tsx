@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ClockIcon, ExclamationTriangleIcon, CheckCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useThemeClasses } from '../contexts/ThemeContext';
 import { apiService } from '../services/api.service';
+import { auditService } from '../services/audit.service';
 
 interface SystemEvent {
   id: string;
@@ -30,18 +31,66 @@ const RecentSystemEventsPanel: React.FC<RecentSystemEventsPanelProps> = ({
   const themeClasses = useThemeClasses();
 
   useEffect(() => {
-    loadEvents();
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: number | null = null;
 
-    const interval = setInterval(loadEvents, refreshInterval);
-    return () => clearInterval(interval);
+    const connectWebSocket = () => {
+      try {
+        ws = auditService.createAuditWebSocket();
+        ws.onopen = () => {
+          setError(null);
+        };
+        ws.onmessage = (evt) => {
+          const msg = auditService.parseWebSocketMessage(evt);
+          if (msg?.type === 'audit_update' && Array.isArray(msg.logs)) {
+            setEvents(msg.logs.slice(0, limit));
+          }
+        };
+        ws.onerror = () => {
+          // Fallback to REST polling on error
+          startPolling();
+        };
+        ws.onclose = () => {
+          // Fallback and schedule reconnect
+          startPolling();
+          reconnectTimeout = window.setTimeout(() => {
+            connectWebSocket();
+          }, 5000);
+        };
+      } catch {
+        startPolling();
+      }
+    };
+
+    let pollInterval: number | null = null;
+    const startPolling = () => {
+      stopPolling();
+      loadEvents();
+      pollInterval = window.setInterval(loadEvents, refreshInterval);
+    };
+    const stopPolling = () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    };
+
+    // Prefer WS, fallback to REST
+    connectWebSocket();
+
+    return () => {
+      stopPolling();
+      if (ws) ws.close();
+      if (reconnectTimeout) window.clearTimeout(reconnectTimeout);
+    };
   }, [limit, refreshInterval]);
 
   const loadEvents = async () => {
     try {
       setLoading(true);
-      const data = await apiService.get<any>(`/api/audit/recent-events?limit=${limit}&hours=24`);
-      setEvents(data.logs || []);
-      setError(data.sample_data ? 'Using sample data' : null);
+      const logs = await auditService.getRecentEvents(limit, 24);
+      setEvents(logs || []);
+      setError(null);
     } catch (err) {
       // Silently handle errors and use sample data
       setError('Using sample data');
