@@ -181,7 +181,7 @@ class AuthService {
 
   public async updateProfile(userData: Partial<User>): Promise<User> {
     try {
-      const response = await apiService.put<{ user: User }>('/auth/profile', userData);
+      const response = await apiService.put<{ user: User }>('/api/auth/profile', userData);
       return response.user;
     } catch (error) {
       throw this.handleAuthError(error);
@@ -190,7 +190,7 @@ class AuthService {
 
   public async updatePassword(currentPassword: string, newPassword: string): Promise<void> {
     try {
-      await apiService.put('/auth/password', {
+      await apiService.put('/api/auth/password', {
         current_password: currentPassword,
         new_password: newPassword,
       });

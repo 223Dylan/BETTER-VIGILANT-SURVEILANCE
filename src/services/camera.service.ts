@@ -176,7 +176,7 @@ class CameraService {
 
   async createCamera(cameraData: CreateCameraRequest): Promise<CreateCameraResponse> {
     try {
-      const response = await apiService.post<CreateCameraResponse>('/cameras', cameraData)
+      const response = await apiService.post<CreateCameraResponse>('/cameras/', cameraData)
       return response
     } catch (error: any) {
       console.error('Error creating camera:', error)
