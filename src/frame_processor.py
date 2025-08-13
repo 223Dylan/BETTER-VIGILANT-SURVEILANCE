@@ -335,6 +335,9 @@ class FrameProcessor(BaseComponent):
                     "avg_processing_time": 0,
                     "processing_fps": 0,
                     "buffer_position": self.buffer_position,
+                    "sequence_collected": self.frames_collected,
+                    "sequence_length": self.sequence_length,
+                    "sequence_ready": self.sequence_complete,
                 }
 
             avg_time = sum(self.fps_history) / len(self.fps_history)
@@ -342,7 +345,17 @@ class FrameProcessor(BaseComponent):
                 "avg_processing_time": avg_time,
                 "processing_fps": 1.0 / avg_time if avg_time > 0 else 0,
                 "buffer_position": self.buffer_position,
+                "sequence_collected": self.frames_collected,
+                "sequence_length": self.sequence_length,
+                "sequence_ready": self.sequence_complete,
             }
         except Exception as e:
             logger.error(f"Error getting stats: {e}")
-            return {"avg_processing_time": 0, "processing_fps": 0, "buffer_position": 0}
+            return {
+                "avg_processing_time": 0,
+                "processing_fps": 0,
+                "buffer_position": 0,
+                "sequence_collected": 0,
+                "sequence_length": self.sequence_length,
+                "sequence_ready": False,
+            }

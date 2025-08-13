@@ -112,7 +112,15 @@ class CameraPipelineProcess(multiprocessing.Process):
                 ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85]
             )
             if success:
+                # Local process stream manager (different process) - useful for legacy debug only
                 stream_manager.process_frame(self.camera_config.id, buffer.tobytes())
+                # Cross-process injection via shared frames dict picked up by API server injector
+                try:
+                    frames_dict = self.shared_data.get("frames")
+                    if frames_dict is not None:
+                        frames_dict[f"frame_{self.camera_config.id}"] = buffer.tobytes()
+                except Exception:
+                    pass
 
         # Store for other uses
         self.shared_data["frames"][self.camera_config.id] = frame
@@ -123,11 +131,25 @@ class CameraPipelineProcess(multiprocessing.Process):
             self._check_and_trigger_predictions()
 
         # Update stats
-        if self.camera_config.id in self.shared_data["stats"]:
-            stats = self.shared_data["stats"][self.camera_config.id]
-            stats["fps"] = self.camera_manager.get_stats(self.camera_config.id)["fps"]
-            stats["processing_fps"] = self.frame_processor.get_stats()["processing_fps"]
-            self.shared_data["stats"][self.camera_config.id] = stats
+        try:
+            existing = self.shared_data["stats"].get(self.camera_config.id, {})
+            # Camera stats
+            cam_stats = self.camera_manager.get_camera_status(self.camera_config.id)
+            proc_stats = self.frame_processor.get_stats()
+
+            existing["fps"] = cam_stats.get("fps", 0)
+            existing["processing_fps"] = proc_stats.get("processing_fps", 0)
+            # Sequence buffer stats for Celery
+            existing["sequence_collected"] = proc_stats.get("sequence_collected", 0)
+            existing["sequence_length"] = proc_stats.get("sequence_length", 0)
+            existing["sequence_ready"] = proc_stats.get("sequence_ready", False)
+            existing["buffer_position"] = proc_stats.get("buffer_position", 0)
+
+            self.shared_data["stats"][self.camera_config.id] = existing
+        except Exception as e:
+            logger.error(
+                f"Failed to update shared stats for {self.camera_config.id}: {e}"
+            )
 
         # Check for brightness update commands
         self._check_brightness_updates()
@@ -176,9 +198,16 @@ class CameraPipelineProcess(multiprocessing.Process):
                 f"[TASK] PREDICTION TASK SENT to Celery: {task.id} for camera {self.camera_config.id}"
             )
 
-            if "prediction_tasks" not in self.shared_data:
-                self.shared_data["prediction_tasks"] = {}
-            self.shared_data["prediction_tasks"][self.camera_config.id] = task.id
+            # Track last task in shared stats for quick UI access
+            try:
+                stats = self.shared_data["stats"].get(self.camera_config.id, {})
+                stats["last_task_id"] = task.id
+                stats["last_task_sent_at"] = time.time()
+                self.shared_data["stats"][self.camera_config.id] = stats
+            except Exception as e:
+                logger.error(
+                    f"Failed to record last task id for {self.camera_config.id}: {e}"
+                )
 
         except Exception as e:
             logger.error(

@@ -300,35 +300,31 @@ class VideoStreamManager:
             logger.error(f"Error cleaning up stream manager: {e}")
 
     def get_stats(self, camera_id: str) -> dict:
-        """Get streaming statistics for a camera."""
-        if camera_id not in self._frame_times or len(self._frame_times[camera_id]) < 2:
-            return {
-                "fps": 0,
-                "buffer_size": 0,
-                "connected": camera_id in self.connections,
-                "frames_processed": self._frames_processed.get(camera_id, 0),
-                "frames_sent": self._frames_sent.get(camera_id, 0),
-            }
+        """Get streaming statistics for a camera.
+        Always report buffer size/connection, and compute FPS from recent ingestion times if available.
+        """
+        buffer_len = len(self.streams.get(camera_id, []))
+        connected = camera_id in self.connections
 
-        times = list(self._frame_times[camera_id])
-        if len(times) < 2:
-            return {
-                "fps": 0,
-                "buffer_size": 0,
-                "connected": camera_id in self.connections,
-                "frames_processed": self._frames_processed.get(camera_id, 0),
-                "frames_sent": self._frames_sent.get(camera_id, 0),
-            }
-
-        # Calculate FPS from frame times
-        intervals = [times[i] - times[i - 1] for i in range(1, len(times))]
-        avg_interval = sum(intervals) / len(intervals)
-        fps = 1.0 / avg_interval if avg_interval > 0 else 0
+        fps = 0.0
+        if camera_id in self._frame_times and len(self._frame_times[camera_id]) >= 2:
+            times = list(self._frame_times[camera_id])
+            intervals = [times[i] - times[i - 1] for i in range(1, len(times))]
+            avg_interval = sum(intervals) / len(intervals) if intervals else 0
+            fps = 1.0 / avg_interval if avg_interval and avg_interval > 0 else 0.0
+        elif (
+            camera_id in self._connection_status
+            and self._connection_status[camera_id].get("frames_sent", 0) > 0
+        ):
+            # Fallback: compute FPS from sending pace
+            status = self._connection_status[camera_id]
+            duration = max(1e-6, time.time() - status.get("start_time", time.time()))
+            fps = status.get("frames_sent", 0) / duration
 
         return {
             "fps": fps,
-            "buffer_size": len(self.streams.get(camera_id, [])),
-            "connected": camera_id in self.connections,
+            "buffer_size": buffer_len,
+            "connected": connected,
             "frames_processed": self._frames_processed.get(camera_id, 0),
             "frames_sent": self._frames_sent.get(camera_id, 0),
         }
@@ -374,6 +370,11 @@ class VideoStreamManager:
             if camera_id not in self._frames_processed:
                 self._frames_processed[camera_id] = 0
             self._frames_processed[camera_id] += 1
+
+            # Track ingestion times to derive FPS for status endpoint
+            if camera_id not in self._frame_times:
+                self._frame_times[camera_id] = deque(maxlen=self._fps_window)
+            self._frame_times[camera_id].append(time.time())
 
             return True
 

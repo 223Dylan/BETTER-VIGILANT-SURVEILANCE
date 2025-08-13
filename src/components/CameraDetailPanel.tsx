@@ -3,6 +3,7 @@ import VideoPlayer from './VideoPlayer';
 import { Camera } from '../types';
 import { Alert } from '../types/alert';
 import { cameraService } from '../services/camera.service';
+import { apiService } from '../services/api.service';
 import { useThemeClasses } from '../contexts/ThemeContext';
 
 // Material-UI Icons
@@ -149,7 +150,11 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     framesProcessed: 0,
     lastUpdate: new Date(),
     streamConnected: false,
-    streamErrors: 0
+    streamErrors: 0,
+    sequenceCollected: 0,
+    sequenceLength: 0,
+    sequenceReady: false,
+    lastTaskId: null as string | null,
   });
 
   // WebSocket for receiving predictions/alerts
@@ -365,90 +370,68 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     if (!camera) return;
 
     try {
-      // For MJPEG streams, get stats from camera manager and provide fallback logic
-      if (streamType === 'mjpeg') {
-        const cameraStatsResponse = await fetch(`http://localhost:8001/cameras/status`);
-        if (cameraStatsResponse.ok) {
-          const allCameraStats = await cameraStatsResponse.json();
-          const cameraStats = allCameraStats[camera.id];
+      // 1) Always query stream manager for buffer/FPS (works for all stream types)
+      try {
+        const streamStats = await apiService.get<any>(`/api/video/status/${camera.id}`);
+        setRealTimeStats(prev => ({
+          ...prev,
+          actualFPS: streamStats.fps || 0,
+          bufferSize: streamStats.buffer_size || 0,
+          framesSent: streamStats.frames_sent || 0,
+          framesProcessed: streamStats.frames_processed || 0,
+          streamConnected: !!streamStats.connected,
+          lastUpdate: new Date(),
+        }));
+      } catch {
+        // ignore here; we’ll fallback to camera manager below
+      }
 
-          if (cameraStats) {
-            // For MJPEG, if the backend FPS is 0 but camera is enabled and status is active,
-            // assume the stream is working at a reasonable FPS (since we can see the video)
-            let effectiveFPS = cameraStats.fps || 0;
-            let streamStatus = cameraStats.running && cameraStats.status === 'active';
-
-            // Fallback logic for MJPEG: if camera is enabled but FPS is 0, estimate based on visible stream
-            if (camera.enabled && streamStatus && effectiveFPS === 0) {
-              // If we can see video but FPS is 0, it means the backend isn't tracking properly
-              // Estimate a reasonable FPS based on camera configuration
-              effectiveFPS = Math.min(camera.fps * 0.7, 15); // Assume 70% of target FPS, max 15
-            }
-
-            setRealTimeStats(prev => ({
-              ...prev,
-              actualFPS: effectiveFPS,
-              streamConnected: streamStatus,
-              lastUpdate: new Date()
-            }));
-          } else {
-            // Camera not found in stats - likely disconnected
-            setRealTimeStats(prev => ({
-              ...prev,
-              actualFPS: 0,
-              streamConnected: false,
-              lastUpdate: new Date()
-            }));
+      // 2) Fallback/augment with camera manager status
+      try {
+        const allCameraStats = await apiService.get<Record<string, any>>('/cameras/status');
+        const cameraStats = (allCameraStats as any)[camera.id];
+        if (cameraStats) {
+          let effectiveFPS = realTimeStats.actualFPS || cameraStats.fps || 0;
+          const streamStatus = cameraStats.running && cameraStats.status === 'active';
+          if (streamType === 'mjpeg' && camera.enabled && streamStatus && effectiveFPS === 0) {
+            effectiveFPS = Math.min(camera.fps * 0.7, 15);
           }
-        } else {
-          // If API call fails but camera is enabled, provide optimistic fallback
           setRealTimeStats(prev => ({
             ...prev,
-            actualFPS: camera.enabled ? Math.min(camera.fps * 0.5, 10) : 0,
-            streamConnected: camera.enabled,
-            streamErrors: prev.streamErrors + 1,
-            lastUpdate: new Date()
+            actualFPS: effectiveFPS,
+            streamConnected: streamStatus || prev.streamConnected,
+            lastUpdate: new Date(),
           }));
         }
-      } else {
-        // For WebSocket-based streams (HLS, mjpeg-ws, webrtc), use stream manager stats
-        const streamStatsResponse = await fetch(`http://localhost:8001/api/video/status/${camera.id}`);
-        if (streamStatsResponse.ok) {
-          const streamStats = await streamStatsResponse.json();
-
+      } catch {
+        // If this also fails and camera is enabled, keep optimistic status
+        if (camera.enabled) {
           setRealTimeStats(prev => ({
             ...prev,
-            actualFPS: streamStats.fps || 0,
-            bufferSize: streamStats.buffer_size || 0,
-            framesSent: streamStats.frames_sent || 0,
-            framesProcessed: streamStats.frames_processed || 0,
-            streamConnected: streamStats.connected || false,
-            lastUpdate: new Date()
+            streamConnected: true,
+            lastUpdate: new Date(),
           }));
-        } else {
-          // Fallback to camera manager stats for WebSocket streams too
-          const cameraStatsResponse = await fetch(`http://localhost:8001/cameras/status`);
-          if (cameraStatsResponse.ok) {
-            const allCameraStats = await cameraStatsResponse.json();
-            const cameraStats = allCameraStats[camera.id];
-
-            if (cameraStats) {
-              setRealTimeStats(prev => ({
-                ...prev,
-                actualFPS: cameraStats.fps || 0,
-                streamConnected: cameraStats.running || false,
-                lastUpdate: new Date()
-              }));
-            }
-          }
         }
       }
+
+      // 3) Celery sequence status
+      try {
+        const seq = await apiService.get<any>(`/api/cameras/${camera.id}/sequence`);
+        setRealTimeStats(prev => ({
+          ...prev,
+          sequenceCollected: seq.sequence_collected || 0,
+          sequenceLength: seq.sequence_length || 0,
+          sequenceReady: !!seq.sequence_ready,
+          lastTaskId: seq.last_task_id || null,
+          lastUpdate: new Date(),
+        }));
+      } catch {}
     } catch (error) {
       console.error('Error loading real-time stats:', error);
       setRealTimeStats(prev => ({
         ...prev,
         streamErrors: prev.streamErrors + 1,
-        lastUpdate: new Date()
+        lastUpdate: new Date(),
       }));
     }
   };
@@ -799,6 +782,42 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                     height="100%"
                     streamType={streamType}
                   />
+
+                  {/* Overlay: Stream buffer and sequence status */}
+                  <div className="absolute bottom-3 left-3 right-3 bg-black/50 rounded-md p-3">
+                    <div className="flex items-center justify-between text-xs text-white/80 mb-2">
+                      <span>Stream buffer {realTimeStats.bufferSize}/10</span>
+                      <span>{realTimeStats.actualFPS.toFixed(1)} FPS</span>
+                    </div>
+                    <div className="w-full h-2 bg-white/20 rounded mb-2">
+                      <div
+                        className="h-2 bg-emerald-400 rounded"
+                        style={{ width: `${Math.min(100, (realTimeStats.bufferSize / 10) * 100)}%` }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-white/80 mb-1">
+                      <span>
+                        Sequence {realTimeStats.sequenceCollected}/{realTimeStats.sequenceLength || 0}
+                      </span>
+                      {realTimeStats.sequenceReady && (
+                        <span className="text-emerald-300">ready</span>
+                      )}
+                    </div>
+                    <div className="w-full h-2 bg-white/20 rounded">
+                      <div
+                        className="h-2 bg-blue-400 rounded"
+                        style={{
+                          width: `${realTimeStats.sequenceLength ? Math.min(100, (realTimeStats.sequenceCollected / realTimeStats.sequenceLength) * 100) : 0}%`,
+                        }}
+                      />
+                    </div>
+                    {realTimeStats.lastTaskId && (
+                      <div className="mt-2 text-[10px] text-white/60 truncate">
+                        last task: {realTimeStats.lastTaskId}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Video controls */}

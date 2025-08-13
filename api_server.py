@@ -196,9 +196,52 @@ def initialize_shared_data(frames: Dict, predictions: Dict, stats: Dict, configs
     initialize_hls_data(shared_frames, stream_manager, camera_controller)
     # Initialize simple HLS router with shared data
     initialize_simple_hls_data(shared_frames, stream_manager, camera_controller)
+    # Wire shared frames dict into video_stream background injector
+    try:
+        # Late import to avoid circular import issues
+        from src.api import video_stream as video_stream_module  # type: ignore
+
+        # Expect the injector to look for keys like 'frame_<camera_id>'
+        video_stream_module.shared_data = frames
+        logger.info("Wired shared frame dictionary into video_stream injector")
+    except Exception as e:
+        logger.warning(f"Failed to wire shared frames into video_stream injector: {e}")
     logger.info(
         f"Shared data initialized in API server - frames: {type(frames)}, keys: {list(frames.keys()) if frames else 'None'}"
     )
+
+
+@app.get("/api/cameras/{camera_id}/sequence")
+def get_camera_sequence_status(camera_id: str):
+    """Expose per-camera Celery sequence buffer status and last task info."""
+    try:
+        if shared_stats is None:
+            return {
+                "sequence_collected": 0,
+                "sequence_length": 0,
+                "sequence_ready": False,
+                "last_task_id": None,
+                "last_task_sent_at": None,
+            }
+
+        stats = shared_stats.get(camera_id, {})
+        return {
+            "sequence_collected": int(stats.get("sequence_collected", 0) or 0),
+            "sequence_length": int(stats.get("sequence_length", 0) or 0),
+            "sequence_ready": bool(stats.get("sequence_ready", False)),
+            "last_task_id": stats.get("last_task_id"),
+            "last_task_sent_at": stats.get("last_task_sent_at"),
+        }
+    except Exception as e:
+        logger.error(f"Error reading sequence status for {camera_id}: {e}")
+        return {
+            "sequence_collected": 0,
+            "sequence_length": 0,
+            "sequence_ready": False,
+            "last_task_id": None,
+            "last_task_sent_at": None,
+            "error": str(e),
+        }
 
 
 def initialize_controller(controller):
