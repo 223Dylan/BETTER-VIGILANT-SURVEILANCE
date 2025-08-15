@@ -18,6 +18,16 @@ def setup_logging():
     level = os.getenv("LOG_LEVEL", "WARNING").upper()
     log_format = os.getenv("LOG_FORMAT", "text").lower()
     log_file_path = os.getenv("LOG_FILE_PATH", "logs/app.log")
+    # Avoid Windows file-rename collisions across processes by using per-process files
+    try:
+        pid = os.getpid()
+        if "{pid}" in log_file_path:
+            log_file_path = log_file_path.replace("{pid}", str(pid))
+        else:
+            base, ext = os.path.splitext(log_file_path)
+            log_file_path = f"{base}_{pid}{ext or '.log'}"
+    except Exception:
+        pass
     max_size_mb = int(os.getenv("LOG_MAX_SIZE", "10"))
     backup_count = int(os.getenv("LOG_BACKUP_COUNT", "5"))
 
