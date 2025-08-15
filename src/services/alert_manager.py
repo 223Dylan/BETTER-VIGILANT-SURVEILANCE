@@ -9,6 +9,13 @@ from typing import Any, Dict, List, Optional
 from loguru import logger
 
 from src.services.alert_database import get_alert_db_service
+from src.utils.datetime_utils import (
+    parse_datetime,
+    utc_now,
+    utc_now_date,
+    utc_now_isoformat,
+    utc_now_timestamp,
+)
 from src.websocket_manager import websocket_manager
 
 
@@ -58,8 +65,8 @@ class AlertRecord:
 
     def __post_init__(self):
         if self.created_at is None:
-            self.created_at = datetime.utcnow().isoformat()
-        self.updated_at = datetime.utcnow().isoformat()
+            self.created_at = utc_now_isoformat()
+        self.updated_at = utc_now_isoformat()
 
 
 class AlertManager:
@@ -100,7 +107,7 @@ class AlertManager:
         regular_timeout_hours = int(os.getenv("ALERT_AUTO_CLEAR_HOURS", "12"))
         critical_timeout_hours = int(os.getenv("ALERT_CRITICAL_AUTO_CLEAR_HOURS", "24"))
 
-        current_time = datetime.utcnow()
+        current_time = utc_now()
         cleared_count = 0
         alerts_to_clear = []
 
@@ -117,15 +124,11 @@ class AlertManager:
             try:
                 # Parse the alert creation time
                 if alert.created_at:
-                    created_time = datetime.fromisoformat(
-                        alert.created_at.replace("Z", "")
-                    )
+                    created_time = parse_datetime(alert.created_at)
                     time_source = "created_at"
                 else:
                     # Fallback to timestamp if created_at is not available
-                    created_time = datetime.fromisoformat(
-                        alert.timestamp.replace("Z", "")
-                    )
+                    created_time = parse_datetime(alert.timestamp)
                     time_source = "timestamp"
 
                 # Calculate age
@@ -201,14 +204,10 @@ class AlertManager:
                 try:
                     # Parse the alert creation time
                     if alert_data.get("created_at"):
-                        created_time = datetime.fromisoformat(
-                            alert_data["created_at"].replace("Z", "")
-                        )
+                        created_time = parse_datetime(alert_data["created_at"])
                         time_source = "created_at"
                     else:
-                        created_time = datetime.fromisoformat(
-                            alert_data["timestamp"].replace("Z", "")
-                        )
+                        created_time = parse_datetime(alert_data["timestamp"])
                         time_source = "timestamp"
 
                     # Calculate age
@@ -328,9 +327,7 @@ class AlertManager:
             camera_id = prediction_result.get("camera_id", "unknown")
             confidence = prediction_result.get("confidence", 0.0)
             is_shoplifting = prediction_result.get("is_shoplifting", False)
-            timestamp = prediction_result.get(
-                "timestamp", datetime.utcnow().timestamp()
-            )
+            timestamp = prediction_result.get("timestamp", utc_now_timestamp())
 
             # Convert timestamp to ISO format if needed
             if isinstance(timestamp, (int, float)):
@@ -529,8 +526,8 @@ class AlertManager:
             alert = self.active_alerts[alert_id]
             alert.status = AlertStatus.ACKNOWLEDGED.value
             alert.acknowledged_by = user_id
-            alert.acknowledged_at = datetime.utcnow().isoformat()
-            alert.updated_at = datetime.utcnow().isoformat()
+            alert.acknowledged_at = utc_now_isoformat()
+            alert.updated_at = utc_now_isoformat()
 
             if notes:
                 alert.notes = notes
@@ -627,8 +624,8 @@ class AlertManager:
             # Update alert properties
             alert.status = AlertStatus.RESOLVED.value
             alert.resolved_by = user_id
-            alert.resolved_at = datetime.utcnow().isoformat()
-            alert.updated_at = datetime.utcnow().isoformat()
+            alert.resolved_at = utc_now_isoformat()
+            alert.updated_at = utc_now_isoformat()
 
             if notes:
                 current_notes = alert.notes or ""
@@ -791,7 +788,7 @@ class AlertManager:
             )
 
         # Fallback to in-memory calculation
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = utc_now() - timedelta(days=days)
 
         # Filter recent alerts
         recent_alerts = [
@@ -874,7 +871,7 @@ class AlertManager:
         """Check if timestamp is from today."""
         try:
             alert_date = datetime.fromisoformat(timestamp_str.replace("Z", "")).date()
-            return alert_date == datetime.utcnow().date()
+            return alert_date == utc_now_date()
         except:
             return False
 
