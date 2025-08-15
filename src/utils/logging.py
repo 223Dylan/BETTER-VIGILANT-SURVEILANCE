@@ -18,6 +18,25 @@ def setup_logging():
     level = os.getenv("LOG_LEVEL", "WARNING").upper()
     log_format = os.getenv("LOG_FORMAT", "text").lower()
     log_file_path = os.getenv("LOG_FILE_PATH", "logs/app.log")
+
+    # Remove icons from existing log levels
+    import loguru
+
+    try:
+        # Only modify levels if they exist, don't recreate them
+        if loguru.logger.level("DEBUG").name == "DEBUG":
+            loguru.logger.level("DEBUG", icon="")
+        if loguru.logger.level("INFO").name == "INFO":
+            loguru.logger.level("INFO", icon="")
+        if loguru.logger.level("WARNING").name == "WARNING":
+            loguru.logger.level("WARNING", icon="")
+        if loguru.logger.level("ERROR").name == "ERROR":
+            loguru.logger.level("ERROR", icon="")
+        if loguru.logger.level("CRITICAL").name == "CRITICAL":
+            loguru.logger.level("CRITICAL", icon="")
+    except Exception:
+        # If any level doesn't exist, just continue
+        pass
     # Avoid Windows file-rename collisions across processes by using per-process files
     try:
         pid = os.getpid()
@@ -57,30 +76,35 @@ def setup_logging():
         "level": level,
         "rotation": f"{max_size_mb} MB",
         "retention": backup_count,
-        "serialize": serialize,
+        "serialize": False,  # Always use text format for files
         "enqueue": True,
     }
-    if not serialize:
-        file_kwargs["format"] = (
-            "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | "
-            "{name}:{function}:{line} - {message}"
-        )
+    file_kwargs["format"] = (
+        "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | "
+        "{name}:{function}:{line} - {message}"
+    )
     logger.add(**file_kwargs)
 
-    # File handler for per-camera logs (only if not JSON for readability)
+    # File handler for per-camera logs
     # For per-camera sink (callable sink), rotation/retention are not supported
     per_camera_kwargs = {
         "sink": lambda record: f"logs/camera_{record['extra'].get('camera_id', 'unknown')}.log",
         "level": level,
         "filter": lambda record: "camera_id" in record["extra"],
-        "serialize": serialize,
+        "serialize": False,  # Always use text format for per-camera logs
         "enqueue": True,
     }
-    if not serialize:
-        per_camera_kwargs["format"] = (
-            "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | "
-            "{name}:{function}:{line} - {message}"
-        )
+    per_camera_kwargs["format"] = (
+        "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | "
+        "{name}:{function}:{line} - {message}"
+    )
     logger.add(**per_camera_kwargs)
 
+    return logger
+
+
+def get_logger(name: str = None):
+    """Get a logger instance."""
+    if name:
+        return logger.bind(name=name)
     return logger

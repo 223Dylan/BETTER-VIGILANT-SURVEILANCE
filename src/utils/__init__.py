@@ -18,6 +18,7 @@ from .datetime_utils import (
     utc_now_timestamp,
 )
 from .image_utils import resize_frame
+from .logging import get_logger
 from .secrets import secrets_manager
 
 # Function is in src.utils module, not the utils package
@@ -36,4 +37,5 @@ __all__ = [
     "utc_now_timestamp",
     "utc_now_date",
     "parse_datetime",
+    "get_logger",
 ]
