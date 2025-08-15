@@ -101,6 +101,10 @@ class CameraController:
                 camera_db_service.update_camera_status(camera_id, "active")
                 self._invalidate_cache()  # Invalidate cache on status change
                 logger.info(f"Started camera process for {camera_id}")
+
+                # Ensure frame injection is running when cameras are active
+                self._ensure_frame_injection_running()
+
                 return True
             else:
                 self.camera_status[camera_id] = "error"
@@ -203,6 +207,57 @@ class CameraController:
 
         # Close database session
         camera_db_service.close_session()
+
+        # Optionally stop frame injection if no cameras are running
+        self._check_and_manage_frame_injection()
+
+    def _check_and_manage_frame_injection(self):
+        """Check if any cameras are running and manage frame injection accordingly."""
+        try:
+            # Check if any cameras are enabled and active
+            cameras = camera_db_service.get_all_cameras()
+            active_cameras = [c for c in cameras if c.enabled and c.status == "active"]
+
+            if not active_cameras:
+                logger.info(
+                    "No active cameras detected, considering stopping frame injection"
+                )
+                # Import here to avoid circular imports
+                try:
+                    from src.api.video_stream import stop_frame_injection
+
+                    stop_frame_injection()
+                    logger.info("Frame injection loop stopped due to no active cameras")
+                except ImportError:
+                    logger.debug("Could not import frame injection control functions")
+            else:
+                logger.info(
+                    f"Found {len(active_cameras)} active cameras, keeping frame injection running"
+                )
+        except Exception as e:
+            logger.warning(
+                f"Error checking camera status for frame injection management: {e}"
+            )
+
+    def _ensure_frame_injection_running(self):
+        """Ensure frame injection is running when cameras are active."""
+        try:
+            # Import here to avoid circular imports
+            from src.api.video_stream import (
+                is_injection_running,
+                start_frame_injection_endpoint,
+            )
+
+            if not is_injection_running():
+                logger.info("Starting frame injection loop for active cameras")
+                # Start frame injection if not running
+                start_frame_injection_endpoint()
+            else:
+                logger.debug("Frame injection loop is already running")
+        except ImportError:
+            logger.debug("Could not import frame injection control functions")
+        except Exception as e:
+            logger.warning(f"Error ensuring frame injection is running: {e}")
 
     def add_camera(self, camera_data: Dict) -> bool:
         """Add new camera to database."""

@@ -23,16 +23,32 @@ logger.info(
 
 # Background task to inject frames from shared memory
 import asyncio
+import signal
+import sys
 import threading
 
 shared_data = None  # Will be set by api_server
+_injection_running = True  # Global flag to control injection loop
+_injection_thread = None  # Reference to the injection thread
+
+
+def signal_handler(signum, frame):
+    """Handle shutdown signals to gracefully stop the injection loop."""
+    global _injection_running
+    logger.info(f"Received signal {signum}, shutting down frame injection loop...")
+    _injection_running = False
 
 
 def start_frame_injection_task():
     """Start background task to inject frames from shared memory."""
 
+    # Set up signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     def injection_loop():
-        while True:
+        global _injection_running
+        while _injection_running:
             try:
                 if shared_data:
                     # Check for frame data in shared memory
@@ -40,21 +56,89 @@ def start_frame_injection_task():
                         if key.startswith("frame_"):
                             camera_id = key.replace("frame_", "")
                             frame_bytes = shared_data.get(key)
+
+                            # Only inject frames if camera is actually enabled and running
                             if frame_bytes and stream_manager._initialized:
-                                # Inject frame into stream manager
-                                stream_manager.inject_frame_for_streaming(
-                                    camera_id, frame_bytes
-                                )
-                                logger.debug(f"Injected shared frame for {camera_id}")
+                                try:
+                                    # Check if camera is enabled in database
+                                    from src.services.camera_db_service import (
+                                        camera_db_service,
+                                    )
+
+                                    camera = camera_db_service.get_camera_by_id(
+                                        camera_id
+                                    )
+
+                                    if (
+                                        camera
+                                        and camera.enabled
+                                        and camera.status == "active"
+                                    ):
+                                        # Inject frame into stream manager
+                                        stream_manager.inject_frame_for_streaming(
+                                            camera_id, frame_bytes
+                                        )
+                                        logger.debug(
+                                            f"Injected shared frame for {camera_id}"
+                                        )
+                                    else:
+                                        # Camera is disabled or stopped - skip frame injection
+                                        logger.debug(
+                                            f"Skipping frame injection for disabled/stopped camera: {camera_id}"
+                                        )
+                                        # Remove the frame from shared memory to prevent accumulation
+                                        if key in shared_data:
+                                            del shared_data[key]
+                                except Exception as db_error:
+                                    logger.warning(
+                                        f"Error checking camera status for {camera_id}: {db_error}"
+                                    )
+                                    # If we can't check status, skip injection to be safe
+                                    continue
                 time.sleep(0.033)  # ~30 FPS injection rate
             except Exception as e:
                 logger.error(f"Error in frame injection loop: {e}")
                 time.sleep(1)
 
+        logger.info("Frame injection loop stopped")
+
     # Start background thread
-    injection_thread = threading.Thread(target=injection_loop, daemon=True)
-    injection_thread.start()
+    global _injection_thread
+    _injection_thread = threading.Thread(target=injection_loop, daemon=True)
+    _injection_thread.start()
     logger.info("Started frame injection background task")
+
+    return _injection_thread
+
+
+def stop_frame_injection():
+    """Stop the frame injection loop."""
+    global _injection_running, _injection_thread
+    _injection_running = False
+    logger.info("Frame injection loop stop requested")
+
+    # Wait for thread to finish if it exists
+    if _injection_thread and _injection_thread.is_alive():
+        logger.info("Waiting for injection thread to finish...")
+        _injection_thread.join(timeout=5)
+        if _injection_thread.is_alive():
+            logger.warning("Injection thread did not finish gracefully")
+
+
+def cleanup_frame_injection():
+    """Clean up frame injection resources."""
+    global _injection_running, _injection_thread
+    _injection_running = False
+
+    if _injection_thread and _injection_thread.is_alive():
+        _injection_thread.join(timeout=2)
+
+    logger.info("Frame injection cleanup completed")
+
+
+def is_injection_running():
+    """Check if the frame injection loop is running."""
+    return _injection_running and _injection_thread and _injection_thread.is_alive()
 
 
 # Start the injection task
@@ -415,3 +499,44 @@ async def get_simple_debug(camera_id: str):
     except Exception as e:
         logger.error(f"Error getting simple debug for {camera_id}: {e}")
         return {"error": str(e)}
+
+
+@router.post("/control/injection/stop")
+async def stop_frame_injection_endpoint():
+    """Stop the frame injection loop."""
+    try:
+        stop_frame_injection()
+        return {"status": "success", "message": "Frame injection loop stop requested"}
+    except Exception as e:
+        logger.error(f"Error stopping frame injection: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/control/injection/start")
+async def start_frame_injection_endpoint():
+    """Start the frame injection loop."""
+    try:
+        global _injection_running
+        _injection_running = True
+        start_frame_injection_task()
+        return {"status": "success", "message": "Frame injection loop started"}
+    except Exception as e:
+        logger.error(f"Error starting frame injection: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@router.get("/control/injection/status")
+async def get_injection_status():
+    """Get the status of the frame injection loop."""
+    try:
+        return {
+            "status": "success",
+            "injection_running": is_injection_running(),
+            "injection_flag": _injection_running,
+            "thread_alive": (
+                _injection_thread.is_alive() if _injection_thread else False
+            ),
+        }
+    except Exception as e:
+        logger.error(f"Error getting injection status: {e}")
+        return {"status": "error", "message": str(e)}
