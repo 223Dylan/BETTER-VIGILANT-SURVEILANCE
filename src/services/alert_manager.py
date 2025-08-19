@@ -389,21 +389,72 @@ class AlertManager:
                 f"[ALERT] Created {severity.value.upper()} alert: {alert_type.value} for {camera_id} (confidence: {confidence:.3f})"
             )
 
-            # Trigger real-time notifications (safely handle async)
+            # Trigger real-time notifications (properly handle async in Celery workers)
             try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.create_task(self._broadcast_alert(alert))
-                else:
-                    logger.debug("No running event loop for WebSocket broadcast")
-            except RuntimeError:
-                logger.debug("No event loop available for WebSocket broadcast")
+                import asyncio
+
+                # Try to get existing event loop
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    # Create new event loop if none exists (common in Celery workers)
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+
+                # Run the broadcast in the event loop
+                loop.run_until_complete(self._broadcast_alert(alert))
+                logger.info(f"[BROADCAST] Successfully broadcasted alert {alert_id}")
+
+            except Exception as e:
+                logger.error(f"[ERROR] Failed to broadcast alert {alert_id}: {e}")
+                # Even if broadcast fails, try to send notifications directly
+                try:
+                    self._send_notifications_sync(alert)
+                except Exception as notify_error:
+                    logger.error(
+                        f"[ERROR] Failed to send notifications for alert {alert_id}: {notify_error}"
+                    )
 
             return alert_id
 
         except Exception as e:
             logger.error(f"[ERROR] Error processing prediction for alert: {e}")
             return None
+
+    def _send_notifications_sync(self, alert: AlertRecord):
+        """Synchronous method to send notifications when async broadcast fails."""
+        try:
+            from src.database.models.base import get_db
+            from src.services.user_notification_service import user_notification_service
+
+            # Get database session
+            db = next(get_db())
+            try:
+                # Prepare alert data for notification service
+                notification_alert_data = asdict(alert)
+
+                # Create event loop for notification service
+                import asyncio
+
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+
+                # Send notifications
+                notifications_sent = loop.run_until_complete(
+                    user_notification_service.send_alert_to_users(
+                        notification_alert_data, db
+                    )
+                )
+                logger.info(
+                    f"[NOTIFICATIONS] Sent {notifications_sent} user notifications for alert {alert.id}"
+                )
+            finally:
+                db.close()
+        except Exception as e:
+            logger.error(f"[NOTIFICATIONS] Error sending user notifications: {e}")
 
     def _determine_alert_type(
         self, confidence: float, is_shoplifting: bool

@@ -3,6 +3,7 @@ import json
 import logging
 import multiprocessing
 import os
+import signal
 import sys
 import threading
 import time
@@ -547,6 +548,19 @@ def initialize_alert_system(config: Config) -> AlertSystem:
 
 def main():
     """Main entry point."""
+    # Global shutdown flag
+    shutdown_requested = False
+
+    def signal_handler(signum, frame):
+        """Handle shutdown signals gracefully."""
+        nonlocal shutdown_requested
+        logger.info(f"Received signal {signum}, initiating shutdown...")
+        shutdown_requested = True
+
+    # Register signal handlers
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     try:
         logger.info("=" * 80)
         logger.info("STARTING BETTER VIGILANT SURVEILLANCE SYSTEM")
@@ -636,11 +650,16 @@ def main():
             logger.info("=" * 80)
 
             try:
-                # Keep main process running, waiting for shutdown signal
+                # Keep main process running, waiting for shutdown signal or server process death
                 start_time = time.time()
                 last_status_log = start_time
-                while True:
+                while not shutdown_requested:
                     time.sleep(1)
+
+                    # Check if server process is still alive
+                    if not server_process.is_alive():
+                        logger.warning("Server process has died unexpectedly")
+                        break
 
                     # Log system status every 5 minutes
                     current_time = time.time()
@@ -658,8 +677,14 @@ def main():
                         logger.info("=" * 60)
                         last_status_log = current_time
 
+                if shutdown_requested:
+                    logger.info("Shutdown requested, cleaning up...")
+
             except KeyboardInterrupt:
                 logger.info("Received shutdown signal...")
+            except Exception as e:
+                logger.error(f"Unexpected error in main loop: {e}")
+                logger.error(traceback.format_exc())
             finally:
                 # Cleanup
                 logger.info("=" * 80)
@@ -671,14 +696,34 @@ def main():
                 logger.info("Camera controller stopped")
 
                 logger.info("Terminating server process...")
-                server_process.terminate()
-                server_process.join(timeout=10)
                 if server_process.is_alive():
-                    logger.warning(
-                        "Server process did not terminate gracefully, forcing..."
-                    )
-                    server_process.kill()
+                    server_process.terminate()
+                    server_process.join(timeout=10)
+                    if server_process.is_alive():
+                        logger.warning(
+                            "Server process did not terminate gracefully, forcing..."
+                        )
+                        server_process.kill()
+                        server_process.join(timeout=5)
+                        if server_process.is_alive():
+                            logger.error(
+                                "Server process could not be terminated, exiting anyway"
+                            )
+                        else:
+                            logger.info("Server process forcefully terminated")
+                    else:
+                        logger.info("Server process terminated gracefully")
+                else:
+                    logger.info("Server process already terminated")
                 logger.info("Server process terminated")
+
+                logger.info("Cleaning up shared resources...")
+                try:
+                    # Clean up shared data
+                    shared_data.clear()
+                    logger.info("Shared data cleared")
+                except Exception as e:
+                    logger.warning(f"Error clearing shared data: {e}")
 
                 logger.info("System shutdown complete")
                 logger.info("=" * 80)
