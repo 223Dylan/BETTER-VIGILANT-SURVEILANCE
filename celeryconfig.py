@@ -1,6 +1,8 @@
 # Celery Configuration
-broker_url = "redis://localhost:6379/0"
-result_backend = "redis://localhost:6379/0"
+import os
+
+broker_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+result_backend = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # Task settings
 task_serializer = "json"
@@ -44,7 +46,6 @@ worker_log_format = "[%(asctime)s: %(levelname)s/%(processName)s] %(message)s"
 worker_task_log_format = "[%(asctime)s: %(levelname)s/%(processName)s][%(task_name)s(%(task_id)s)] %(message)s"
 
 # Beat schedule for periodic tasks
-import os
 
 
 def get_auto_clear_interval():

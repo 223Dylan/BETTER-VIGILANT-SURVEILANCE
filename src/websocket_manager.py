@@ -138,8 +138,7 @@ class WebSocketManager:
         """Send a notification message to a specific user."""
         logger.info(f"[WEBSOCKET] Attempting to send notification to user {user_id}")
 
-        # For now, we'll broadcast to all connections since we don't have user-specific connections
-        # In a real implementation, you'd store user-specific WebSocket connections
+        # Broadcast to all connections since we don't have user-specific connections
         sent_count = 0
 
         # Broadcast to all camera connections

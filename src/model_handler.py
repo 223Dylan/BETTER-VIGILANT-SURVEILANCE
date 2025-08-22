@@ -1,3 +1,18 @@
+"""
+NOTE: This component is NOT currently in use by the system.
+
+The system currently uses the simpler Celery-based approach in src/tasks.py
+with direct model loading from src/model.py.
+
+This ModelHandler provides advanced features like:
+- Batch processing
+- Performance optimization (XLA, GPU memory management)
+- Advanced lifecycle management
+- Queue-based processing
+
+It can be used as an alternative to the Celery approach when advanced features are needed.
+"""
+
 import time
 from typing import Dict, List, Optional, Tuple
 

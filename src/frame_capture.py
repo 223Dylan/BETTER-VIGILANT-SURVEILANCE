@@ -134,7 +134,7 @@ class FrameCapture(BaseComponent):
                 cap = (
                     cv2.VideoCapture(index_or_path, backend)
                     if isinstance(index_or_path, int)
-                    else cv2.VideoCapture(index_or_path, backend)
+                    else cv2.VideoCapture(index_or_path)
                 )
                 if cap.isOpened():
                     logger.info(f"Opened USB camera using backend={backend}")

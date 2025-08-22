@@ -45,9 +45,14 @@ class CameraController:
             logger.error(f"Error loading cameras from database: {e}")
 
     def get_available_cameras(self) -> List[Dict]:
-        """Get all available cameras from database."""
+        """Get all available cameras from database and update internal status tracking."""
         try:
             cameras = camera_db_service.get_all_cameras()
+
+            # Update internal status tracking with fresh data
+            for camera in cameras:
+                self.camera_status[camera.id] = camera.status or "stopped"
+
             return [camera.to_dict() for camera in cameras]
         except Exception as e:
             logger.error(f"Error getting available cameras: {e}")
@@ -55,12 +60,42 @@ class CameraController:
 
     def get_camera_status(self, camera_id: str) -> str:
         """Get current status of a camera."""
+        # First check if process is running
         if camera_id in self.processes and self.processes[camera_id].is_alive():
             return "active"
 
-        # Check database status
+        # Check internal status tracking (may be stale)
+        if camera_id in self.camera_status:
+            return self.camera_status[camera_id]
+
+        # Fallback to database status
         camera = camera_db_service.get_camera_by_id(camera_id)
-        return camera.status if camera else "unknown"
+        if camera:
+            # Update internal tracking
+            self.camera_status[camera_id] = camera.status or "stopped"
+            return self.camera_status[camera_id]
+
+        return "unknown"
+
+    def refresh_status_tracking(self) -> None:
+        """Refresh internal status tracking with current database state."""
+        try:
+            cameras = camera_db_service.get_all_cameras()
+            for camera in cameras:
+                self.camera_status[camera.id] = camera.status or "stopped"
+            logger.info(f"Refreshed status tracking for {len(cameras)} cameras")
+        except Exception as e:
+            logger.error(f"Error refreshing status tracking: {e}")
+
+    def get_all_camera_statuses(self) -> Dict[str, str]:
+        """Get status of all cameras with efficient status tracking."""
+        try:
+            # Refresh status tracking to ensure it's current
+            self.refresh_status_tracking()
+            return self.camera_status.copy()
+        except Exception as e:
+            logger.error(f"Error getting all camera statuses: {e}")
+            return {}
 
     def start_camera(self, camera_id: str) -> bool:
         """Starts the pipeline for a specific camera using database config."""

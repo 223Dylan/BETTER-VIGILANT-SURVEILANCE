@@ -211,7 +211,6 @@ class FrameProcessor(BaseComponent):
         try:
             # Step 1: Frame differencing (background subtraction)
             if self._previous_frame is not None:
-                # Use frame differencing as in the notebook
                 diff = cv2.absdiff(frame, self._previous_frame)
             else:
                 # For the first frame, use the original frame
@@ -220,16 +219,16 @@ class FrameProcessor(BaseComponent):
             # Update previous frame for next iteration
             self._previous_frame = frame.copy()
 
-            # Step 2: Gaussian blur (exactly as in notebook: kernel (3,3), sigma 0)
+            # Step 2: Gaussian blur (kernel (3,3), sigma 0)
             diff = cv2.GaussianBlur(diff, (3, 3), 0)
 
-            # Step 3: Resize (exactly as in notebook: to frame_height, frame_width)
+            # Step 3: Resize (to frame_height, frame_width)
             resized_frame = cv2.resize(diff, (self.frame_size, self.frame_size))
 
-            # Step 4: Convert to grayscale (exactly as in notebook)
+            # Step 4: Convert to grayscale
             gray_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
 
-            # Step 5: Normalize (exactly as in notebook: divide by 255)
+            # Step 5: Normalize (divide by 255)
             normalized_frame = gray_frame / 255.0
 
             # Reshape for model input (add channel dimension)
