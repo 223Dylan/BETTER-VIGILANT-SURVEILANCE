@@ -9,7 +9,8 @@ interface NotificationContextType {
   error: string | null;
   updatePreferences: (preferences: NotificationPreferences) => Promise<void>;
   sendTestNotification: () => Promise<void>;
-  markAsRead: (notificationId: string) => void;
+  markAsRead: (notificationId: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
   clearAll: () => void;
   requestPermission: () => Promise<boolean>;
 }
@@ -51,11 +52,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       const history = await notificationService.getNotificationHistory(20);
       setNotifications(history.notifications);
 
-      // Calculate unread count (notifications from last 24 hours)
-      const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const unread = history.notifications.filter(n =>
-        new Date(n.created_at) > last24h
-      ).length;
+      // Calculate unread count based on status, not time
+      const unread = history.notifications.filter(n => n.status === 'pending').length;
       setUnreadCount(unread);
     } catch (err) {
       console.error('Failed to load notifications:', err);
@@ -89,10 +87,35 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   };
 
-  const markAsRead = (notificationId: string) => {
-    // In a real implementation, you'd mark this on the server
-    // For now, we'll just remove it from the unread count
-    setUnreadCount(prev => Math.max(0, prev - 1));
+  const markAsRead = async (notificationId: string) => {
+    try {
+      await notificationService.updateNotificationStatus(notificationId, 'delivered');
+      // Update local state
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId
+            ? { ...n, status: 'delivered' as const }
+            : n
+        )
+      );
+      // Update unread count
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await notificationService.markAllNotificationsAsRead();
+      // Update local state
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, status: 'delivered' as const }))
+      );
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Failed to mark all notifications as read:', err);
+    }
   };
 
   const clearAll = () => {
@@ -119,6 +142,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     updatePreferences,
     sendTestNotification,
     markAsRead,
+    markAllAsRead,
     clearAll,
     requestPermission: requestNotificationPermission,
   };

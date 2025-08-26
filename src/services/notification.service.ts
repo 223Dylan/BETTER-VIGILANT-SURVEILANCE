@@ -157,7 +157,7 @@ class NotificationService {
       return await response.json();
     } catch (error) {
       console.error('Error fetching notification history:', error);
-      // Return empty array for demo
+      // Return empty array when API fails
       return { notifications: [] };
     }
   }
@@ -241,6 +241,60 @@ class NotificationService {
     } catch (error) {
       console.error('Error requesting notification permission:', error);
       return false;
+    }
+  }
+
+  // Update notification status
+  async updateNotificationStatus(
+    notificationId: string,
+    status: string,
+    channelData?: Record<string, any>
+  ): Promise<{ message: string; notification: any }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/users/me/notifications/${notificationId}/status`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authService.getAuthToken()}`
+        },
+        body: JSON.stringify({
+          status,
+          channel_data: channelData
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update notification status');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating notification status:', error);
+      throw error;
+    }
+  }
+
+  // Mark all notifications as read
+  async markAllNotificationsAsRead(): Promise<{ message: string; updated_count: number }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/users/me/notifications/mark-all-read`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authService.getAuthToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark notifications as read');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
+      throw error;
     }
   }
 
