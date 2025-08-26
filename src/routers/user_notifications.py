@@ -272,6 +272,7 @@ async def get_my_notification_history(
 
         # Get notification history from the database
         notifications = notification_history_service.get_user_notification_history(
+            db=db,
             user_id=current_user.id,
             limit=limit,
             notification_type=type,
@@ -287,13 +288,111 @@ async def get_my_notification_history(
         return {"notifications": []}
 
 
+@router.put("/users/me/notifications/{notification_id}/status")
+async def update_my_notification_status(
+    notification_id: str,
+    status_update: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Update the status of a specific notification for the current user."""
+    try:
+        # Verify the notification belongs to the current user
+        notification = notification_history_service.get_notification_by_id(
+            db, notification_id
+        )
+
+        if not notification:
+            raise HTTPException(status_code=404, detail="Notification not found")
+
+        if notification.get("user_id") != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Update the notification status
+        updated_notification = notification_history_service.update_notification_status(
+            db=db,
+            notification_id=notification_id,
+            new_status=status_update.get("status"),
+            timestamp=datetime.now(),
+            channel_data=status_update.get("channel_data"),
+        )
+
+        if updated_notification:
+            return {
+                "message": "Notification status updated successfully",
+                "notification": updated_notification,
+            }
+        else:
+            raise HTTPException(
+                status_code=500, detail="Failed to update notification status"
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"[STATUS_UPDATE] Error updating notification {notification_id}: {e}"
+        )
+        raise HTTPException(
+            status_code=500, detail="Failed to update notification status"
+        )
+
+
+@router.put("/users/me/notifications/mark-all-read")
+async def mark_all_notifications_read(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Mark all pending notifications as read for the current user."""
+    try:
+        # Get all pending notifications for the user
+        pending_notifications = (
+            notification_history_service.get_user_notification_history(
+                db=db,
+                user_id=current_user.id,
+                status="pending",
+                limit=1000,  # Get all pending notifications
+            )
+        )
+
+        updated_count = 0
+        for notification in pending_notifications:
+            try:
+                notification_history_service.update_notification_status(
+                    db=db,
+                    notification_id=notification["id"],
+                    new_status="delivered",
+                    timestamp=datetime.now(),
+                )
+                updated_count += 1
+            except Exception as e:
+                logger.warning(
+                    f"Failed to update notification {notification['id']}: {e}"
+                )
+                continue
+
+        return {
+            "message": f"Marked {updated_count} notifications as read",
+            "updated_count": updated_count,
+        }
+
+    except Exception as e:
+        logger.error(f"[MARK_ALL_READ] Error marking notifications as read: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to mark notifications as read"
+        )
+
+
 @router.get("/users/me/notification-stats")
 async def get_my_notification_stats(
-    days: int = 7, current_user: User = Depends(get_current_user)
+    days: int = 7,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """Get notification statistics for current user."""
     try:
         stats = notification_history_service.get_notification_statistics(
+            db=db,
             user_id=current_user.id,
             days=days,
         )
@@ -412,6 +511,7 @@ async def get_system_notification_history(
     """Get system-wide notification history (admin only)."""
     try:
         notifications = notification_history_service.get_system_notification_history(
+            db=db,
             limit=limit,
             notification_type=notification_type,
             status=status,
