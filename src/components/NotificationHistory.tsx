@@ -8,20 +8,8 @@ import {
   ExclamationTriangleIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { notificationService } from '../services/notification.service';
+import { notificationService, NotificationHistoryItem } from '../services/notification.service';
 import { useThemeClasses } from '../contexts/ThemeContext';
-
-interface NotificationHistoryItem {
-  id: string;
-  type: 'email' | 'push' | 'webhook';
-  title: string;
-  message: string;
-  timestamp: string;
-  status: 'sent' | 'failed' | 'pending';
-  alert_id?: string;
-  camera_id?: string;
-  severity?: string;
-}
 
 interface NotificationHistoryProps {
   limit?: number;
@@ -62,31 +50,35 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
   };
 
   const generateMockNotifications = (): NotificationHistoryItem[] => {
-    const types: ('email' | 'push' | 'webhook')[] = ['email', 'push', 'webhook'];
-    const statuses: ('sent' | 'failed' | 'pending')[] = ['sent', 'failed', 'pending'];
+    const types: ('email' | 'push' | 'webhook' | 'alert_broadcast')[] = ['email', 'push', 'webhook', 'alert_broadcast'];
+    const statuses: ('pending' | 'sent' | 'delivered' | 'failed' | 'opened' | 'clicked')[] = ['pending', 'sent', 'delivered', 'failed', 'opened', 'clicked'];
     const severities = ['critical', 'high', 'medium', 'low'];
 
     return Array.from({ length: 20 }, (_, i) => ({
       id: `notification-${i + 1}`,
-      type: types[Math.floor(Math.random() * types.length)],
+      user_id: `user-${i + 1}`,
+      notification_type: types[Math.floor(Math.random() * types.length)],
       title: `Security Alert - ${severities[Math.floor(Math.random() * severities.length)]} severity`,
-      message: `Suspicious activity detected on camera CAM-${Math.floor(Math.random() * 10) + 1}`,
-      timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+      message: `Suspicious activity detected on camera CAM-${Math.floor(Math.random() * 0) + 1}`,
       status: statuses[Math.floor(Math.random() * statuses.length)],
       alert_id: `alert-${i + 1}`,
-      camera_id: `CAM-${Math.floor(Math.random() * 10) + 1}`,
-      severity: severities[Math.floor(Math.random() * severities.length)]
+      channel_data: { severity: severities[Math.floor(Math.random() * severities.length)] },
+      retry_count: '0',
+      created_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+      updated_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
     }));
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
+  const getTypeIcon = (notification_type: string) => {
+    switch (notification_type) {
       case 'email':
         return <EnvelopeIcon className="h-5 w-5 text-blue-500" />;
       case 'push':
         return <BellIcon className="h-5 w-5 text-green-500" />;
       case 'webhook':
         return <GlobeAltIcon className="h-5 w-5 text-purple-500" />;
+      case 'alert_broadcast':
+        return <GlobeAltIcon className="h-5 w-5 text-orange-500" />;
       default:
         return <BellIcon className="h-5 w-5 text-gray-500" />;
     }
@@ -132,7 +124,7 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
   };
 
   const filteredNotifications = notifications.filter(notification => {
-    if (filters.type !== 'all' && notification.type !== filters.type) return false;
+    if (filters.type !== 'all' && notification.notification_type !== filters.type) return false;
     if (filters.status !== 'all' && notification.status !== filters.status) return false;
     return true;
   });
@@ -239,27 +231,27 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
               <div key={notification.id} className={`p-4 ${themeClasses.hover.bg}`}>
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0">
-                    {getTypeIcon(notification.type)}
+                    {getTypeIcon(notification.notification_type)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <p className={`text-sm font-medium ${themeClasses.text.primary}`}>{notification.title}</p>
-                        {notification.severity && (
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(notification.severity)}`}>
-                            {notification.severity}
-                          </span>
-                        )}
+                                        {notification.channel_data?.severity && (
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(notification.channel_data.severity)}`}>
+                    {notification.channel_data.severity}
+                  </span>
+                )}
                       </div>
                       <div className="flex items-center space-x-2">
                         {getStatusIcon(notification.status)}
-                        <span className={`text-xs ${themeClasses.text.secondary}`}>{formatTimeAgo(notification.timestamp)}</span>
+                        <span className={`text-xs ${themeClasses.text.secondary}`}>{formatTimeAgo(notification.created_at)}</span>
                       </div>
                     </div>
-                    <p className={`text-sm ${themeClasses.text.secondary} mt-1`}>{notification.message}</p>
-                    {notification.camera_id && (
-                      <p className={`text-xs ${themeClasses.text.secondary} mt-1`}>Camera: {notification.camera_id}</p>
-                    )}
+                                         <p className={`text-sm ${themeClasses.text.secondary} mt-1`}>{notification.message}</p>
+                     {notification.channel_data?.camera_id && (
+                       <p className={`text-xs ${themeClasses.text.secondary} mt-1`}>Camera: {notification.channel_data.camera_id}</p>
+                     )}
                   </div>
                 </div>
               </div>

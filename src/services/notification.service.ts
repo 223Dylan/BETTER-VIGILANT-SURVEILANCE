@@ -19,25 +19,34 @@ export interface NotificationPreferences {
 
 export interface NotificationHistoryItem {
   id: string;
-  type: 'email' | 'push' | 'webhook';
-  title: string;
-  message: string;
-  timestamp: string;
-  status: 'sent' | 'failed' | 'pending';
+  user_id: string;
   alert_id?: string;
-  camera_id?: string;
-  severity?: string;
+  notification_type: 'email' | 'push' | 'webhook' | 'alert_broadcast';
+  title?: string;
+  message?: string;
+  status: 'pending' | 'sent' | 'delivered' | 'failed' | 'opened' | 'clicked';
+  sent_at?: string;
+  delivered_at?: string;
+  opened_at?: string;
+  clicked_at?: string;
+  channel_data?: Record<string, any>;
+  error_message?: string;
+  retry_count: string;
+  delivery_time?: string;
+  processing_time?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface NotificationStats {
-  total_sent: number;
-  total_failed: number;
-  email_sent: number;
-  push_sent: number;
-  webhook_sent: number;
-  last_24h: number;
-  last_7d: number;
-  last_30d: number;
+  total_notifications: number;
+  successful_notifications: number;
+  failed_notifications: number;
+  success_rate: number;
+  status_breakdown: Record<string, number>;
+  type_breakdown: Record<string, number>;
+  period_days: number;
+  generated_at: string;
 }
 
 class NotificationService {
@@ -171,14 +180,14 @@ class NotificationService {
       console.error('Error fetching notification stats:', error);
       // Return mock stats for demo
       return {
-        total_sent: 0,
-        total_failed: 0,
-        email_sent: 0,
-        push_sent: 0,
-        webhook_sent: 0,
-        last_24h: 0,
-        last_7d: 0,
-        last_30d: 0
+        total_notifications: 0,
+        successful_notifications: 0,
+        failed_notifications: 0,
+        success_rate: 0.0,
+        status_breakdown: {},
+        type_breakdown: {},
+        period_days: 7,
+        generated_at: new Date().toISOString()
       };
     }
   }

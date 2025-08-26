@@ -36,6 +36,9 @@ class User(Base):
     notification_webhooks = relationship(
         "NotificationWebhook", back_populates="user", lazy="dynamic"
     )
+    notification_history = relationship(
+        "NotificationHistory", back_populates="user", lazy="dynamic"
+    )
 
     def to_dict(self):
         return {

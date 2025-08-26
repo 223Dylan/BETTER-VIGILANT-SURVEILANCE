@@ -46,6 +46,34 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
     };
   }, []);
 
+  // Debug effect to monitor for duplicates
+  useEffect(() => {
+    if (allAlerts.length > 0) {
+      const uniqueIds = new Set(allAlerts.map(alert => alert.id));
+      if (uniqueIds.size !== allAlerts.length) {
+        console.warn('Duplicate alerts detected in allAlerts:', {
+          total: allAlerts.length,
+          unique: uniqueIds.size,
+          duplicates: allAlerts.length - uniqueIds.size
+        });
+      }
+    }
+  }, [allAlerts]);
+
+  // Debug effect to monitor activeAlerts for duplicates
+  useEffect(() => {
+    if (activeAlerts.length > 0) {
+      const uniqueIds = new Set(activeAlerts.map(alert => alert.id));
+      if (uniqueIds.size !== activeAlerts.length) {
+        console.warn('Duplicate alerts detected in activeAlerts:', {
+          total: activeAlerts.length,
+          unique: uniqueIds.size,
+          duplicates: activeAlerts.length - uniqueIds.size
+        });
+      }
+    }
+  }, [activeAlerts]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -65,7 +93,13 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
 
       // Fetch all alerts (for "all" view)
       const allData = await apiService.get<any>(`/api/alerts/history?limit=200&${filterParams}`);
-      setAllAlerts([...activeData.data.alerts, ...allData.data.alerts]);
+
+      // Combine alerts and remove duplicates based on ID
+      const combinedAlerts = [...activeData.data.alerts, ...allData.data.alerts];
+      const uniqueAlerts = combinedAlerts.filter((alert, index, self) =>
+        index === self.findIndex(a => a.id === alert.id)
+      );
+      setAllAlerts(uniqueAlerts);
 
       // Fetch statistics
       const statsData = await apiService.get<any>('/api/alerts/stats');
@@ -167,7 +201,22 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
     );
   }
 
+  // Ensure no duplicate alerts in the current view
   const currentAlerts = view === 'active' ? activeAlerts : allAlerts;
+
+  // Additional safety check - remove any remaining duplicates
+  const uniqueCurrentAlerts = currentAlerts.filter((alert, index, self) =>
+    index === self.findIndex(a => a.id === alert.id)
+  );
+
+  // Log warning if duplicates are found
+  if (currentAlerts.length !== uniqueCurrentAlerts.length) {
+    console.warn(`Found ${currentAlerts.length - uniqueCurrentAlerts.length} duplicate alerts, removing them`);
+    console.warn('Duplicate IDs:', currentAlerts
+      .filter((alert, index, self) => self.findIndex(a => a.id === alert.id) !== index)
+      .map(alert => alert.id)
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -202,7 +251,7 @@ const AlertsPage: React.FC<AlertsPageProps> = () => {
       {/* Alerts List */}
       {view !== 'stats' && (
         <AlertList
-          alerts={currentAlerts}
+          alerts={uniqueCurrentAlerts}
           loading={loading}
           title={view === 'active' ? 'Active Alerts' : 'All Alerts'}
           emptyMessage={view === 'active' ? 'No active alerts' : 'No alerts found'}

@@ -6,6 +6,7 @@ from .base import Base, engine, get_db
 from .camera import Camera
 from .frame import Frame
 from .notification_analytics import NotificationAnalytics, NotificationEvent
+from .notification_history import NotificationHistory
 from .notification_schedule import NotificationSchedule
 from .notification_template import NotificationTemplate
 from .notification_webhook import NotificationWebhook, WebhookDeliveryLog
@@ -20,6 +21,7 @@ __all__ = [
     "UserNotificationPreferences",
     "NotificationAnalytics",
     "NotificationEvent",
+    "NotificationHistory",
     "NotificationSchedule",
     "NotificationTemplate",
     "NotificationWebhook",

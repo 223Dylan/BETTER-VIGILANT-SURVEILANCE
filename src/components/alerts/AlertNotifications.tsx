@@ -105,9 +105,9 @@ const AlertNotifications: React.FC<AlertNotificationsProps> = ({
                 </span>
               </div>
 
-              <p className="text-sm font-medium text-gray-900 mb-1">
-                {notification.type.replace('_', ' ').toUpperCase()} DETECTED
-              </p>
+                             <p className="text-sm font-medium text-gray-900 mb-1">
+                 {notification.type.replace('_', ' ').toUpperCase()} DETECTED
+               </p>
 
               <p className="text-xs text-gray-600 line-clamp-2">
                 {notification.message}

@@ -54,7 +54,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       // Calculate unread count (notifications from last 24 hours)
       const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const unread = history.notifications.filter(n =>
-        new Date(n.timestamp) > last24h
+        new Date(n.created_at) > last24h
       ).length;
       setUnreadCount(unread);
     } catch (err) {

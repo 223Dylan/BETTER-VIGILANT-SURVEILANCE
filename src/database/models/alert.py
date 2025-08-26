@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Index, String, Text
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from .base import Base
@@ -50,6 +51,11 @@ class Alert(Base):
 
     # Additional notes
     notes = Column(Text, nullable=True)
+
+    # Relationships
+    notification_history = relationship(
+        "NotificationHistory", back_populates="alert", lazy="dynamic"
+    )
 
     # Create indexes for common queries
     __table_args__ = (

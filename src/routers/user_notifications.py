@@ -14,6 +14,7 @@ from src.database.models.user_notification_preferences import (
     UserNotificationPreferences,
 )
 from src.services.alert_manager import AlertRecord
+from src.services.notification_history_service import notification_history_service
 from src.services.user_notification_service import user_notification_service
 
 router = APIRouter()
@@ -265,14 +266,18 @@ async def get_my_notification_history(
 ):
     """Get current user's notification history."""
     try:
-        # For now, return empty history since we don't have a notification history table yet
-        # In a real implementation, you would query from a notification_history table
         logger.info(
             f"[HISTORY] Getting notification history for user {current_user.id}"
         )
 
-        # Mock response for now
-        notifications = []
+        # Get notification history from the database
+        notifications = notification_history_service.get_user_notification_history(
+            user_id=current_user.id,
+            limit=limit,
+            notification_type=type,
+            status=status,
+            date_range=date_range,
+        )
 
         return {"notifications": notifications}
     except Exception as e:
@@ -287,13 +292,24 @@ async def get_my_notification_stats(
     days: int = 7, current_user: User = Depends(get_current_user)
 ):
     """Get notification statistics for current user."""
-    # For now, return basic stats
-    # TODO: Implement per-user notification tracking
-    return {
-        "message": "Personal notification statistics coming soon",
-        "days": days,
-        "user_id": current_user.id,
-    }
+    try:
+        stats = notification_history_service.get_notification_statistics(
+            user_id=current_user.id,
+            days=days,
+        )
+        return stats
+    except Exception as e:
+        logger.error(f"Failed to get user notification stats: {e}")
+        return {
+            "total_notifications": 0,
+            "successful_notifications": 0,
+            "failed_notifications": 0,
+            "success_rate": 0.0,
+            "status_breakdown": {},
+            "type_breakdown": {},
+            "period_days": days,
+            "user_id": current_user.id,
+        }
 
 
 @router.get("/admin/notification-stats")
@@ -380,6 +396,45 @@ async def get_all_user_notification_preferences(
         logger.error(f"[ADMIN] Failed to get user notification preferences: {e}")
         raise HTTPException(
             status_code=500, detail="Failed to retrieve user notification preferences"
+        )
+
+
+@router.get("/admin/notification-history")
+@require_permission(Permission.SYSTEM_METRICS)
+async def get_system_notification_history(
+    limit: int = 100,
+    notification_type: Optional[str] = None,
+    status: Optional[str] = None,
+    date_range: Optional[str] = None,
+    user_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+):
+    """Get system-wide notification history (admin only)."""
+    try:
+        notifications = notification_history_service.get_system_notification_history(
+            limit=limit,
+            notification_type=notification_type,
+            status=status,
+            date_range=date_range,
+            user_id=user_id,
+        )
+
+        return {
+            "notifications": notifications,
+            "total": len(notifications),
+            "limit": limit,
+            "filters": {
+                "notification_type": notification_type,
+                "status": status,
+                "date_range": date_range,
+                "user_id": user_id,
+            },
+            "generated_at": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"[ADMIN] Failed to get system notification history: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to retrieve system notification history"
         )
 
 

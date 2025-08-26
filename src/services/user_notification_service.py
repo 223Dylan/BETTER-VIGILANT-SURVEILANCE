@@ -16,6 +16,7 @@ from src.database.models.user import User
 from src.database.models.user_notification_preferences import (
     UserNotificationPreferences,
 )
+from src.services.notification_history_service import notification_history_service
 from src.websocket_manager import websocket_manager
 
 
@@ -402,6 +403,7 @@ This is an automated alert from your surveillance system.
         self, alert_data: Dict, eligible_users: int, successful: int, failed: int
     ):
         """Record notification attempt in history."""
+        # Keep in-memory record for backward compatibility
         record = {
             "timestamp": datetime.now().isoformat(),
             "alert_id": alert_data.get("id"),
@@ -420,6 +422,27 @@ This is an automated alert from your surveillance system.
             self.notification_history = self.notification_history[
                 -self.max_history_size :
             ]
+
+        # Also record in database for persistent storage
+        try:
+            # Create a summary record in the database
+            notification_history_service.create_notification_record(
+                user_id="system",  # System-wide record
+                notification_type="alert_broadcast",
+                title=f"Alert Broadcast: {alert_data.get('type', 'Unknown')}",
+                message=f"Alert {alert_data.get('id')} sent to {eligible_users} users. Success: {successful}, Failed: {failed}",
+                alert_id=alert_data.get("id"),
+                channel_data={
+                    "alert_type": alert_data.get("type"),
+                    "alert_severity": alert_data.get("severity"),
+                    "camera_id": alert_data.get("camera_id"),
+                    "eligible_users": eligible_users,
+                    "successful_deliveries": successful,
+                    "failed_deliveries": failed,
+                },
+            )
+        except Exception as e:
+            logger.error(f"Failed to record notification in database: {e}")
 
     def get_notification_stats(self, days: int = 7) -> Dict:
         """Get notification statistics for the last N days."""

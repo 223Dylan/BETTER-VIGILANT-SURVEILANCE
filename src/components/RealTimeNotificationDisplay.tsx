@@ -251,9 +251,9 @@ const RealTimeNotificationDisplay: React.FC<RealTimeNotificationDisplayProps> = 
                       Camera: {notification.camera_id}
                     </span>
                   )}
-                  <span className="text-xs text-gray-500">
-                    {formatTimeAgo(notification.timestamp)}
-                  </span>
+                                     <span className="text-xs text-gray-500">
+                     {formatTimeAgo(notification.timestamp)}
+                   </span>
                 </div>
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                   notification.severity === 'critical' ? 'text-red-800 bg-red-100' :
