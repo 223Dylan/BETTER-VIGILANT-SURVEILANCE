@@ -3,13 +3,19 @@ import { Tab } from '@headlessui/react';
 import { BellIcon, Cog6ToothIcon, ClockIcon } from '@heroicons/react/24/outline';
 import UserNotificationSettings from '../components/UserNotificationSettings';
 import NotificationHistory from '../components/NotificationHistory';
+import NotificationsTabContent from '../components/NotificationsTabContent';
 import { useThemeClasses } from '../contexts/ThemeContext';
 
 const NotificationsPage: React.FC = () => {
   const themeClasses = useThemeClasses();
-  const [selectedTab, setSelectedTab] = useState(0);
+  const [selectedTab, setSelectedTab] = useState(0); // Start with Notifications tab (index 0)
 
   const tabs = [
+    {
+      name: 'Notifications',
+      icon: BellIcon,
+      component: <NotificationsTabContent />
+    },
     {
       name: 'Settings',
       icon: Cog6ToothIcon,

@@ -42,8 +42,8 @@ const NotificationHistory: React.FC<NotificationHistoryProps> = ({
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load notification history');
-      // For demo purposes, create mock data
-      setNotifications(generateMockNotifications());
+      // Don't show mock data in production - keep empty state
+      setNotifications([]);
     } finally {
       setLoading(false);
     }
