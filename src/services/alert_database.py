@@ -19,6 +19,50 @@ class AlertDatabaseService:
         """Get database session."""
         return self.session_factory()
 
+    def refresh_connection(self):
+        """Refresh database connection to ensure latest data."""
+        try:
+            # Force engine disposal to clear connection pool
+            from src.database.models.base import engine
+
+            engine.dispose()
+            logger.info("Database connection pool refreshed")
+        except Exception as e:
+            logger.error(f"Error refreshing database connection: {e}")
+
+    def verify_database_state(self):
+        """Verify current database state for debugging."""
+        try:
+            with self.get_session() as db:
+                # Check total alerts
+                total_alerts = db.query(Alert).count()
+
+                # Check by status
+                active_count = db.query(Alert).filter(Alert.status == "active").count()
+                resolved_count = (
+                    db.query(Alert).filter(Alert.status == "resolved").count()
+                )
+                acknowledged_count = (
+                    db.query(Alert).filter(Alert.status == "acknowledged").count()
+                )
+
+                logger.info(
+                    f"Database state - Total: {total_alerts}, Active: {active_count}, Resolved: {resolved_count}, Acknowledged: {acknowledged_count}"
+                )
+
+                # Check recent updates
+                recent_alerts = (
+                    db.query(Alert).order_by(desc(Alert.updated_at)).limit(5).all()
+                )
+                logger.info("Recent alert updates:")
+                for alert in recent_alerts:
+                    logger.info(
+                        f"  {alert.id}: status={alert.status}, updated_at={alert.updated_at}"
+                    )
+
+        except Exception as e:
+            logger.error(f"Error verifying database state: {e}")
+
     def save_alert(self, alert_record) -> bool:
         """Save an alert to the database."""
         try:
@@ -60,6 +104,12 @@ class AlertDatabaseService:
         """Get active alerts with optional filtering."""
         try:
             with self.get_session() as db:
+                # Force database refresh to see latest changes
+                db.commit()  # Commit any pending transactions
+
+                # Debug: Check what we're actually querying
+                logger.debug(f"Querying for active alerts with filters: {filters}")
+
                 query = db.query(Alert).filter(Alert.status == "active")
 
                 # Apply filters
@@ -68,6 +118,16 @@ class AlertDatabaseService:
 
                 # Order by timestamp (newest first) and apply limit
                 alerts = query.order_by(desc(Alert.timestamp)).limit(limit).all()
+
+                # Debug: Log what we found
+                logger.debug(f"Found {len(alerts)} active alerts in database")
+                for alert in alerts[:3]:  # Log first 3 alerts
+                    logger.debug(
+                        f"Alert {alert.id}: status={alert.status}, updated_at={alert.updated_at}"
+                    )
+
+                # Verify database state for debugging
+                self.verify_database_state()
 
                 return [alert.to_dict() for alert in alerts]
 
