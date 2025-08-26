@@ -14,10 +14,11 @@ class NotificationHistoryService:
     """Service for managing notification history records."""
 
     def __init__(self):
-        self.db: Session = next(get_db())
+        pass
 
     def create_notification_record(
         self,
+        db: Session,
         user_id: str,
         notification_type: str,
         title: Optional[str] = None,
@@ -37,20 +38,42 @@ class NotificationHistoryService:
                 status="pending",
             )
 
-            self.db.add(notification)
-            self.db.commit()
-            self.db.refresh(notification)
+            db.add(notification)
+            db.commit()
+            db.refresh(notification)
 
             logger.debug(f"Created notification history record: {notification.id}")
             return notification
 
         except Exception as e:
-            self.db.rollback()
+            db.rollback()
             logger.error(f"Failed to create notification history record: {e}")
             raise
 
+    def get_notification_by_id(
+        self,
+        db: Session,
+        notification_id: str,
+    ) -> Optional[Dict]:
+        """Get a specific notification by ID."""
+        try:
+            notification = (
+                db.query(NotificationHistory)
+                .filter(NotificationHistory.id == notification_id)
+                .first()
+            )
+
+            if notification:
+                return notification.to_dict()
+            return None
+
+        except Exception as e:
+            logger.error(f"Failed to get notification {notification_id}: {e}")
+            return None
+
     def update_notification_status(
         self,
+        db: Session,
         notification_id: str,
         new_status: str,
         timestamp: Optional[datetime] = None,
@@ -60,7 +83,7 @@ class NotificationHistoryService:
         """Update notification status and related fields."""
         try:
             notification = (
-                self.db.query(NotificationHistory)
+                db.query(NotificationHistory)
                 .filter(NotificationHistory.id == notification_id)
                 .first()
             )
@@ -81,8 +104,8 @@ class NotificationHistoryService:
                     notification.channel_data = {}
                 notification.channel_data.update(channel_data)
 
-            self.db.commit()
-            self.db.refresh(notification)
+            db.commit()
+            db.refresh(notification)
 
             logger.debug(
                 f"Updated notification {notification_id} status to {new_status}"
@@ -90,12 +113,13 @@ class NotificationHistoryService:
             return notification
 
         except Exception as e:
-            self.db.rollback()
+            db.rollback()
             logger.error(f"Failed to update notification status: {e}")
             raise
 
     def get_user_notification_history(
         self,
+        db: Session,
         user_id: str,
         limit: int = 50,
         notification_type: Optional[str] = None,
@@ -105,17 +129,17 @@ class NotificationHistoryService:
     ) -> List[Dict]:
         """Get notification history for a specific user with optional filtering."""
         try:
-            query = self.db.query(NotificationHistory).filter(
+            query = db.query(NotificationHistory).filter(
                 NotificationHistory.user_id == user_id
             )
 
             # Apply filters
-            if notification_type:
+            if notification_type and notification_type.lower() != "all":
                 query = query.filter(
                     NotificationHistory.notification_type == notification_type
                 )
 
-            if status:
+            if status and status.lower() != "all":
                 query = query.filter(NotificationHistory.status == status)
 
             if alert_id:
@@ -124,7 +148,17 @@ class NotificationHistoryService:
             # Apply date range filter
             if date_range:
                 try:
-                    days = int(date_range)
+                    # Handle formats like "7d", "24h", "30d", etc.
+                    if isinstance(date_range, str):
+                        if date_range.endswith("d"):
+                            days = int(date_range[:-1])
+                        elif date_range.endswith("h"):
+                            days = int(date_range[:-1]) / 24
+                        else:
+                            days = int(date_range)
+                    else:
+                        days = int(date_range)
+
                     cutoff_date = datetime.now() - timedelta(days=days)
                     query = query.filter(NotificationHistory.created_at >= cutoff_date)
                 except ValueError:
@@ -142,6 +176,7 @@ class NotificationHistoryService:
 
     def get_system_notification_history(
         self,
+        db: Session,
         limit: int = 100,
         notification_type: Optional[str] = None,
         status: Optional[str] = None,
@@ -150,24 +185,34 @@ class NotificationHistoryService:
     ) -> List[Dict]:
         """Get system-wide notification history with optional filtering."""
         try:
-            query = self.db.query(NotificationHistory)
+            query = db.query(NotificationHistory)
 
             # Apply filters
-            if notification_type:
+            if notification_type and notification_type.lower() != "all":
                 query = query.filter(
                     NotificationHistory.notification_type == notification_type
                 )
 
-            if status:
+            if status and status.lower() != "all":
                 query = query.filter(NotificationHistory.status == status)
 
-            if user_id:
+            if user_id and user_id.lower() != "all":
                 query = query.filter(NotificationHistory.user_id == user_id)
 
             # Apply date range filter
             if date_range:
                 try:
-                    days = int(date_range)
+                    # Handle formats like "7d", "24h", "30d", etc.
+                    if isinstance(date_range, str):
+                        if date_range.endswith("d"):
+                            days = int(date_range[:-1])
+                        elif date_range.endswith("h"):
+                            days = int(date_range[:-1]) / 24
+                        else:
+                            days = int(date_range)
+                    else:
+                        days = int(date_range)
+
                     cutoff_date = datetime.now() - timedelta(days=days)
                     query = query.filter(NotificationHistory.created_at >= cutoff_date)
                 except ValueError:
@@ -185,6 +230,7 @@ class NotificationHistoryService:
 
     def get_notification_statistics(
         self,
+        db: Session,
         user_id: Optional[str] = None,
         days: int = 7,
     ) -> Dict:
@@ -193,7 +239,7 @@ class NotificationHistoryService:
             cutoff_date = datetime.now() - timedelta(days=days)
 
             # Base query
-            query = self.db.query(NotificationHistory).filter(
+            query = db.query(NotificationHistory).filter(
                 NotificationHistory.created_at >= cutoff_date
             )
 
@@ -205,7 +251,7 @@ class NotificationHistoryService:
             total_notifications = query.count()
 
             # Get status breakdown
-            status_counts = self.db.query(
+            status_counts = db.query(
                 NotificationHistory.status, func.count(NotificationHistory.id)
             ).filter(NotificationHistory.created_at >= cutoff_date)
 
@@ -217,7 +263,7 @@ class NotificationHistoryService:
             status_counts = status_counts.group_by(NotificationHistory.status).all()
 
             # Get type breakdown
-            type_counts = self.db.query(
+            type_counts = db.query(
                 NotificationHistory.notification_type,
                 func.count(NotificationHistory.id),
             ).filter(NotificationHistory.created_at >= cutoff_date)
@@ -266,13 +312,13 @@ class NotificationHistoryService:
                 "generated_at": datetime.now().isoformat(),
             }
 
-    def cleanup_old_notifications(self, days_to_keep: int = 90) -> int:
+    def cleanup_old_notifications(self, db: Session, days_to_keep: int = 90) -> int:
         """Clean up old notification history records."""
         try:
             cutoff_date = datetime.now() - timedelta(days=days_to_keep)
 
             # Count records to be deleted
-            count_query = self.db.query(func.count(NotificationHistory.id)).filter(
+            count_query = db.query(func.count(NotificationHistory.id)).filter(
                 NotificationHistory.created_at < cutoff_date
             )
             count_to_delete = count_query.scalar()
@@ -282,12 +328,12 @@ class NotificationHistoryService:
                 return 0
 
             # Delete old records
-            delete_query = self.db.query(NotificationHistory).filter(
+            delete_query = db.query(NotificationHistory).filter(
                 NotificationHistory.created_at < cutoff_date
             )
             delete_query.delete()
 
-            self.db.commit()
+            db.commit()
 
             logger.info(
                 f"Cleaned up {count_to_delete} old notification history records"
@@ -295,7 +341,7 @@ class NotificationHistoryService:
             return count_to_delete
 
         except Exception as e:
-            self.db.rollback()
+            db.rollback()
             logger.error(f"Failed to cleanup old notifications: {e}")
             raise
 

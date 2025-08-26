@@ -16,8 +16,9 @@ from src.database.models.user import User
 from src.database.models.user_notification_preferences import (
     UserNotificationPreferences,
 )
-from src.services.notification_history_service import notification_history_service
 from src.websocket_manager import websocket_manager
+
+from .notification_history_service import notification_history_service
 
 
 class UserNotificationService:
@@ -140,6 +141,7 @@ class UserNotificationService:
             notification_data = self._prepare_notification_data(alert_data, user)
 
             success = False
+            channel_results = {}
 
             # Send email notification
             if prefs.email_enabled and self.smtp_config:
@@ -147,6 +149,7 @@ class UserNotificationService:
                     user, notification_data
                 )
                 success = success or email_success
+                channel_results["email"] = email_success
 
             # Send WebSocket notification (real-time)
             if prefs.push_enabled:
@@ -154,6 +157,7 @@ class UserNotificationService:
                     user, notification_data
                 )
                 success = success or ws_success
+                channel_results["push"] = ws_success
 
             # Send webhook notification
             if prefs.webhook_enabled and prefs.webhook_url:
@@ -161,10 +165,16 @@ class UserNotificationService:
                     user, prefs.webhook_url, notification_data
                 )
                 success = success or webhook_success
+                channel_results["webhook"] = webhook_success
 
             # Update last notification time if any channel succeeded
             if success:
                 self.last_notification_time[user.id] = datetime.now()
+
+                # Record individual notifications for each channel
+                self._record_channel_notifications(
+                    user, notification_data, channel_results, db
+                )
 
             return success
 
@@ -423,26 +433,49 @@ This is an automated alert from your surveillance system.
                 -self.max_history_size :
             ]
 
-        # Also record in database for persistent storage
+        # Note: Individual user notifications are recorded separately in _record_channel_notifications
+        # System broadcast records are skipped to avoid foreign key constraint issues
+        pass
+
+    def _record_channel_notifications(
+        self,
+        user: User,
+        notification_data: Dict,
+        channel_results: Dict[str, bool],
+        db: Session,
+    ):
+        """Record individual user notifications for each channel in history."""
         try:
-            # Create a summary record in the database
-            notification_history_service.create_notification_record(
-                user_id="system",  # System-wide record
-                notification_type="alert_broadcast",
-                title=f"Alert Broadcast: {alert_data.get('type', 'Unknown')}",
-                message=f"Alert {alert_data.get('id')} sent to {eligible_users} users. Success: {successful}, Failed: {failed}",
-                alert_id=alert_data.get("id"),
-                channel_data={
-                    "alert_type": alert_data.get("type"),
-                    "alert_severity": alert_data.get("severity"),
-                    "camera_id": alert_data.get("camera_id"),
-                    "eligible_users": eligible_users,
-                    "successful_deliveries": successful,
-                    "failed_deliveries": failed,
-                },
-            )
+            for channel, success in channel_results.items():
+                if channel in ["email", "push", "webhook"]:
+                    # Create individual notification record for this channel
+                    notification_history_service.create_notification_record(
+                        db=db,
+                        user_id=user.id,
+                        notification_type=channel,
+                        title=f"Security Alert: {notification_data.get('type', 'Unknown').replace('_', ' ').title()}",
+                        message=notification_data.get(
+                            "message", "Security alert notification"
+                        ),
+                        alert_id=notification_data.get("alert_id"),
+                        channel_data={
+                            "severity": notification_data.get("severity"),
+                            "camera_id": notification_data.get("camera_id"),
+                            "alert_type": notification_data.get("type"),
+                            "confidence": notification_data.get("confidence"),
+                            "delivery_status": "delivered" if success else "failed",
+                            "user_email": user.email,
+                            "username": user.username,
+                            "channel": channel,
+                        },
+                    )
+
+                    logger.debug(f"Recorded {channel} notification for user {user.id}")
+
         except Exception as e:
-            logger.error(f"Failed to record notification in database: {e}")
+            logger.error(
+                f"Failed to record channel notifications for user {user.id}: {e}"
+            )
 
     def get_notification_stats(self, days: int = 7) -> Dict:
         """Get notification statistics for the last N days."""
