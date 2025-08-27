@@ -40,6 +40,7 @@ from src.middleware.security import SecurityMiddleware
 from src.middleware.security_headers import SecurityHeadersMiddleware
 from src.model import load_model
 from src.routers import auth, ws
+from src.routers.websocket import router as analytics_websocket_router
 from src.tasks import celery_predict
 from src.utils import CameraConfig, Config, ensure_directory, setup_environment
 from src.utils.config import load_config
@@ -203,6 +204,9 @@ app.include_router(auth.router)
 
 # Include WebSocket router
 app.include_router(ws.router)
+
+# Include analytics WebSocket router
+app.include_router(analytics_websocket_router)
 
 # Add video streaming router
 app.include_router(video_router)
