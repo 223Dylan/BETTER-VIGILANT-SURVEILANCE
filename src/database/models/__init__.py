@@ -10,6 +10,7 @@ from .notification_history import NotificationHistory
 from .notification_schedule import NotificationSchedule
 from .notification_template import NotificationTemplate
 from .notification_webhook import NotificationWebhook, WebhookDeliveryLog
+from .push_subscription import PushSubscription
 from .user import User
 from .user_notification_preferences import UserNotificationPreferences
 
@@ -26,6 +27,7 @@ __all__ = [
     "NotificationTemplate",
     "NotificationWebhook",
     "WebhookDeliveryLog",
+    "PushSubscription",
     "Camera",
     "Alert",
     "AuditLog",

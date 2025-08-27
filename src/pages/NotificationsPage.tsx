@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Tab } from '@headlessui/react';
-import { BellIcon, Cog6ToothIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { BellIcon, Cog6ToothIcon, ClockIcon, DevicePhoneMobileIcon } from '@heroicons/react/24/outline';
 import UserNotificationSettings from '../components/UserNotificationSettings';
 import NotificationHistory from '../components/NotificationHistory';
 import NotificationsTabContent from '../components/NotificationsTabContent';
+import PushNotificationSettings from '../components/PushNotificationSettings';
 import { useThemeClasses } from '../contexts/ThemeContext';
 
 const NotificationsPage: React.FC = () => {
@@ -15,6 +16,11 @@ const NotificationsPage: React.FC = () => {
       name: 'Notifications',
       icon: BellIcon,
       component: <NotificationsTabContent />
+    },
+    {
+      name: 'Push Settings',
+      icon: DevicePhoneMobileIcon,
+      component: <PushNotificationSettings />
     },
     {
       name: 'Settings',

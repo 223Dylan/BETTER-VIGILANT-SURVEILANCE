@@ -15,6 +15,7 @@ from src.database.models.user_notification_preferences import (
 )
 from src.services.alert_manager import AlertRecord
 from src.services.notification_history_service import notification_history_service
+from src.services.push_notification_service import push_notification_service
 from src.services.user_notification_service import user_notification_service
 
 router = APIRouter()
@@ -586,4 +587,93 @@ async def update_user_notification_preferences(
         logger.error(f"[ADMIN] Failed to update preferences for user {user_id}: {e}")
         raise HTTPException(
             status_code=500, detail="Failed to update notification preferences"
+        )
+
+
+# Push Notification Subscription Endpoints
+class PushSubscriptionRequest(BaseModel):
+    """Request model for push subscription."""
+
+    endpoint: str
+    keys: Dict[str, str]
+
+
+@router.post("/users/me/push-subscription")
+async def subscribe_to_push_notifications(
+    subscription: PushSubscriptionRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Subscribe current user to push notifications."""
+    try:
+        # Store push subscription in database
+        success = await push_notification_service.subscribe_user(
+            db=db, user_id=current_user.id, subscription_data=subscription.dict()
+        )
+
+        if success:
+            logger.info(
+                f"[PUSH] User {current_user.id} subscribed to push notifications"
+            )
+            return {"message": "Successfully subscribed to push notifications"}
+        else:
+            raise HTTPException(
+                status_code=500, detail="Failed to subscribe to push notifications"
+            )
+
+    except Exception as e:
+        logger.error(f"[PUSH] Failed to subscribe user {current_user.id}: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to subscribe to push notifications"
+        )
+
+
+@router.delete("/users/me/push-subscription")
+async def unsubscribe_from_push_notifications(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Unsubscribe current user from push notifications."""
+    try:
+        # Remove push subscription from database
+        success = await push_notification_service.unsubscribe_user(
+            db=db, user_id=current_user.id
+        )
+
+        if success:
+            logger.info(
+                f"[PUSH] User {current_user.id} unsubscribed from push notifications"
+            )
+            return {"message": "Successfully unsubscribed from push notifications"}
+        else:
+            raise HTTPException(
+                status_code=500, detail="Failed to unsubscribe from push notifications"
+            )
+
+    except Exception as e:
+        logger.error(f"[PUSH] Failed to unsubscribe user {current_user.id}: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to unsubscribe from push notifications"
+        )
+
+
+@router.get("/users/me/push-subscription")
+async def get_push_subscription_status(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get current user's push subscription status."""
+    try:
+        subscription = await push_notification_service.get_user_subscription(
+            db=db, user_id=current_user.id
+        )
+
+        return {"subscribed": subscription is not None, "subscription": subscription}
+
+    except Exception as e:
+        logger.error(
+            f"[PUSH] Failed to get subscription for user {current_user.id}: {e}"
+        )
+        raise HTTPException(
+            status_code=500, detail="Failed to retrieve push subscription status"
         )
