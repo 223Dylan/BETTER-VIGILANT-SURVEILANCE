@@ -39,6 +39,9 @@ class User(Base):
     notification_history = relationship(
         "NotificationHistory", back_populates="user", lazy="dynamic"
     )
+    analytics_aggregates = relationship(
+        "AnalyticsAggregates", back_populates="user", lazy="dynamic"
+    )
 
     def to_dict(self):
         return {

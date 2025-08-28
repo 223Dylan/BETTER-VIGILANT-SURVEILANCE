@@ -1,4 +1,5 @@
 from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Integer, String, Text
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from .base import Base
@@ -52,6 +53,17 @@ class Camera(Base):
     status = Column(String(50), default="stopped")  # stopped, starting, active, error
     error_message = Column(Text)
     uptime_hours = Column(Float, default=0.0)
+
+    # Relationships
+    detection_metrics = relationship(
+        "DetectionMetrics", back_populates="camera", lazy="dynamic"
+    )
+    camera_metrics = relationship(
+        "CameraMetrics", back_populates="camera", lazy="dynamic"
+    )
+    analytics_aggregates = relationship(
+        "AnalyticsAggregates", back_populates="camera", lazy="dynamic"
+    )
 
     def to_dict(self):
         """Convert to dictionary for API responses."""
