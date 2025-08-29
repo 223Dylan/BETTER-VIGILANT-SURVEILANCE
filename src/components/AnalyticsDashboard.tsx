@@ -79,7 +79,9 @@ const AnalyticsDashboard: React.FC = () => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     setConnectionStatus('connecting');
-    const ws = new WebSocket(`ws://${window.location.host}/ws/analytics`);
+    // Use the backend server port for WebSocket connection
+    const wsHost = window.location.hostname === 'localhost' ? 'localhost:8001' : window.location.host;
+    const ws = new WebSocket(`ws://${wsHost}/ws/analytics`);
 
     ws.onopen = () => {
       setIsConnected(true);

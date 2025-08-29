@@ -182,7 +182,15 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     def _is_public_endpoint(self, path: str) -> bool:
         """Check if an endpoint is public (doesn't require API key)"""
         # Check exact matches first
-        if path in PUBLIC_ENDPOINTS or path.startswith("/static/"):
+        if (
+            path in PUBLIC_ENDPOINTS
+            or path.startswith("/static/")
+            or path.endswith(".png")
+            or path.endswith(".ico")
+            or path.endswith(".jpg")
+            or path.endswith(".jpeg")
+            or path.endswith(".svg")
+        ):
             return True
 
         # Check video streaming patterns

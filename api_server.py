@@ -48,7 +48,7 @@ app = FastAPI(title="Video Streaming API")
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize Redis WebSocket bridge on startup."""
+    """Initialize Redis WebSocket bridge and analytics services on startup."""
     logger.info("=" * 60)
     logger.info("FASTAPI SERVER STARTING UP")
     logger.info("=" * 60)
@@ -59,11 +59,37 @@ async def startup_event():
     except Exception as e:
         logger.error(f"[STARTUP] Failed to initialize Redis WebSocket bridge: {e}")
 
+    # Initialize analytics services
+    try:
+        from src.services.analytics_aggregation_service import (
+            analytics_aggregation_service,
+        )
+        from src.services.metrics_collection_service import metrics_collection_service
+        from src.websockets.analytics_websocket_manager import (
+            analytics_websocket_manager,
+        )
+
+        # Start metrics collection service
+        await metrics_collection_service.start_collection()
+        logger.info("[STARTUP] Metrics collection service started")
+
+        # Start analytics aggregation service
+        await analytics_aggregation_service.start_aggregation()
+        logger.info("[STARTUP] Analytics aggregation service started")
+
+        # Start analytics WebSocket broadcasting service
+        await analytics_websocket_manager.start_broadcasting()
+        logger.info("[STARTUP] Analytics WebSocket broadcasting service started")
+
+    except Exception as e:
+        logger.error(f"[STARTUP] Failed to initialize analytics services: {e}")
+
     # Log available WebSocket endpoints
     logger.info("[STARTUP] Available WebSocket endpoints:")
     logger.info("  - /ws/audit - Real-time system activity stream")
     logger.info("  - /ws/metrics - Real-time system metrics")
     logger.info("  - /ws/alerts - Real-time alert notifications")
+    logger.info("  - /ws/analytics - Real-time analytics updates")
     logger.info("  - /ws/camera/{camera_id} - Camera status updates")
     logger.info("  - /ws/cameras/{camera_id}/prediction - Camera predictions")
 
@@ -73,7 +99,7 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Cleanup Redis WebSocket bridge on shutdown."""
+    """Cleanup Redis WebSocket bridge and analytics services on shutdown."""
     logger.info("=" * 60)
     logger.info("FASTAPI SERVER SHUTTING DOWN")
     logger.info("=" * 60)
@@ -84,6 +110,31 @@ async def shutdown_event():
         logger.info("[SHUTDOWN] Redis WebSocket bridge stopped")
     except Exception as e:
         logger.error(f"[SHUTDOWN] Error stopping Redis WebSocket bridge: {e}")
+
+    # Stop analytics services
+    try:
+        from src.services.analytics_aggregation_service import (
+            analytics_aggregation_service,
+        )
+        from src.services.metrics_collection_service import metrics_collection_service
+        from src.websockets.analytics_websocket_manager import (
+            analytics_websocket_manager,
+        )
+
+        # Stop analytics WebSocket broadcasting service
+        await analytics_websocket_manager.stop_broadcasting()
+        logger.info("[SHUTDOWN] Analytics WebSocket broadcasting service stopped")
+
+        # Stop analytics aggregation service
+        await analytics_aggregation_service.stop_aggregation()
+        logger.info("[SHUTDOWN] Analytics aggregation service stopped")
+
+        # Stop metrics collection service
+        await metrics_collection_service.stop_collection()
+        logger.info("[SHUTDOWN] Metrics collection service stopped")
+
+    except Exception as e:
+        logger.error(f"[SHUTDOWN] Error stopping analytics services: {e}")
 
     logger.info("[SHUTDOWN] FastAPI server shutdown complete")
     logger.info("=" * 60)
@@ -130,6 +181,11 @@ app.include_router(auth.router)
 
 # Include WebSocket router
 app.include_router(ws.router)
+
+# Include analytics WebSocket router
+from src.routers.websocket import router as analytics_websocket_router
+
+app.include_router(analytics_websocket_router)
 
 # Include cameras router
 app.include_router(cameras.router)

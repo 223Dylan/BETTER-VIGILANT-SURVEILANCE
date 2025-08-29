@@ -16,6 +16,7 @@ from src.database.models import (
     CameraMetrics,
     DetectionMetrics,
     SystemMetrics,
+    get_db,
 )
 from src.utils.system_monitor import SystemMonitor
 from src.websockets.analytics_websocket_manager import analytics_websocket_manager
@@ -91,7 +92,12 @@ class MetricsCollectionService:
         """Continuous loop for collecting camera metrics."""
         while self._running:
             try:
-                await self.collect_camera_metrics()
+                # Get database session for metrics collection
+                db = next(get_db())
+                try:
+                    await self.collect_camera_metrics(db)
+                finally:
+                    db.close()
                 await asyncio.sleep(self.camera_metrics_interval)
             except asyncio.CancelledError:
                 break
