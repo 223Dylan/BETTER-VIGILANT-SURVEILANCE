@@ -337,6 +337,12 @@ class AnalyticsWebSocketManager:
     async def handle_message(self, websocket: WebSocket, message: Dict[str, Any]):
         """Handle incoming WebSocket messages."""
         try:
+            # Handle direct topic list subscription (from frontend)
+            if isinstance(message, list):
+                topics = message
+                await self.subscribe(websocket, topics)
+                return
+
             message_type = message.get("type")
 
             if message_type == "subscribe":

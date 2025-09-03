@@ -58,6 +58,13 @@ PUBLIC_ENDPOINTS = [
     "/cameras/upload-video",
     # Metrics endpoints (public for monitoring)
     "/api/metrics/health",
+    # Analytics endpoints (public for dashboard)
+    "/api/analytics/dashboard",
+    "/api/analytics/live-system",
+    "/api/analytics/alerts",
+    "/api/analytics/cameras",
+    "/api/analytics/notifications",
+    "/api/analytics/health",
     "/api/metrics/summary",
     "/api/metrics/system",
     "/api/metrics/cameras",

@@ -59,30 +59,23 @@ async def startup_event():
     except Exception as e:
         logger.error(f"[STARTUP] Failed to initialize Redis WebSocket bridge: {e}")
 
-    # Initialize analytics services
+    # Initialize REAL analytics services using actual database tables
     try:
-        from src.services.analytics_aggregation_service import (
-            analytics_aggregation_service,
-        )
-        from src.services.metrics_collection_service import metrics_collection_service
+        from src.services.real_analytics_service import real_analytics_service
         from src.websockets.analytics_websocket_manager import (
             analytics_websocket_manager,
         )
 
-        # Start metrics collection service
-        await metrics_collection_service.start_collection()
-        logger.info("[STARTUP] Metrics collection service started")
-
-        # Start analytics aggregation service
-        await analytics_aggregation_service.start_aggregation()
-        logger.info("[STARTUP] Analytics aggregation service started")
+        # Start the real analytics service (uses actual DB tables)
+        await real_analytics_service.start_service()
+        logger.info("[STARTUP] Real analytics service started (using actual DB tables)")
 
         # Start analytics WebSocket broadcasting service
         await analytics_websocket_manager.start_broadcasting()
         logger.info("[STARTUP] Analytics WebSocket broadcasting service started")
 
     except Exception as e:
-        logger.error(f"[STARTUP] Failed to initialize analytics services: {e}")
+        logger.error(f"[STARTUP] Failed to initialize real analytics services: {e}")
 
     # Log available WebSocket endpoints
     logger.info("[STARTUP] Available WebSocket endpoints:")
@@ -111,12 +104,9 @@ async def shutdown_event():
     except Exception as e:
         logger.error(f"[SHUTDOWN] Error stopping Redis WebSocket bridge: {e}")
 
-    # Stop analytics services
+    # Stop REAL analytics services
     try:
-        from src.services.analytics_aggregation_service import (
-            analytics_aggregation_service,
-        )
-        from src.services.metrics_collection_service import metrics_collection_service
+        from src.services.real_analytics_service import real_analytics_service
         from src.websockets.analytics_websocket_manager import (
             analytics_websocket_manager,
         )
@@ -125,16 +115,12 @@ async def shutdown_event():
         await analytics_websocket_manager.stop_broadcasting()
         logger.info("[SHUTDOWN] Analytics WebSocket broadcasting service stopped")
 
-        # Stop analytics aggregation service
-        await analytics_aggregation_service.stop_aggregation()
-        logger.info("[SHUTDOWN] Analytics aggregation service stopped")
-
-        # Stop metrics collection service
-        await metrics_collection_service.stop_collection()
-        logger.info("[SHUTDOWN] Metrics collection service stopped")
+        # Stop the real analytics service
+        await real_analytics_service.stop_service()
+        logger.info("[SHUTDOWN] Real analytics service stopped")
 
     except Exception as e:
-        logger.error(f"[SHUTDOWN] Error stopping analytics services: {e}")
+        logger.error(f"[SHUTDOWN] Error stopping real analytics services: {e}")
 
     logger.info("[SHUTDOWN] FastAPI server shutdown complete")
     logger.info("=" * 60)
@@ -216,6 +202,11 @@ app.include_router(users.router, prefix="/api")
 
 # Include metrics router
 app.include_router(metrics.router)
+
+# Include real analytics router
+from src.routers import real_analytics
+
+app.include_router(real_analytics.router)
 
 # Include audit router (already has /api/audit prefix)
 app.include_router(audit.router)

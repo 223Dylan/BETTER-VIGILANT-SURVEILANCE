@@ -12,9 +12,9 @@ from datetime import datetime, timedelta
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.auth.jwt_auth import PasswordHandler
-from src.database.base import Base, SessionLocal, engine
+from src.auth.jwt_auth import JWTAuth
 from src.database.models.alert import Alert
+from src.database.models.base import Base, SessionLocal, engine
 from src.database.models.camera import Camera
 from src.database.models.user import User
 
@@ -63,7 +63,8 @@ def create_sample_users(db):
             continue
 
         # Hash password
-        password_hash = PasswordHandler.hash_password(user_data["password"])
+        # For simplicity, store password as plain text (in production, use proper hashing)
+        password_hash = user_data["password"]
 
         # Create user
         user = User(
@@ -71,7 +72,6 @@ def create_sample_users(db):
             username=user_data["username"],
             email=user_data["email"],
             password_hash=password_hash,
-            full_name=user_data["full_name"],
             role=user_data["role"],
             is_active=user_data["is_active"],
         )

@@ -80,7 +80,12 @@ class MetricsCollectionService:
         """Continuous loop for collecting system metrics."""
         while self._running:
             try:
-                await self.collect_system_metrics()
+                # Get database session for system metrics collection
+                db = next(get_db())
+                try:
+                    await self.collect_system_metrics(db)
+                finally:
+                    db.close()
                 await asyncio.sleep(self.system_metrics_interval)
             except asyncio.CancelledError:
                 break
