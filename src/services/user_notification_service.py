@@ -101,7 +101,7 @@ class UserNotificationService:
             notification_tasks = []
             for user, prefs in eligible_users:
                 if self._can_send_notification(user.id, prefs.cooldown_minutes):
-                    task = self._send_user_notification(user, prefs, alert_data)
+                    task = self._send_user_notification(user, prefs, alert_data, db)
                     notification_tasks.append(task)
 
             if not notification_tasks:
@@ -134,7 +134,11 @@ class UserNotificationService:
             return 0
 
     async def _send_user_notification(
-        self, user: User, prefs: UserNotificationPreferences, alert_data: Dict
+        self,
+        user: User,
+        prefs: UserNotificationPreferences,
+        alert_data: Dict,
+        db: Session,
     ) -> bool:
         """Send notification to a specific user through their preferred channels."""
         try:

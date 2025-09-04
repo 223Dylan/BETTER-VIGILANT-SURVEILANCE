@@ -995,7 +995,7 @@ const AnalyticsDashboard: React.FC = () => {
                         {Object.entries(notification_analytics.notification_status_breakdown).map(([status, count]) => (
                           <div key={status} className="flex justify-between items-center">
                             <span className="capitalize text-gray-700 dark:text-gray-300">{status}</span>
-                            <Badge variant="outline">{count}</Badge>
+                            <Badge variant="outline" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600">{count}</Badge>
                           </div>
                         ))}
                       </div>
@@ -1011,7 +1011,7 @@ const AnalyticsDashboard: React.FC = () => {
                         {Object.entries(notification_analytics.notification_type_breakdown).map(([type, count]) => (
                           <div key={type} className="flex justify-between items-center">
                             <span className="capitalize text-gray-700 dark:text-gray-300">{type}</span>
-                            <Badge variant="outline">{count}</Badge>
+                            <Badge variant="outline" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600">{count}</Badge>
                           </div>
                         ))}
                       </div>
