@@ -324,9 +324,11 @@ class RealAnalyticsService:
                 if alert_time.tzinfo is not None:
                     alert_time = alert_time.replace(tzinfo=None)
 
-                # Hourly grouping (last 24 hours)
+                # Hourly grouping (last 24 hours + 4 hours buffer for clock sync issues)
                 hour_key = alert_time.strftime("%Y-%m-%d %H:00")
-                if alert_time >= now - timedelta(hours=24):
+                if alert_time >= now - timedelta(
+                    hours=24
+                ) and alert_time <= now + timedelta(hours=4):
                     hourly_data[hour_key] = hourly_data.get(hour_key, 0) + 1
 
                 # Daily grouping (last 30 days)

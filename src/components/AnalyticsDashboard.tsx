@@ -123,6 +123,8 @@ const AnalyticsDashboard: React.FC = () => {
   // Chart state
   const [chartTimeFilter, setChartTimeFilter] = useState<'24h' | '7d' | '30d'>('7d');
   const [chartData, setChartData] = useState<any[]>([]);
+
+  // Chart data state management
   const [isLoadingChart, setIsLoadingChart] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -268,23 +270,52 @@ const AnalyticsDashboard: React.FC = () => {
       let chartDataPoints: any[] = [];
       const chartData = alertData.chart_data;
 
+      // Chart data processing
+
       if (timePeriod === '24h') {
         // Use hourly data from the last 24 hours
         const now = new Date();
         const hourlyData = chartData.hourly || {};
 
-        // Generate 24 hourly data points
-        for (let i = 23; i >= 0; i--) {
-          const time = new Date(now.getTime() - (i * 60 * 60 * 1000));
-          const hourKey = time.toISOString().slice(0, 13) + ':00';
+        // Generate 24 hourly data points using UTC time to match backend
+        // Include current hour + 3 future hours to account for clock sync issues
+        for (let i = 23; i >= -3; i--) {
+          // Create UTC time for the hour key to match backend
+          // Use UTC time as reference to match backend's UTC-based calculations
+          const utcTime = new Date(Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate(),
+            now.getUTCHours() - i,
+            0, 0, 0
+          ));
+
+          // Generate the hour key in the same format as backend: "YYYY-MM-DD HH:00"
+          const year = utcTime.getUTCFullYear();
+          const month = String(utcTime.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(utcTime.getUTCDate()).padStart(2, '0');
+          const hour = String(utcTime.getUTCHours()).padStart(2, '0');
+          const hourKey = `${year}-${month}-${day} ${hour}:00`;
+
           const alerts = hourlyData[hourKey] || 0;
 
+          // Convert UTC time to local time for display
+          const localTime = new Date(utcTime);
+
           chartDataPoints.push({
-            time: time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            time: localTime.toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            }),
             alerts: alerts,
-            timestamp: time.toISOString()
+            timestamp: utcTime.toISOString(),
+            // Metadata
+            utcTime: utcTime.toISOString()
           });
         }
+
+        // 24h chart data points generated
       } else if (timePeriod === '7d') {
         // Use daily data from the last 7 days
         const now = new Date();
@@ -297,7 +328,10 @@ const AnalyticsDashboard: React.FC = () => {
           const alerts = dailyData[dayKey] || 0;
 
           chartDataPoints.push({
-            time: time.toLocaleDateString('en-US', { weekday: 'short' }),
+            time: time.toLocaleDateString('en-US', {
+              weekday: 'short',
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            }),
             alerts: alerts,
             timestamp: time.toISOString()
           });
@@ -314,13 +348,18 @@ const AnalyticsDashboard: React.FC = () => {
           const alerts = dailyData[dayKey] || 0;
 
           chartDataPoints.push({
-            time: time.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            time: time.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            }),
             alerts: alerts,
             timestamp: time.toISOString()
           });
         }
       }
 
+      // Chart data ready for display
       setChartData(chartDataPoints);
     } catch (err) {
       console.error('Error fetching chart data:', err);
@@ -562,7 +601,7 @@ const AnalyticsDashboard: React.FC = () => {
                           Alert Trends
                         </CardTitle>
                         <CardDescription className="text-gray-600 dark:text-gray-400">
-                          Track alert patterns over time
+                          Track alert patterns over time (times shown in {Intl.DateTimeFormat().resolvedOptions().timeZone})
                         </CardDescription>
                       </div>
                       <div className="flex gap-2">
@@ -601,7 +640,7 @@ const AnalyticsDashboard: React.FC = () => {
                           <p className="text-gray-600 dark:text-gray-400">Loading chart data...</p>
                         </div>
                       </div>
-                    ) : chartData.length > 0 ? (
+                    ) : chartData && chartData.length > 0 ? (
                       <ResponsiveContainer width="100%" height={chartTimeFilter === '30d' ? 400 : chartTimeFilter === '24h' ? 350 : 300}>
                         <AreaChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: chartTimeFilter === '24h' ? 20 : 5 }}>
                           <defs>
