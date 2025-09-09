@@ -13,7 +13,7 @@ from loguru import logger
 class VideoStreamManager:
     """Manages frame buffering and processing for video streaming."""
 
-    def __init__(self, buffer_size: int = 10):
+    def __init__(self, buffer_size: int = 50):
         """Initialize the video stream manager."""
         self.buffer_size = buffer_size
         self.streams = {}  # camera_id -> deque of frames
@@ -28,7 +28,14 @@ class VideoStreamManager:
         self._last_stats_time = {}  # camera_id -> last stats time
         self._frame_times = {}  # camera_id -> deque of frame times
         self._fps_window = 30  # Window size for FPS calculation
-        self._min_frame_interval = 1.0 / 15.0  # Reduced to 15 FPS for stability
+        self._min_frame_interval = (
+            0.0  # Removed artificial rate limit - let system run at natural camera FPS
+        )
+        self._adaptive_interval = 0.0  # Dynamic interval based on buffer levels
+        self._min_interval = 0.001  # Minimum interval to prevent CPU spinning
+        self._max_interval = 0.1  # Maximum interval for slow consumption
+        self._batch_size = 3  # Number of frames to send per batch
+        self._max_batch_size = 5  # Maximum batch size
         self._last_frame_time = {}  # camera_id -> last frame time
         self._fps = {}  # camera_id -> current FPS
         self.frame_count = 0
@@ -63,7 +70,23 @@ class VideoStreamManager:
                 self.streams[camera_id] = deque(maxlen=self.buffer_size)
                 logger.info(f"Initializing frame buffer for camera: {camera_id}")
 
-            # Add frame to buffer
+            # Add frame to buffer with bulk dropping strategy
+            current_size = len(self.streams[camera_id])
+            if current_size >= 30:  # When buffer hits 30 frames
+                # Drop first 20 frames to make room for new frames
+                for _ in range(20):
+                    if self.streams[camera_id]:
+                        self.streams[camera_id].popleft()
+                logger.debug(
+                    f"Buffer at {current_size} for {camera_id}, dropped 20 oldest frames"
+                )
+            elif current_size >= self.buffer_size:
+                # Fallback: single frame drop if we somehow exceed buffer size
+                self.streams[camera_id].popleft()
+                logger.debug(
+                    f"Buffer exceeded max size for {camera_id}, dropped oldest frame"
+                )
+
             self.streams[camera_id].append(frame)
             self._frames_processed[camera_id] += 1
 
@@ -268,6 +291,61 @@ class VideoStreamManager:
             logger.error(f"Error in send_frame for camera {camera_id}: {e}")
             await self.send_error(camera_id, str(e))
 
+    async def send_frame_batch(self, camera_id: str) -> bool:
+        """Send multiple frames in a batch to the WebSocket client."""
+        if camera_id not in self.connections:
+            return False
+
+        websocket = self.connections[camera_id]
+        batch_size = self.get_adaptive_batch_size(camera_id)
+
+        try:
+            # Check frame availability
+            if camera_id not in self.streams or not self.streams[camera_id]:
+                await self.send_error(camera_id, "No frame available")
+                return False
+
+            # Collect frames for batch
+            frames = []
+            for _ in range(min(batch_size, len(self.streams[camera_id]))):
+                if self.streams[camera_id]:
+                    frames.append(self.streams[camera_id].popleft())
+
+            if not frames:
+                return False
+
+            # Send batch as JSON message
+            batch_data = {"type": "frame_batch", "count": len(frames), "frames": frames}
+
+            try:
+                await websocket.send_json(batch_data)
+
+                # Update stats
+                if camera_id not in self._frames_sent:
+                    self._frames_sent[camera_id] = 0
+                self._frames_sent[camera_id] += len(frames)
+
+                if camera_id in self._connection_status:
+                    self._connection_status[camera_id]["frames_sent"] += len(frames)
+                    self._connection_status[camera_id]["last_frame_time"] = time.time()
+
+                # Log success occasionally
+                if self._frames_sent[camera_id] % 50 <= len(frames):
+                    buffer_size = len(self.streams[camera_id])
+                    logger.info(
+                        f"[BATCH] Sent {len(frames)} frames to {camera_id}, Buffer: {buffer_size}/{self.buffer_size}"
+                    )
+
+                return True
+
+            except Exception as send_error:
+                logger.error(f"Error sending frame batch to {camera_id}: {send_error}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error in send_frame_batch for {camera_id}: {e}")
+            return False
+
     async def send_error(self, camera_id: str, error_message: str) -> None:
         """Send an error message to the client."""
         if not self._running or not self._initialized:
@@ -299,6 +377,50 @@ class VideoStreamManager:
         except Exception as e:
             logger.error(f"Error cleaning up stream manager: {e}")
 
+    def get_adaptive_interval(self, camera_id: str) -> float:
+        """Calculate adaptive interval based on buffer levels."""
+        if camera_id not in self.streams:
+            return self._min_interval
+
+        buffer_size = len(self.streams[camera_id])
+        buffer_ratio = buffer_size / self.buffer_size
+
+        # Adaptive logic with bulk dropping consideration:
+        # - Very high buffer (60+ frames): Send very fast to trigger bulk drop
+        # - High buffer (40-60 frames): Send fast (min interval)
+        # - Medium buffer (20-40 frames): Send at medium speed
+        # - Low buffer (<20 frames): Send slow (max interval)
+        if buffer_size >= 60:
+            return self._min_interval * 0.5  # Very fast to trigger bulk drop
+        elif buffer_ratio >= 0.8:  # 40+ frames
+            return self._min_interval  # Fast consumption
+        elif buffer_ratio >= 0.4:  # 20-40 frames
+            return self._min_interval * 2  # Medium consumption
+        else:  # <20 frames
+            return self._max_interval  # Slow consumption
+
+    def get_adaptive_batch_size(self, camera_id: str) -> int:
+        """Calculate adaptive batch size based on buffer levels."""
+        if camera_id not in self.streams:
+            return 1
+
+        buffer_size = len(self.streams[camera_id])
+        buffer_ratio = buffer_size / self.buffer_size
+
+        # Adaptive batch logic with bulk dropping consideration:
+        # - Very high buffer (60+ frames): Very large batches to clear buffer quickly
+        # - High buffer (40-60 frames): Large batches (max batch size)
+        # - Medium buffer (20-40 frames): Medium batches
+        # - Low buffer (<20 frames): Small batches (1 frame)
+        if buffer_size >= 60:
+            return self._max_batch_size * 2  # Very large batches to clear quickly
+        elif buffer_ratio >= 0.8:  # 40+ frames
+            return self._max_batch_size  # Large batches
+        elif buffer_ratio >= 0.4:  # 20-40 frames
+            return self._batch_size  # Medium batches
+        else:  # <20 frames
+            return 1  # Small batches
+
     def get_stats(self, camera_id: str) -> dict:
         """Get streaming statistics for a camera.
         Always report buffer size/connection, and compute FPS from recent ingestion times if available.
@@ -321,12 +443,18 @@ class VideoStreamManager:
             duration = max(1e-6, time.time() - status.get("start_time", time.time()))
             fps = status.get("frames_sent", 0) / duration
 
+        adaptive_interval = self.get_adaptive_interval(camera_id)
+
+        adaptive_batch_size = self.get_adaptive_batch_size(camera_id)
+
         return {
             "fps": fps,
             "buffer_size": buffer_len,
             "connected": connected,
             "frames_processed": self._frames_processed.get(camera_id, 0),
             "frames_sent": self._frames_sent.get(camera_id, 0),
+            "adaptive_interval": adaptive_interval,
+            "adaptive_batch_size": adaptive_batch_size,
         }
 
     def get_connection_status(self, camera_id: str) -> dict:
@@ -363,7 +491,23 @@ class VideoStreamManager:
                 self._last_frame_time[camera_id] = time.time()
                 logger.info(f"Direct streaming initialized for camera: {camera_id}")
 
-            # Add frame directly to stream buffer
+            # Add frame directly to stream buffer with bulk dropping strategy
+            current_size = len(self.streams[camera_id])
+            if current_size >= 30:  # When buffer hits 30 frames
+                # Drop first 20 frames to make room for new frames
+                for _ in range(20):
+                    if self.streams[camera_id]:
+                        self.streams[camera_id].popleft()
+                logger.debug(
+                    f"Buffer at {current_size} for {camera_id}, dropped 20 oldest frames"
+                )
+            elif current_size >= self.buffer_size:
+                # Fallback: single frame drop if we somehow exceed buffer size
+                self.streams[camera_id].popleft()
+                logger.debug(
+                    f"Buffer exceeded max size for {camera_id}, dropped oldest frame"
+                )
+
             self.streams[camera_id].append(frame)
 
             # Update minimal stats

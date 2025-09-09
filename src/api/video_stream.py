@@ -10,7 +10,7 @@ from src.video_stream_manager import VideoStreamManager
 router = APIRouter(tags=["video"])
 
 # Create a singleton instance
-stream_manager = VideoStreamManager()
+stream_manager = VideoStreamManager(buffer_size=50)
 
 # Initialize the stream manager
 if not stream_manager.initialize():
@@ -95,7 +95,8 @@ def start_frame_injection_task():
                                     )
                                     # If we can't check status, skip injection to be safe
                                     continue
-                time.sleep(0.033)  # ~30 FPS injection rate
+                # Removed artificial rate limit - let system run at natural camera FPS
+                time.sleep(0.001)  # Minimal sleep to prevent CPU spinning
             except Exception as e:
                 logger.error(f"Error in frame injection loop: {e}")
                 time.sleep(1)
@@ -177,8 +178,9 @@ async def video_stream(websocket: WebSocket, camera_id: str):
                 current_time = time.time()
                 elapsed = current_time - last_frame_time
 
-                # Only send frame if enough time has passed (respect target FPS)
-                if elapsed >= stream_manager._min_frame_interval:
+                # Use adaptive buffering - adjust consumption based on buffer levels
+                adaptive_interval = stream_manager.get_adaptive_interval(camera_id)
+                if elapsed >= adaptive_interval:
                     # Check if camera is actually running
                     camera_is_running = await check_camera_status(camera_id)
 
@@ -189,8 +191,8 @@ async def video_stream(websocket: WebSocket, camera_id: str):
                         await websocket.send_json({"error": "Camera stopped"})
                         await asyncio.sleep(1)  # Wait before next check
                     else:
-                        # Send next frame
-                        await stream_manager.send_frame(camera_id)
+                        # Send frame batch for better performance
+                        await stream_manager.send_frame_batch(camera_id)
                         frames_sent += 1
 
                         # Log every 30 frames
@@ -200,7 +202,7 @@ async def video_stream(websocket: WebSocket, camera_id: str):
                             )
 
                         # If buffer is getting low, log a warning
-                        if stats["buffer_size"] < 5:
+                        if stats["buffer_size"] < 15:
                             logger.warning(
                                 f"Low buffer for camera {camera_id} at {ws_url}: {stats['buffer_size']} frames"
                             )
