@@ -144,7 +144,6 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
   // Real-time metrics state
   const [realTimeStats, setRealTimeStats] = useState({
-    actualFPS: 0,
     bufferSize: 0,
     framesSent: 0,
     framesProcessed: 0,
@@ -156,6 +155,9 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
     sequenceReady: false,
     lastTaskId: null as string | null,
   });
+
+  // Stats overlay visibility state
+  const [showStatsOverlay, setShowStatsOverlay] = useState(true);
 
   // WebSocket for receiving predictions/alerts
   const [predictionWs, setPredictionWs] = useState<WebSocket | null>(null);
@@ -375,7 +377,6 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
         const streamStats = await apiService.get<any>(`/api/video/status/${camera.id}`);
         setRealTimeStats(prev => ({
           ...prev,
-          actualFPS: streamStats.fps || 0,
           bufferSize: streamStats.buffer_size || 0,
           framesSent: streamStats.frames_sent || 0,
           framesProcessed: streamStats.frames_processed || 0,
@@ -391,14 +392,9 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
         const allCameraStats = await apiService.get<Record<string, any>>('/cameras/status');
         const cameraStats = (allCameraStats as any)[camera.id];
         if (cameraStats) {
-          let effectiveFPS = realTimeStats.actualFPS || cameraStats.fps || 0;
           const streamStatus = cameraStats.running && cameraStats.status === 'active';
-          if (streamType === 'mjpeg' && camera.enabled && streamStatus && effectiveFPS === 0) {
-            effectiveFPS = Math.min(camera.fps * 0.7, 15);
-          }
           setRealTimeStats(prev => ({
             ...prev,
-            actualFPS: effectiveFPS,
             streamConnected: streamStatus || prev.streamConnected,
             lastUpdate: new Date(),
           }));
@@ -784,40 +780,61 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                   />
 
                   {/* Overlay: Stream buffer and sequence status */}
-                  <div className="absolute bottom-3 left-3 right-3 bg-black/50 rounded-md p-3">
-                    <div className="flex items-center justify-between text-xs text-white/80 mb-2">
-                      <span>Stream buffer {realTimeStats.bufferSize}/10</span>
-                      <span>{realTimeStats.actualFPS.toFixed(1)} FPS</span>
-                    </div>
-                    <div className="w-full h-2 bg-white/20 rounded mb-2">
-                      <div
-                        className="h-2 bg-emerald-400 rounded"
-                        style={{ width: `${Math.min(100, (realTimeStats.bufferSize / 10) * 100)}%` }}
-                      />
-                    </div>
+                  {showStatsOverlay && (
+                    <div className="absolute bottom-3 left-3 right-3 bg-black/50 rounded-md p-3">
+                      <div className="flex items-center justify-between text-xs text-white/80 mb-2">
+                        <span>Stream buffer {realTimeStats.bufferSize}/50</span>
+                        <button
+                          onClick={() => setShowStatsOverlay(false)}
+                          className="text-white/60 hover:text-white/80 transition-colors"
+                          title="Hide stats"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <div className="w-full h-2 bg-white/20 rounded mb-2">
+                        <div
+                          className="h-2 bg-emerald-400 rounded"
+                          style={{ width: `${Math.min(100, (realTimeStats.bufferSize / 50) * 100)}%` }}
+                        />
+                      </div>
 
-                    <div className="flex items-center justify-between text-xs text-white/80 mb-1">
-                      <span>
-                        Sequence {realTimeStats.sequenceCollected}/{realTimeStats.sequenceLength || 0}
-                      </span>
-                      {realTimeStats.sequenceReady && (
-                        <span className="text-emerald-300">ready</span>
+                      <div className="flex items-center justify-between text-xs text-white/80 mb-1">
+                        <span>
+                          Sequence {realTimeStats.sequenceCollected}/{realTimeStats.sequenceLength || 0}
+                        </span>
+                        {realTimeStats.sequenceReady && (
+                          <span className="text-emerald-300">ready</span>
+                        )}
+                      </div>
+                      <div className="w-full h-2 bg-white/20 rounded">
+                        <div
+                          className="h-2 bg-blue-400 rounded"
+                          style={{
+                            width: `${realTimeStats.sequenceLength ? Math.min(100, (realTimeStats.sequenceCollected / realTimeStats.sequenceLength) * 100) : 0}%`,
+                          }}
+                        />
+                      </div>
+                      {realTimeStats.lastTaskId && (
+                        <div className="mt-2 text-[10px] text-white/60 truncate">
+                          last task: {realTimeStats.lastTaskId}
+                        </div>
                       )}
                     </div>
-                    <div className="w-full h-2 bg-white/20 rounded">
-                      <div
-                        className="h-2 bg-blue-400 rounded"
-                        style={{
-                          width: `${realTimeStats.sequenceLength ? Math.min(100, (realTimeStats.sequenceCollected / realTimeStats.sequenceLength) * 100) : 0}%`,
-                        }}
-                      />
-                    </div>
-                    {realTimeStats.lastTaskId && (
-                      <div className="mt-2 text-[10px] text-white/60 truncate">
-                        last task: {realTimeStats.lastTaskId}
-                      </div>
-                    )}
-                  </div>
+                  )}
+
+                  {/* Show stats button when overlay is hidden */}
+                  {!showStatsOverlay && (
+                        <button
+                          onClick={() => setShowStatsOverlay(true)}
+                          className="absolute bottom-3 left-3 bg-black/50 hover:bg-black/70 rounded-md p-2 text-white/80 hover:text-white transition-colors"
+                          title="Show stats"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                        </button>
+                  )}
                 </div>
 
                 {/* Video controls */}
@@ -1052,52 +1069,6 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
 
 
-                  {/* PTZ Controls Section */}
-                  {camera.ptz && (
-                    <AccordionSection
-                      title="PTZ Controls"
-                      icon={<GamepadIcon className="w-5 h-5" />}
-                      isExpanded={expandedSections.ptz}
-                      onToggle={() => toggleSection('ptz')}
-                    >
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-3 gap-2">
-                          <div></div>
-                          <button className="p-3 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors text-center flex items-center justify-center">
-                            <ArrowUpIcon className="w-4 h-4" />
-                          </button>
-                          <div></div>
-
-                          <button className="p-3 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors text-center flex items-center justify-center">
-                            <ArrowLeftIcon className="w-4 h-4" />
-                          </button>
-                          <button className="p-3 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-center flex items-center justify-center">
-                            <HomeIcon className="w-4 h-4" />
-                          </button>
-                          <button className="p-3 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors text-center flex items-center justify-center">
-                            <ArrowRightIcon className="w-4 h-4" />
-                          </button>
-
-                          <div></div>
-                          <button className="p-3 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors text-center flex items-center justify-center">
-                            <ArrowDownIcon className="w-4 h-4" />
-                          </button>
-                          <div></div>
-                        </div>
-
-                        <div className="flex space-x-2">
-                          <button className="flex-1 p-2 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors text-sm flex items-center justify-center space-x-1">
-                            <ZoomInIcon className="w-4 h-4" />
-                            <span>Zoom In</span>
-                          </button>
-                          <button className="flex-1 p-2 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors text-sm flex items-center justify-center space-x-1">
-                            <ZoomOutIcon className="w-4 h-4" />
-                            <span>Zoom Out</span>
-                          </button>
-                        </div>
-                      </div>
-                    </AccordionSection>
-                  )}
 
                   {/* Camera Settings Section */}
                   <AccordionSection
@@ -1110,7 +1081,14 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                       {/* Technical Settings */}
                       <div className="space-y-2">
                         <div>
-                          <label className={`block text-xs font-medium ${themeClasses.text.secondary} mb-1`}>Resolution</label>
+                          <label className={`block text-xs font-medium ${themeClasses.text.secondary} mb-1`}>
+                            Resolution
+                            <span className="text-orange-500 ml-1" title="Requires camera restart">
+                              <svg className="w-3 h-3 inline" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          </label>
                           <select
                             value={`${editableCamera?.resolutionWidth || 640}x${editableCamera?.resolutionHeight || 480}`}
                             onChange={(e) => {
@@ -1134,10 +1112,20 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                             <option value="2560x1440">2560x1440 (1440p QHD)</option>
                             <option value="3840x2160">3840x2160 (4K UHD)</option>
                           </select>
+                          <div className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                            Camera will restart to apply new resolution
+                          </div>
                         </div>
 
                         <div>
-                          <label className={`block text-xs font-medium ${themeClasses.text.secondary} mb-1`}>Frame Rate</label>
+                          <label className={`block text-xs font-medium ${themeClasses.text.secondary} mb-1`}>
+                            Frame Rate
+                            <span className="text-orange-500 ml-1" title="Requires camera restart">
+                              <svg className="w-3 h-3 inline" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          </label>
                           <select
                             value={editableCamera?.fps || 30}
                             onChange={(e) => {
@@ -1158,6 +1146,9 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                             <option value={50}>50 FPS</option>
                             <option value={60}>60 FPS</option>
                           </select>
+                          <div className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                            Camera will restart to apply new frame rate
+                          </div>
                         </div>
                       </div>
 
@@ -1176,6 +1167,12 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                         {isUpdatingBrightness && (
                           <div className="text-xs text-blue-500 mt-1">Updating brightness...</div>
                         )}
+                        <div className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center">
+                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          Updates instantly without camera restart
+                        </div>
                       </div>
 
                       {/* Detection Settings */}
@@ -1223,10 +1220,13 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
 
                       {/* Save/Update Status */}
                       {isUpdatingSettings && (
-                        <div className="flex items-center justify-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                          <div className="flex items-center space-x-2 text-yellow-700 dark:text-yellow-300">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-700 dark:border-yellow-300"></div>
-                            <span className="text-sm">Saving changes...</span>
+                        <div className="flex items-center justify-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                          <div className="flex items-center space-x-2 text-orange-700 dark:text-orange-300">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-700 dark:border-orange-300"></div>
+                            <div className="text-sm">
+                              <div className="font-medium">Updating camera settings...</div>
+                              <div className="text-xs opacity-75">Camera may restart briefly</div>
+                            </div>
                           </div>
                         </div>
                       )}
