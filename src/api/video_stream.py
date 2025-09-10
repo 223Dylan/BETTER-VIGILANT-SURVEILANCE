@@ -12,6 +12,41 @@ router = APIRouter(tags=["video"])
 # Create a singleton instance
 stream_manager = VideoStreamManager(buffer_size=50)
 
+# Camera status cache to avoid database queries per frame
+_camera_status_cache = {}
+_camera_status_cache_timeout = 1.0  # Cache for 1 second
+
+
+def get_camera_status_cached(camera_id: str) -> bool:
+    """Get camera status with caching to avoid database queries per frame."""
+    global _camera_status_cache, _camera_status_cache_timeout
+
+    current_time = time.time()
+
+    # Check if we have cached status that's still valid
+    if camera_id in _camera_status_cache:
+        cached_time, cached_status = _camera_status_cache[camera_id]
+        if current_time - cached_time < _camera_status_cache_timeout:
+            return cached_status
+
+    # Cache miss or expired - query database
+    try:
+        from src.services.camera_db_service import camera_db_service
+
+        camera = camera_db_service.get_camera_by_id(camera_id)
+
+        # Cache the result
+        is_active = camera and camera.enabled and camera.status == "active"
+        _camera_status_cache[camera_id] = (current_time, is_active)
+
+        return is_active
+    except Exception as e:
+        logger.warning(f"Error checking camera status for {camera_id}: {e}")
+        # Cache negative result for shorter time to retry sooner
+        _camera_status_cache[camera_id] = (current_time, False)
+        return False
+
+
 # Initialize the stream manager
 if not stream_manager.initialize():
     logger.error("Failed to initialize stream manager")
@@ -51,52 +86,37 @@ def start_frame_injection_task():
         while _injection_running:
             try:
                 if shared_data:
-                    # Check for frame data in shared memory
-                    for key in list(shared_data.keys()):
-                        if key.startswith("frame_"):
-                            camera_id = key.replace("frame_", "")
-                            frame_bytes = shared_data.get(key)
+                    # Optimized frame processing - only iterate through frame keys
+                    frame_keys = [
+                        key for key in shared_data.keys() if key.startswith("frame_")
+                    ]
+                    for key in frame_keys:
+                        camera_id = key.replace("frame_", "")
+                        frame_bytes = shared_data.get(key)
 
-                            # Only inject frames if camera is actually enabled and running
-                            if frame_bytes and stream_manager._initialized:
-                                try:
-                                    # Check if camera is enabled in database
-                                    from src.services.camera_db_service import (
-                                        camera_db_service,
-                                    )
-
-                                    camera = camera_db_service.get_camera_by_id(
-                                        camera_id
-                                    )
-
-                                    if (
-                                        camera
-                                        and camera.enabled
-                                        and camera.status == "active"
-                                    ):
-                                        # Inject frame into stream manager
-                                        stream_manager.inject_frame_for_streaming(
-                                            camera_id, frame_bytes
-                                        )
-                                        logger.debug(
-                                            f"Injected shared frame for {camera_id}"
-                                        )
-                                    else:
-                                        # Camera is disabled or stopped - skip frame injection
-                                        logger.debug(
-                                            f"Skipping frame injection for disabled/stopped camera: {camera_id}"
-                                        )
-                                        # Remove the frame from shared memory to prevent accumulation
-                                        if key in shared_data:
-                                            del shared_data[key]
-                                except Exception as db_error:
-                                    logger.warning(
-                                        f"Error checking camera status for {camera_id}: {db_error}"
-                                    )
-                                    # If we can't check status, skip injection to be safe
-                                    continue
+                        # Only inject frames if camera is actually enabled and running
+                        if frame_bytes and stream_manager._initialized:
+                            # Use cached camera status instead of database query
+                            if get_camera_status_cached(camera_id):
+                                # Inject frame into stream manager
+                                stream_manager.inject_frame_for_streaming(
+                                    camera_id, frame_bytes
+                                )
+                                logger.debug(f"Injected shared frame for {camera_id}")
+                            else:
+                                # Camera is disabled or stopped - skip frame injection
+                                logger.debug(
+                                    f"Skipping frame injection for disabled/stopped camera: {camera_id}"
+                                )
+                                # Remove the frame from shared memory to prevent accumulation
+                                if key in shared_data:
+                                    del shared_data[key]
                 # Removed artificial rate limit - let system run at natural camera FPS
-                time.sleep(0.001)  # Minimal sleep to prevent CPU spinning
+                # Only sleep if no frames were processed to prevent CPU spinning
+                if not shared_data or not any(
+                    key.startswith("frame_") for key in shared_data.keys()
+                ):
+                    time.sleep(0.001)  # Minimal sleep only when no frames available
             except Exception as e:
                 logger.error(f"Error in frame injection loop: {e}")
                 time.sleep(1)
