@@ -109,7 +109,9 @@ class CameraPipelineProcess(multiprocessing.Process):
 
         if stream_manager:
             success, buffer = cv2.imencode(
-                ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85]
+                ".jpg",
+                frame,
+                [cv2.IMWRITE_JPEG_QUALITY, 70],  # Reduced quality for faster encoding
             )
             if success:
                 # Local process stream manager (different process) - useful for legacy debug only
