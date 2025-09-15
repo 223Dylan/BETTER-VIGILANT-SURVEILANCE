@@ -601,7 +601,7 @@ const AnalyticsDashboard: React.FC = () => {
                           Alert Trends
                         </CardTitle>
                         <CardDescription className="text-gray-600 dark:text-gray-400">
-                          Track alert patterns over time (times shown in {Intl.DateTimeFormat().resolvedOptions().timeZone})
+                          Track alert patterns over time
                         </CardDescription>
                       </div>
                       <div className="flex gap-2">

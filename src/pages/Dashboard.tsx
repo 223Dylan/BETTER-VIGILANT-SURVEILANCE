@@ -19,7 +19,7 @@ const Dashboard: React.FC = () => {
     total: 0,
     active: 0,
     error: 0,
-    detectionRate: '0%'
+    detections24h: 0
   });
   const [selectedCamera, setSelectedCamera] = useState<string | null>(null);
   const [healthStatus, setHealthStatus] = useState<any>(null);
@@ -44,11 +44,20 @@ const Dashboard: React.FC = () => {
       const active = cameras.filter(c => c.enabled).length;
       const error = cameras.filter(c => c.health?.status === 'error').length;
 
+      // Get detections count for last 24 hours
+      let detections24h = 0;
+      try {
+        const summary = await metricsService.getMetricsSummary();
+        detections24h = summary.total_detections_today || 0;
+      } catch (metricsErr) {
+        console.warn('Could not fetch detections count:', metricsErr);
+      }
+
       setCameraStats({
         total: cameras.length,
         active,
         error,
-        detectionRate: active > 0 ? '98%' : '0%' // Mock detection rate
+        detections24h
       });
 
       // Set first active camera as selected if none selected
@@ -86,8 +95,8 @@ const Dashboard: React.FC = () => {
       color: cameraStats.error > 0 ? 'bg-red-500' : 'bg-blue-500'
     },
     {
-      name: 'Detection Rate',
-      value: cameraStats.detectionRate,
+      name: 'Detections (24h)',
+      value: cameraStats.detections24h.toString(),
       icon: ChartBarIcon,
       color: 'bg-purple-500'
     },
