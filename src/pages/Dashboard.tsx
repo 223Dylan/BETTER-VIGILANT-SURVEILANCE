@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { VideoCameraIcon, BellIcon, ChartBarIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import ActiveCameraGrid from '../components/ActiveCameraGrid';
-import DetectionsByHourDashboard from '../components/DetectionsByHourDashboard';
+import DetectionChart from '../components/DetectionChart';
 import CameraPerformancePanel from '../components/CameraPerformancePanel';
 import AlertsNotificationPanel from '../components/AlertsNotificationPanel';
 import RecentSystemEventsPanel from '../components/RecentSystemEventsPanel';
@@ -210,8 +210,8 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Analytics Section - Detections by Hour */}
-          <DetectionsByHourDashboard />
+          {/* Analytics Section - Detection Chart */}
+          <DetectionChart />
 
           {/* Performance Panel */}
           {selectedCamera && (
