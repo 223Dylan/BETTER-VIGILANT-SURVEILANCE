@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ClockIcon, ExclamationTriangleIcon, CheckCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { ClockIcon, ExclamationTriangleIcon, CheckCircleIcon, InformationCircleIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useThemeClasses } from '../contexts/ThemeContext';
 import { apiService } from '../services/api.service';
 import { auditService } from '../services/audit.service';
@@ -22,114 +22,45 @@ interface RecentSystemEventsPanelProps {
 }
 
 const RecentSystemEventsPanel: React.FC<RecentSystemEventsPanelProps> = ({
-  limit = 10,
+  limit = 50, // Load more events for pagination
   refreshInterval = 30000 // 30 seconds
 }) => {
   const [events, setEvents] = useState<SystemEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [displayLimit] = useState(5); // Show 5 events at a time
   const themeClasses = useThemeClasses();
 
   useEffect(() => {
-    let ws: WebSocket | null = null;
-    let reconnectTimeout: number | null = null;
-
-    const connectWebSocket = () => {
-      try {
-        ws = auditService.createAuditWebSocket();
-        ws.onopen = () => {
-          setError(null);
-        };
-        ws.onmessage = (evt) => {
-          const msg = auditService.parseWebSocketMessage(evt);
-          if (msg?.type === 'audit_update' && Array.isArray(msg.logs)) {
-            setEvents(msg.logs.slice(0, limit));
-          }
-        };
-        ws.onerror = () => {
-          // Fallback to REST polling on error
-          startPolling();
-        };
-        ws.onclose = () => {
-          // Fallback and schedule reconnect
-          startPolling();
-          reconnectTimeout = window.setTimeout(() => {
-            connectWebSocket();
-          }, 5000);
-        };
-      } catch {
-        startPolling();
-      }
-    };
-
-    let pollInterval: number | null = null;
-    const startPolling = () => {
-      stopPolling();
-      loadEvents();
-      pollInterval = window.setInterval(loadEvents, refreshInterval);
-    };
-    const stopPolling = () => {
-      if (pollInterval) {
-        clearInterval(pollInterval);
-        pollInterval = null;
-      }
-    };
-
-    // Prefer WS, fallback to REST
-    connectWebSocket();
-
-    return () => {
-      stopPolling();
-      if (ws) ws.close();
-      if (reconnectTimeout) window.clearTimeout(reconnectTimeout);
-    };
-  }, [limit, refreshInterval]);
+    // Load events only once when component mounts
+    loadEvents();
+  }, []);
 
   const loadEvents = async () => {
     try {
       setLoading(true);
       const logs = await auditService.getRecentEvents(limit, 24);
       setEvents(logs || []);
+      setCurrentPage(1); // Reset to first page when manually refreshing
       setError(null);
     } catch (err) {
-      // Silently handle errors and use sample data
-      setError('Using sample data');
-      // Provide sample data for demonstration
-      setEvents([
-        {
-          id: '1',
-          timestamp: new Date().toISOString(),
-          action: 'USER_LOGIN',
-          username: 'admin',
-          user_role: 'admin',
-          success: true,
-          severity: 'low',
-          resource_type: 'authentication'
-        },
-        {
-          id: '2',
-          timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-          action: 'CAMERA_ACCESS',
-          username: 'operator',
-          user_role: 'operator',
-          success: true,
-          severity: 'low',
-          resource_type: 'camera'
-        },
-        {
-          id: '3',
-          timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-          action: 'PERMISSION_DENIED',
-          username: 'user',
-          user_role: 'user',
-          success: false,
-          severity: 'medium',
-          resource_type: 'alert',
-          error_message: 'Insufficient permissions'
-        }
-      ]);
+      setError('Failed to load system events');
+      setEvents([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(events.length / displayLimit);
+  const startIndex = (currentPage - 1) * displayLimit;
+  const endIndex = startIndex + displayLimit;
+  const displayedEvents = events.slice(startIndex, endIndex);
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
     }
   };
 
@@ -200,14 +131,18 @@ const RecentSystemEventsPanel: React.FC<RecentSystemEventsPanelProps> = ({
       )}
 
       {/* Events List */}
-      <div className="space-y-3">
-        {events.length === 0 ? (
+      <div className="space-y-3 max-h-80 overflow-y-auto">
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          </div>
+        ) : events.length === 0 ? (
           <div className={`text-center py-8 ${themeClasses.text.secondary}`}>
             <ClockIcon className="w-8 h-8 mx-auto mb-2" />
             <p className="text-sm">No recent system events</p>
           </div>
         ) : (
-          events.map((event) => (
+          displayedEvents.map((event) => (
             <div
               key={event.id}
               className={`flex items-start space-x-3 p-3 rounded-lg border ${
@@ -249,19 +184,67 @@ const RecentSystemEventsPanel: React.FC<RecentSystemEventsPanelProps> = ({
         )}
       </div>
 
-      {/* Footer */}
+      {/* Footer with Pagination */}
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center">
-          <span className={`text-xs ${themeClasses.text.secondary}`}>
-            Showing {events.length} recent events
-          </span>
-          <button
-            onClick={loadEvents}
-            className={`text-xs ${themeClasses.text.primary} hover:underline`}
-          >
-            Refresh
-          </button>
-        </div>
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center">
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`flex items-center space-x-1 px-2 py-1 rounded text-xs ${
+                currentPage === 1
+                  ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+            >
+              <ChevronLeftIcon className="h-3 w-3" />
+              <span>Previous</span>
+            </button>
+
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum: number;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => goToPage(pageNum)}
+                    className={`px-2 py-1 rounded text-xs ${
+                      currentPage === pageNum
+                        ? 'bg-blue-500 text-white'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`flex items-center space-x-1 px-2 py-1 rounded text-xs ${
+                currentPage === totalPages
+                  ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+            >
+              <span>Next</span>
+              <ChevronRightIcon className="h-3 w-3" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

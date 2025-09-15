@@ -16,25 +16,25 @@ router = APIRouter(prefix="/api/audit", tags=["audit"])
 
 class AuditLogResponse(BaseModel):
     id: str
-    user_id: Optional[str]
+    user_id: Optional[str] = None
     username: str
-    user_role: Optional[str]
+    user_role: Optional[str] = None
     action: str
-    action_category: str
-    resource_type: Optional[str]
-    resource_id: Optional[str]
-    endpoint: Optional[str]
-    permission_required: Optional[str]
-    permission_granted: bool
-    request_method: Optional[str]
-    ip_address: Optional[str]
-    user_agent: Optional[str]
+    action_category: Optional[str] = None
+    resource_type: Optional[str] = None
+    resource_id: Optional[str] = None
+    endpoint: Optional[str] = None
+    permission_required: Optional[str] = None
+    permission_granted: Optional[bool] = None
+    request_method: Optional[str] = None
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
     success: bool
     severity: str
-    error_message: Optional[str]
-    metadata: dict
+    error_message: Optional[str] = None
+    metadata: Optional[dict] = None
     timestamp: str
-    duration_ms: Optional[int]
+    duration_ms: Optional[int] = None
 
 
 class AuditLogListResponse(BaseModel):
@@ -76,82 +76,17 @@ async def get_recent_system_events(
         return {"logs": logs, "count": len(logs), "time_range_hours": hours}
 
     except Exception as e:
-        # Return sample data if there's an error
-        sample_logs = [
-            {
-                "id": "1",
-                "user_id": None,
-                "username": "admin",
-                "user_role": "admin",
-                "action": "USER_LOGIN",
-                "action_category": "authentication",
-                "resource_type": "authentication",
-                "resource_id": None,
-                "endpoint": "/api/auth/login",
-                "permission_required": None,
-                "permission_granted": True,
-                "request_method": "POST",
-                "ip_address": "127.0.0.1",
-                "user_agent": "Mozilla/5.0...",
-                "success": True,
-                "severity": "low",
-                "error_message": None,
-                "metadata": {},
-                "timestamp": datetime.utcnow().isoformat(),
-                "duration_ms": 150,
-            },
-            {
-                "id": "2",
-                "user_id": None,
-                "username": "operator",
-                "user_role": "operator",
-                "action": "CAMERA_ACCESS",
-                "action_category": "resource",
-                "resource_type": "camera",
-                "resource_id": "camera-1",
-                "endpoint": "/api/cameras/camera-1",
-                "permission_required": "camera:view",
-                "permission_granted": True,
-                "request_method": "GET",
-                "ip_address": "127.0.0.1",
-                "user_agent": "Mozilla/5.0...",
-                "success": True,
-                "severity": "low",
-                "error_message": None,
-                "metadata": {},
-                "timestamp": (datetime.utcnow() - timedelta(minutes=5)).isoformat(),
-                "duration_ms": 89,
-            },
-            {
-                "id": "3",
-                "user_id": None,
-                "username": "user",
-                "user_role": "user",
-                "action": "PERMISSION_DENIED",
-                "action_category": "permission",
-                "resource_type": "alert",
-                "resource_id": "alert-123",
-                "endpoint": "/api/alerts/alert-123",
-                "permission_required": "alert:delete",
-                "permission_granted": False,
-                "request_method": "DELETE",
-                "ip_address": "127.0.0.1",
-                "user_agent": "Mozilla/5.0...",
-                "success": False,
-                "severity": "medium",
-                "error_message": "Insufficient permissions",
-                "metadata": {},
-                "timestamp": (datetime.utcnow() - timedelta(minutes=10)).isoformat(),
-                "duration_ms": 45,
-            },
-        ]
+        # Let the error propagate so we can see what's actually failing
+        from loguru import logger
 
-        return {
-            "logs": sample_logs,
-            "count": len(sample_logs),
-            "time_range_hours": hours,
-            "sample_data": True,
-        }
+        logger.error(f"Audit API error: {e}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        import traceback
+
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to retrieve audit logs: {str(e)}"
+        )
 
 
 @router.post("/frontend-events")

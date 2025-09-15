@@ -355,20 +355,36 @@ class AuditLogger:
                 data = log.to_dict()
                 return {
                     "id": data.get("id"),
-                    "timestamp": data.get("timestamp"),
-                    "action": data.get("action"),
+                    "user_id": data.get("user_id"),
                     "username": data.get("username"),
                     "user_role": data.get("user_role"),
+                    "action": data.get("action"),
+                    "action_category": data.get("action_category"),
+                    "resource_type": data.get("resource_type"),
+                    "resource_id": data.get("resource_id"),
+                    "endpoint": data.get("endpoint"),
+                    "permission_required": data.get("permission_required"),
+                    "permission_granted": data.get("permission_granted"),
+                    "request_method": data.get("request_method"),
+                    "ip_address": data.get("ip_address"),
+                    "user_agent": data.get("user_agent"),
                     "success": data.get("success"),
                     "severity": data.get("severity"),
-                    "resource_type": data.get("resource_type"),
                     "error_message": data.get("error_message"),
+                    "metadata": data.get("metadata"),
+                    "timestamp": data.get("timestamp"),
+                    "duration_ms": data.get("duration_ms"),
                 }
 
             return [to_safe_dict(log) for log in logs]
 
         except Exception as e:
             logger.error(f"Failed to retrieve audit logs: {e}")
+            logger.error(f"Exception type: {type(e).__name__}")
+            logger.error(f"Exception details: {str(e)}")
+            import traceback
+
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return []
         finally:
             if "db" in locals():
