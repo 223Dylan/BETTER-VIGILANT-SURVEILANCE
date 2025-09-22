@@ -166,9 +166,9 @@ class MetricsService {
    * Create WebSocket connection for real-time metrics updates
    */
   createMetricsWebSocket(): WebSocket {
-    const { protocol, hostname, port } = window.location;
+    const { protocol, hostname } = window.location;
     const wsProtocol = protocol === 'https:' ? 'wss' : 'ws';
-    const wsPort = port || '8001';
+    const wsPort = process.env.NODE_ENV === 'development' ? '8001' : (window.location.port || '8001');
     return new WebSocket(`${wsProtocol}://${hostname}:${wsPort}/ws/metrics`);
   }
 
@@ -176,9 +176,9 @@ class MetricsService {
    * Create WebSocket connection for camera-specific metrics
    */
   createCameraMetricsWebSocket(cameraId: string): WebSocket {
-    const { protocol, hostname, port } = window.location;
+    const { protocol, hostname } = window.location;
     const wsProtocol = protocol === 'https:' ? 'wss' : 'ws';
-    const wsPort = port || '8001';
+    const wsPort = process.env.NODE_ENV === 'development' ? '8001' : (window.location.port || '8001');
     return new WebSocket(`${wsProtocol}://${hostname}:${wsPort}/ws/metrics/camera/${cameraId}`);
   }
 
@@ -186,9 +186,9 @@ class MetricsService {
    * Create WebSocket connection for real-time alerts
    */
   createAlertsWebSocket(): WebSocket {
-    const { protocol, hostname, port } = window.location;
+    const { protocol, hostname } = window.location;
     const wsProtocol = protocol === 'https:' ? 'wss' : 'ws';
-    const wsPort = port || '8001';
+    const wsPort = process.env.NODE_ENV === 'development' ? '8001' : (window.location.port || '8001');
     return new WebSocket(`${wsProtocol}://${hostname}:${wsPort}/ws/alerts`);
   }
 

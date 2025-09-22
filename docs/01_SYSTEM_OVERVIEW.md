@@ -16,9 +16,10 @@ The system follows a microservices architecture with the following components:
 4. **Alert System** - Real-time notification and alert management
 5. **Database System** - PostgreSQL with SQLAlchemy ORM
 6. **API Server** - FastAPI-based REST API
-7. **Web Dashboard** - React/TypeScript frontend
+7. **Web Dashboard** - React/TypeScript frontend with real-time metrics
 8. **Monitoring Stack** - ELK (Elasticsearch, Logstash, Kibana)
 9. **Task Queue** - Celery for async processing
+10. **Audit System** - Event logging and system activity tracking
 
 ### Technology Stack
 
@@ -94,3 +95,29 @@ The system follows a microservices architecture with the following components:
 - 500GB SSD storage
 - GPU (NVIDIA GTX 1060 or better)
 - Ubuntu 22.04 LTS
+
+## Dashboard Features
+
+### Main Dashboard Components
+
+**Real-time Metrics:**
+- **Active Cameras**: Shows enabled cameras vs total cameras
+- **System Alerts**: Count of cameras with health/connection errors
+- **Detections (24h)**: Actual detection events from last 24 hours (sourced from Elasticsearch)
+
+**Analytics Section:**
+- **Detection Chart**: Hourly detection trends with WebSocket real-time updates
+- Uses AreaChart visualization for time-series data
+- Displays detection patterns over configurable time periods
+
+**System Monitoring:**
+- **Recent System Events**: Paginated audit log display (5 events per page)
+- **Camera Performance**: Individual camera metrics and health status
+- **Alert Notifications**: Active alerts with severity indicators
+
+**Key Features:**
+- Real-time WebSocket updates for live data
+- Responsive design with dark/light theme support
+- Role-based access control (Admin, Operator, Viewer)
+- No auto-refresh on events panel for better performance
+- Simplified UI with essential controls only

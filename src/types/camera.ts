@@ -82,9 +82,7 @@ export interface CreateCameraRequest {
     width: number;
     height: number;
   };
-  detection_enabled?: boolean;
   detection_sensitivity?: number;
-  recording_enabled?: boolean;
   location?: string;
   zone?: string;
   advanced_settings?: Record<string, any>;

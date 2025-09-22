@@ -132,9 +132,9 @@ async def create_camera(
         # Set defaults for optional fields
         camera_data.setdefault("enabled", True)
         camera_data.setdefault("fps", 15)
-        camera_data.setdefault("detection_enabled", True)
+        camera_data.setdefault("detection_enabled", True)  # Always enabled
         camera_data.setdefault("detection_sensitivity", 0.5)
-        camera_data.setdefault("recording_enabled", False)
+        camera_data.setdefault("recording_enabled", False)  # Always disabled
         camera_data.setdefault("status", "stopped")
 
         # Handle resolution

@@ -180,6 +180,23 @@ This system is designed for **legitimate security monitoring only**. Ensure comp
 
 **Important:** Change all default passwords and secrets before production deployment.
 
+## Model Attribution
+
+The Long-term Recurrent Convolutional Network (LRCN) model used in this system is based on the research and implementation by Khaled Hoshme:
+
+**Original Repository:** [Early Detection of Collective or Individual Theft Attempts Using Long-term Recurrent Convolutional Networks](https://github.com/kaledhoshme123/Early-Detection-of-Collective-or-Individual-Theft-Attempts-Us-ing-Long-term-Recurrent-Convolutional-)
+
+**Model Source:** The trained LRCN model (`lrcn_160S_90_90Q.h5`) is available on [Kaggle](https://www.kaggle.com/models/kaledhoshme/early-detection-of-theft-attempts)
+
+This project builds upon the foundational work in behavioral analysis for theft detection using deep learning. We extend the original implementation with:
+- Production-ready deployment infrastructure
+- Real-time multi-camera processing
+- Comprehensive monitoring and alerting
+- Enterprise security features
+- Modern web dashboard interface
+
+**Citation:** If you use this system in research, please cite both this implementation and the original LRCN model work.
+
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.

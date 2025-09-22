@@ -5,6 +5,8 @@ from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Index, String, Te
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
+from src.utils.datetime_utils import parse_datetime, utc_now
+
 from .base import Base
 
 
@@ -103,19 +105,19 @@ class Alert(Base):
             source=alert_record.source,
             detection_data=alert_record.detection_data,
             timestamp=(
-                datetime.fromisoformat(alert_record.timestamp.replace("Z", ""))
+                parse_datetime(alert_record.timestamp)
                 if isinstance(alert_record.timestamp, str)
                 else alert_record.timestamp
             ),
             acknowledged_by=alert_record.acknowledged_by,
             acknowledged_at=(
-                datetime.fromisoformat(alert_record.acknowledged_at.replace("Z", ""))
+                parse_datetime(alert_record.acknowledged_at)
                 if alert_record.acknowledged_at
                 else None
             ),
             resolved_by=alert_record.resolved_by,
             resolved_at=(
-                datetime.fromisoformat(alert_record.resolved_at.replace("Z", ""))
+                parse_datetime(alert_record.resolved_at)
                 if alert_record.resolved_at
                 else None
             ),
@@ -127,15 +129,15 @@ class Alert(Base):
         self.status = alert_record.status
         self.acknowledged_by = alert_record.acknowledged_by
         self.acknowledged_at = (
-            datetime.fromisoformat(alert_record.acknowledged_at.replace("Z", ""))
+            parse_datetime(alert_record.acknowledged_at)
             if alert_record.acknowledged_at
             else None
         )
         self.resolved_by = alert_record.resolved_by
         self.resolved_at = (
-            datetime.fromisoformat(alert_record.resolved_at.replace("Z", ""))
+            parse_datetime(alert_record.resolved_at)
             if alert_record.resolved_at
             else None
         )
         self.notes = alert_record.notes
-        self.updated_at = datetime.utcnow()
+        self.updated_at = utc_now()

@@ -29,6 +29,9 @@ Performance     →    └────────────┴─────
 ### Index Templates
 
 **Detection Metrics Template:**
+
+*Current system uses this index pattern for storing all detection events.*
+
 ```json
 {
   "index_patterns": ["detection-metrics-*"],
@@ -71,6 +74,13 @@ Performance     →    └────────────┴─────
           }
         }
       },
+      "alert": {
+        "properties": {
+          "triggered": {
+            "type": "boolean"
+          }
+        }
+      },
       "location": {
         "type": "geo_point"
       }
@@ -78,6 +88,51 @@ Performance     →    └────────────┴─────
   }
 }
 ```
+
+### Dashboard Metrics Queries
+
+**Detection Count (24h):**
+
+The dashboard queries detection metrics using:
+```json
+{
+  "size": 100,
+  "sort": [{"@timestamp": "desc"}],
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "range": {
+            "@timestamp": {
+              "gte": "now-24h",
+              "lte": "now"
+            }
+          }
+        },
+        {
+          "range": {
+            "prediction.confidence": {
+              "gte": 0.0
+            }
+          }
+        }
+      ]
+    }
+  },
+  "_source": [
+    "@timestamp",
+    "camera_id",
+    "prediction.confidence",
+    "prediction.label",
+    "prediction.is_shoplifting",
+    "alert.triggered"
+  ]
+}
+```
+
+**Metrics Calculation:**
+- `total_detections_today`: Count of all detection events in last 24h
+- `alert_count_today`: Count where `alert.triggered = true`
 
 **Alert Metrics Template:**
 ```json

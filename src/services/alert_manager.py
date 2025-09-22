@@ -2,7 +2,7 @@ import asyncio
 import json
 import uuid
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -329,11 +329,15 @@ class AlertManager:
             is_shoplifting = prediction_result.get("is_shoplifting", False)
             timestamp = prediction_result.get("timestamp", utc_now_timestamp())
 
-            # Convert timestamp to ISO format if needed
+            # Convert timestamp to ISO format in UTC
             if isinstance(timestamp, (int, float)):
-                timestamp_iso = datetime.fromtimestamp(timestamp).isoformat()
+                timestamp_iso = datetime.fromtimestamp(
+                    timestamp, tz=timezone.utc
+                ).isoformat()
             else:
-                timestamp_iso = str(timestamp)
+                # Accept string, normalize to UTC ISO
+                dt = parse_datetime(str(timestamp))
+                timestamp_iso = dt.astimezone(timezone.utc).isoformat()
 
             # Determine alert properties
             alert_type = self._determine_alert_type(confidence, is_shoplifting)

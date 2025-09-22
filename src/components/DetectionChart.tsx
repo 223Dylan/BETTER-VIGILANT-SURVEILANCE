@@ -50,7 +50,7 @@ const DetectionChart: React.FC = () => {
   // WebSocket connection for real-time updates
   const connectWebSocket = useCallback(() => {
     try {
-      wsRef.current = new WebSocket('ws://localhost:8000/ws/analytics');
+      wsRef.current = new WebSocket('ws://localhost:8001/ws/analytics');
 
       wsRef.current.onopen = () => {
         console.log('WebSocket connected for detection chart');

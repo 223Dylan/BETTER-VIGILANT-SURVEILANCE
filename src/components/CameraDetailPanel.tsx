@@ -1179,26 +1179,6 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                       <div className="mt-3 space-y-2">
                         <h4 className={`text-sm font-medium ${themeClasses.text.primary}`}>Detection Settings</h4>
 
-                        <div className={`flex items-center justify-between p-2 ${themeClasses.bg.secondary} rounded-md`}>
-                          <label className={`text-xs font-medium ${themeClasses.text.secondary}`}>Detection Enabled</label>
-                          <button
-                            onClick={() => {
-                              const newValue = !editableCamera?.detection_enabled;
-                              handleCameraFieldChange('detection_enabled', newValue);
-                              updateCameraProperty('detection_enabled', newValue);
-                            }}
-                            disabled={isUpdatingSettings}
-                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                              editableCamera?.detection_enabled ? 'bg-blue-600' : 'bg-gray-300'
-                            } ${isUpdatingSettings ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                          >
-                            <span
-                              className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                                editableCamera?.detection_enabled ? 'translate-x-5' : 'translate-x-1'
-                              }`}
-                            />
-                          </button>
-                        </div>
 
                         <div>
                           <SettingSlider
@@ -1211,7 +1191,7 @@ const CameraDetailPanel: React.FC<CameraDetailPanelProps> = ({
                               handleCameraFieldChange('detection_sensitivity', value);
                               updateCameraProperty('detection_sensitivity', value);
                             }}
-                            disabled={isUpdatingSettings || !editableCamera?.detection_enabled}
+                            disabled={isUpdatingSettings}
                           />
                         </div>
 

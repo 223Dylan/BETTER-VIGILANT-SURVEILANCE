@@ -42,9 +42,7 @@ const AddCameraForm: React.FC<AddCameraFormProps> = ({
       width: 1280,
       height: 720,
     },
-    detection_enabled: true,
     detection_sensitivity: 0.5,
-    recording_enabled: false,
     location: '',
     zone: '',
   });
@@ -392,24 +390,6 @@ const AddCameraForm: React.FC<AddCameraFormProps> = ({
         </Box>
 
         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'flex-start' }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.detection_enabled}
-                onChange={(e) => handleInputChange('detection_enabled', e.target.checked)}
-              />
-            }
-            label="Enable Detection"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.recording_enabled}
-                onChange={(e) => handleInputChange('recording_enabled', e.target.checked)}
-              />
-            }
-            label="Enable Recording"
-          />
           <TextField
             label="Detection Sensitivity"
             type="number"
@@ -417,7 +397,6 @@ const AddCameraForm: React.FC<AddCameraFormProps> = ({
             onChange={(e) => handleInputChange('detection_sensitivity', parseFloat(e.target.value) || 0.5)}
             helperText="0.0 (low) to 1.0 (high)"
             inputProps={{ min: 0, max: 1, step: 0.1 }}
-            disabled={!formData.detection_enabled}
             sx={{ minWidth: 200 }}
           />
         </Box>

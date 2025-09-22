@@ -54,10 +54,30 @@ class NotificationService {
 
   async getNotificationPreferences(): Promise<NotificationPreferences> {
     try {
+      const token = authService.getAuthToken();
+      if (!token) {
+        console.warn('No authentication token available for notification preferences');
+        // Return default preferences instead of throwing error
+        return {
+          email_enabled: true,
+          push_enabled: true,
+          webhook_enabled: false,
+          webhook_url: undefined,
+          alert_severities: ['critical', 'high', 'medium'],
+          alert_types: ['shoplifting', 'suspicious_activity', 'system_alert'],
+          assigned_cameras: [],
+          cooldown_minutes: 5,
+          quiet_hours_enabled: false,
+          quiet_hours_start: '22:00',
+          quiet_hours_end: '08:00',
+          custom_filters: {},
+        };
+      }
+
       const response = await fetch(`${this.baseUrl}/users/me/notification-preferences`, {
         credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${authService.getAuthToken()}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -143,10 +163,16 @@ class NotificationService {
       if (filters?.status) params.append('status', filters.status);
       if (filters?.dateRange) params.append('date_range', filters.dateRange);
 
+      const token = authService.getAuthToken();
+      if (!token) {
+        console.warn('No authentication token available for notification history');
+        return { notifications: [] };
+      }
+
       const response = await fetch(`${this.baseUrl}/users/me/notification-history?${params}`, {
         credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${authService.getAuthToken()}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -196,7 +222,8 @@ class NotificationService {
   createNotificationWebSocket(): WebSocket | null {
     try {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/notifications`;
+      const wsHost = process.env.NODE_ENV === 'development' ? 'localhost:8001' : window.location.host;
+      const wsUrl = `${protocol}//${wsHost}/ws/alerts`;
 
       const ws = new WebSocket(wsUrl);
 

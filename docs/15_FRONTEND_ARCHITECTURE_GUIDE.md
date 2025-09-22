@@ -133,9 +133,72 @@ import { AlertCard } from '@components/alerts/AlertCard';
 - `VideoPlayer.tsx` - Video playback component
 
 #### 4. **Dashboard Components**
-- `DetectionsByHourDashboard.tsx` - Hourly detection analytics
+- `DetectionChart.tsx` - Real-time detection analytics with hourly trends
+- `RecentSystemEventsPanel.tsx` - Paginated audit log display with 5 events per page
 - `MetricsDashboard.tsx` - System metrics overview
 - `QuickSettingsPanel.tsx` - Quick access settings
+- `AlertsNotificationPanel.tsx` - Active alerts and notifications
+- `CameraPerformancePanel.tsx` - Individual camera performance metrics
+
+### Dashboard Architecture
+
+#### Main Dashboard Layout
+
+The main dashboard (`src/pages/Dashboard.tsx`) follows a multi-section layout:
+
+1. **Header Section**
+   - System title and description
+   - Quick action buttons (Manage Cameras, View Alerts)
+
+2. **Stats Grid**
+   - Active Cameras count (enabled/total)
+   - System Alerts count (cameras with health errors)
+   - Detections (24h) count (actual detection events from last 24 hours)
+
+3. **Analytics Section**
+   - `DetectionChart` component with real-time WebSocket updates
+   - Hourly detection trends using AreaChart visualization
+   - No auto-refresh controls (removed for simplicity)
+
+4. **Performance Section**
+   - Camera-specific performance metrics
+   - Selectable camera dropdown
+
+5. **Recent Events Section**
+   - `RecentSystemEventsPanel` with audit log events
+   - 5 events per page with pagination controls
+   - No auto-refresh (loads once on page load)
+
+#### Dashboard Metrics
+
+**Current Dashboard Stats:**
+```typescript
+const stats = [
+  {
+    name: 'Active Cameras',
+    value: `${cameraStats.active}/${cameraStats.total}`,
+    icon: VideoCameraIcon,
+    color: cameraStats.active > 0 ? 'bg-green-500' : 'bg-gray-400'
+  },
+  {
+    name: 'System Alerts',
+    value: cameraStats.error.toString(), // Camera health errors only
+    icon: cameraStats.error > 0 ? ExclamationTriangleIcon : BellIcon,
+    color: cameraStats.error > 0 ? 'bg-red-500' : 'bg-blue-500'
+  },
+  {
+    name: 'Detections (24h)',
+    value: cameraStats.detections24h.toString(), // Real detection count
+    icon: ChartBarIcon,
+    color: 'bg-purple-500'
+  }
+];
+```
+
+**Data Sources:**
+- Active Cameras: `cameraService.getCameras()` with health status filtering
+- System Alerts: Camera health errors (`c.health?.status === 'error'`)
+- Detections (24h): `metricsService.getMetricsSummary().total_detections_today`
 
 ### Component Patterns
 

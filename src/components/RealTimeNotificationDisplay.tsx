@@ -51,7 +51,8 @@ const RealTimeNotificationDisplay: React.FC<RealTimeNotificationDisplayProps> = 
     try {
       // Try to connect to the WebSocket endpoint
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/notifications`;
+      const wsHost = process.env.NODE_ENV === 'development' ? 'localhost:8001' : window.location.host;
+      const wsUrl = `${protocol}//${wsHost}/ws/alerts`;
 
       wsRef.current = new WebSocket(wsUrl);
 

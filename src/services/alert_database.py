@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from src.database.models.alert import Alert
 from src.database.models.base import SessionLocal
+from src.utils.datetime_utils import utc_now
 
 
 class AlertDatabaseService:
@@ -169,14 +170,14 @@ class AlertDatabaseService:
                     return False
 
                 alert.status = status
-                alert.updated_at = datetime.utcnow()
+                alert.updated_at = utc_now()
 
                 if status == "acknowledged":
                     alert.acknowledged_by = user_id
-                    alert.acknowledged_at = datetime.utcnow()
+                    alert.acknowledged_at = utc_now()
                 elif status == "resolved":
                     alert.resolved_by = user_id
-                    alert.resolved_at = datetime.utcnow()
+                    alert.resolved_at = utc_now()
 
                 if notes:
                     current_notes = alert.notes or ""
@@ -194,8 +195,8 @@ class AlertDatabaseService:
         """Get alert statistics for the specified number of days."""
         try:
             with self.get_session() as db:
-                cutoff = datetime.utcnow() - timedelta(days=days)
-                today_start = datetime.utcnow().replace(
+                cutoff = utc_now() - timedelta(days=days)
+                today_start = utc_now().replace(
                     hour=0, minute=0, second=0, microsecond=0
                 )
 

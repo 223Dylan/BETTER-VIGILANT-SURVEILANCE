@@ -10,10 +10,11 @@ This comprehensive guide documents all available API endpoints for the Shoplifti
 4. [Alert System](#alert-system)
 5. [User Management](#user-management)
 6. [Metrics & Analytics](#metrics--analytics)
-7. [Video Streaming](#video-streaming)
-8. [WebSocket Connections](#websocket-connections)
-9. [Error Handling](#error-handling)
-10. [Security Considerations](#security-considerations)
+7. [Audit System](#audit-system)
+8. [Video Streaming](#video-streaming)
+9. [WebSocket Connections](#websocket-connections)
+10. [Error Handling](#error-handling)
+11. [Security Considerations](#security-considerations)
 
 ## Base Information
 
@@ -873,6 +874,61 @@ GET /api/metrics/analytics?time_range=24h
   }
 }
 ```
+
+## Audit System
+
+System audit and event logging endpoints.
+
+### Recent System Events
+
+```http
+GET /api/audit/recent-events?limit=8&hours=24
+```
+
+**Parameters:**
+- `limit` (optional): Number of events to return (default: 8)
+- `hours` (optional): Hours back to search (default: 24)
+
+**Response:**
+```json
+[
+  {
+    "id": "audit_12345",
+    "user_id": "user123",
+    "username": "admin",
+    "user_role": "admin",
+    "action": "VIEW_DASHBOARD",
+    "action_category": "navigation",
+    "resource_type": "page",
+    "resource_id": "/dashboard",
+    "endpoint": "/api/dashboard",
+    "permission_required": "view_dashboard",
+    "permission_granted": true,
+    "request_method": "GET",
+    "ip_address": "127.0.0.1",
+    "user_agent": "Mozilla/5.0...",
+    "success": true,
+    "severity": "info",
+    "error_message": null,
+    "metadata": {},
+    "timestamp": "2023-01-01T12:00:00Z",
+    "duration_ms": 125
+  }
+]
+```
+
+**Event Severity Levels:**
+- `info`: Normal operations
+- `warning`: Potential issues
+- `error`: Failed operations
+- `critical`: Security or system failures
+
+**Common Action Categories:**
+- `authentication`: Login/logout events
+- `navigation`: Page access
+- `camera_management`: Camera operations
+- `alert_management`: Alert operations
+- `user_management`: User operations
 
 ## Video Streaming
 

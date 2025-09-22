@@ -14,6 +14,7 @@ from src.auth.permissions import (
 )
 from src.database.models.user import User
 from src.services.alert_manager import AlertManager, get_alert_manager
+from src.utils.datetime_utils import to_tz_iso
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -60,6 +61,10 @@ async def get_active_alerts(
     ),
     camera_id: Optional[str] = Query(None, description="Filter by camera ID"),
     limit: Optional[int] = Query(100, description="Maximum number of alerts to return"),
+    tz: Optional[str] = Query(
+        "Africa/Nairobi",
+        description="IANA timezone for localization (default 'Africa/Nairobi')",
+    ),
     current_user: User = Depends(get_current_user),
     alert_service: AlertManager = Depends(get_alert_service),
 ) -> AlertResponse:
@@ -78,6 +83,19 @@ async def get_active_alerts(
         # Apply limit
         if limit and len(alerts) > limit:
             alerts = alerts[:limit]
+
+        # Optional timezone localization
+        if tz:
+            for a in alerts:
+                for key in [
+                    "timestamp",
+                    "created_at",
+                    "updated_at",
+                    "acknowledged_at",
+                    "resolved_at",
+                ]:
+                    if a.get(key):
+                        a[key] = to_tz_iso(a[key], tz)
 
         logger.info(f"[SUCCESS] Retrieved {len(alerts)} active alerts")
 
@@ -98,6 +116,10 @@ async def get_alert_history(
     limit: Optional[int] = Query(100, description="Maximum number of alerts to return"),
     severity: Optional[str] = Query(None, description="Filter by severity"),
     camera_id: Optional[str] = Query(None, description="Filter by camera ID"),
+    tz: Optional[str] = Query(
+        "Africa/Nairobi",
+        description="IANA timezone for localization (default 'Africa/Nairobi')",
+    ),
     alert_service: AlertManager = Depends(get_alert_service),
     current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
@@ -112,6 +134,18 @@ async def get_alert_history(
             filters["cameraId"] = [camera_id]
 
         alerts = alert_service.get_alert_history(limit, filters)
+
+        if tz:
+            for a in alerts:
+                for key in [
+                    "timestamp",
+                    "created_at",
+                    "updated_at",
+                    "acknowledged_at",
+                    "resolved_at",
+                ]:
+                    if a.get(key):
+                        a[key] = to_tz_iso(a[key], tz)
 
         logger.info(f"[SUCCESS] Retrieved {len(alerts)} historical alerts")
 
@@ -155,6 +189,10 @@ async def get_alert_stats(
 async def search_alerts(
     filters: AlertFilterRequest,
     limit: Optional[int] = Query(100, description="Maximum number of alerts to return"),
+    tz: Optional[str] = Query(
+        "Africa/Nairobi",
+        description="IANA timezone for localization (default 'Africa/Nairobi')",
+    ),
     alert_service: AlertManager = Depends(get_alert_service),
     current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
@@ -183,6 +221,18 @@ async def search_alerts(
         unique_alerts.sort(key=lambda x: x["timestamp"], reverse=True)
         if limit:
             unique_alerts = unique_alerts[:limit]
+
+        if tz:
+            for a in unique_alerts:
+                for key in [
+                    "timestamp",
+                    "created_at",
+                    "updated_at",
+                    "acknowledged_at",
+                    "resolved_at",
+                ]:
+                    if a.get(key):
+                        a[key] = to_tz_iso(a[key], tz)
 
         logger.info(
             f"[SUCCESS] Found {len(unique_alerts)} alerts matching search criteria"
@@ -269,6 +319,10 @@ async def resolve_alert(
 @require_permission(Permission.ALERT_VIEW)
 async def get_alert_details(
     alert_id: str,
+    tz: Optional[str] = Query(
+        "Africa/Nairobi",
+        description="IANA timezone for localization (default 'Africa/Nairobi')",
+    ),
     alert_service: AlertManager = Depends(get_alert_service),
     current_user: User = Depends(get_current_user),
 ) -> AlertResponse:
@@ -286,6 +340,16 @@ async def get_alert_details(
             alert = next((a for a in historical_alerts if a["id"] == alert_id), None)
 
         if alert:
+            if tz:
+                for key in [
+                    "timestamp",
+                    "created_at",
+                    "updated_at",
+                    "acknowledged_at",
+                    "resolved_at",
+                ]:
+                    if alert.get(key):
+                        alert[key] = to_tz_iso(alert[key], tz)
             logger.info(f"[SUCCESS] Retrieved details for alert {alert_id}")
             return AlertResponse(
                 success=True, message=f"Alert {alert_id} details retrieved", data=alert

@@ -105,14 +105,29 @@ const VideoFileUpload: React.FC<VideoFileUploadProps> = ({
       const formData = new FormData();
       formData.append('file', file);
 
+      // Get auth token
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {};
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch('http://localhost:8001/cameras/upload-video', {
         method: 'POST',
+        headers,
         body: formData,
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Upload failed');
+        if (response.status === 403) {
+          throw new Error('Access denied. You need camera management permissions to upload videos.');
+        } else if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        } else {
+          const errorData = await response.json().catch(() => ({ detail: 'Upload failed' }));
+          throw new Error(errorData.detail || `Upload failed with status ${response.status}`);
+        }
       }
 
       const result = await response.json();
