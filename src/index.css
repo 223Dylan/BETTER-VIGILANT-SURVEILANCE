@@ -4,7 +4,8 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900;
+    /* Match app theme to avoid white strip in dark mode */
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white;
   }
 }
 

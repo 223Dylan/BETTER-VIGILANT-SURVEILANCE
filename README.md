@@ -60,6 +60,32 @@ celery -A src.tasks worker --loglevel=info   # Background processing
 - **High Availability** - Docker-based deployment
 - **Secure by Design** - JWT authentication, data encryption
 
+## UI Screenshots
+
+> Selection of key screens from the web dashboard. All images are stored in `docs/photos/`.
+
+<table>
+  <tr>
+    <td><img src="docs/photos/login.PNG" alt="Login" width="360"></td>
+    <td><img src="docs/photos/dashboard.PNG" alt="Dashboard" width="360"></td>
+    <td><img src="docs/photos/dashboard(dark%20mode).PNG" alt="Dashboard (Dark Mode)" width="360"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/photos/cameras.PNG" alt="Cameras" width="360"></td>
+    <td><img src="docs/photos/camera%20panel.PNG" alt="Camera Panel" width="360"></td>
+    <td><img src="docs/photos/alerts.PNG" alt="Alerts" width="360"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/photos/notifications.PNG" alt="Notifications" width="360"></td>
+    <td><img src="docs/photos/analytics.PNG" alt="Analytics" width="360"></td>
+    <td><img src="docs/photos/user%20management.PNG" alt="User Management" width="360"></td>
+  </tr>
+  <tr>
+    <td colspan="3" align="center"><em>See more in the documentation folder.</em></td>
+  </tr>
+
+</table>
+
 ## Architecture
 
 ```mermaid
